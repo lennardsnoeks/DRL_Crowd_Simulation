@@ -13,18 +13,18 @@ class Obstacle:
 
 class Agent:
     pos = None
+    orientation = 0.0
     radius = 0.0
-    gsd = 0.0
     goals = []
     initial_speed = None
     fov = 0.0
     id = 0.0
     color = []
 
-    def __init__(self, pos, radius, gsd, goals, initial_speed, fov, id, color):
+    def __init__(self, pos, radius, orientation, goals, initial_speed, fov, id, color):
         self.pos = pos
         self.radius = radius
-        self.gsd = gsd
+        self.orientation = orientation
         self.goals = goals
         self.initial_speed = initial_speed
         self.fov = fov

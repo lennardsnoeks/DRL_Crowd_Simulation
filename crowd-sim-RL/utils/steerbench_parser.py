@@ -1,5 +1,6 @@
 import xml.etree.ElementTree as ET
 import random
+import math
 from utils.objects import Obstacle, Agent
 from utils.utils import Vec2
 
@@ -92,7 +93,7 @@ class SimulationState:
 
 class XMLSimulationState:
 
-    def __init__(self, filename):
+    def __init__(self):
         self.simulation_state = SimulationState()
         self.namespace = {
             'steerbench': 'http://www.magix.ucla.edu/steerbench'
@@ -100,14 +101,18 @@ class XMLSimulationState:
         self.fov = 5
         self.rainbow_index = 0
 
-        self.parse_xml(filename)
-
     def parse_xml(self, filename):
         tree = ET.parse(filename)
         root = tree.getroot()
         self.parse_header(root.find('steerbench:header', self.namespace))
         self.parse_obstacles(root)
         self.parse_agents(root)
+
+        self.simulation_state.move_agents_from_obstacles()
+        self.simulation_state.shift_center()
+        self.simulation_state.clip_bounds()
+
+        return self.simulation_state.bounds, self.simulation_state.obstacles, self.simulation_state.agents
 
     def parse_agents(self, root):
         agents = root.findall('steerbench:agent', self.namespace)
@@ -131,16 +136,22 @@ class XMLSimulationState:
             goals.append(self.parse_vector(target.find('steerbench:targetLocation', self.namespace),
                                            self.simulation_state.bounds))
 
-        speed = float(goal_config.find('steerbench:seekStaticTarget', self.namespace).find('steerbench:desiredSpeed',
+        """speed = float(goal_config.find('steerbench:seekStaticTarget', self.namespace).find('steerbench:desiredSpeed',
                                                                                            self.namespace).text)
         initial_speed = Vec2(speed, 0.0)
-        initial_speed = initial_speed.rotate(initial_speed.directed_angle(direction))
+        initial_speed = initial_speed.rotate(initial_speed.directed_angle(direction))"""
+
+        speed = float(
+            goal_config.find('steerbench:initialConditions', self.namespace).find('steerbench:speed',
+                                                                                  self.namespace).text)
+
+        orientation = math.atan2(direction.y, direction.x)
 
         color = rainbow[self.rainbow_index % 7]
         self.rainbow_index += 1
 
         self.simulation_state.agents.append(
-            Agent(pos=pos, radius=0.3, gsd=1, goals=goals, initial_speed=initial_speed, fov=self.fov,
+            Agent(pos=pos, radius=0.3, orientation=orientation, goals=goals, initial_speed=speed, fov=self.fov,
                   id=len(self.simulation_state.agents), color=color)
         )
 
@@ -166,14 +177,17 @@ class XMLSimulationState:
                 goals.append(self.parse_vector(target.find('steerbench:targetLocation', self.namespace),
                                                [bounds[0], bounds[1], bounds[4], bounds[5]]))
 
-            speed = float(
+            """speed = float(
                 goal_config.find('steerbench:seekStaticTarget', self.namespace).find('steerbench:desiredSpeed',
+                                                                                     self.namespace).text)"""
+            speed = float(
+                goal_config.find('steerbench:initialConditions', self.namespace).find('steerbench:speed',
                                                                                      self.namespace).text)
-            initial_speed = Vec2(speed, 0.0)
-            initial_speed = initial_speed.rotate(initial_speed.directed_angle(direction))
+
+            orientation = math.atan2(direction.y, direction.x)
 
             self.simulation_state.agents.append(
-                Agent(pos=pos, radius=0.3, gsd=1, goals=goals, initial_speed=initial_speed, fov=self.fov,
+                Agent(pos=pos, radius=0.3, orientation=orientation, goals=goals, initial_speed=speed, fov=self.fov,
                       id=len(self.simulation_state.agents), color=color)
             )
 
