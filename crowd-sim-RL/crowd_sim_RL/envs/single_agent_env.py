@@ -75,10 +75,10 @@ class SingleAgentEnv(gym.Env):
         relative_pos_agent_to_goal = np.subtract(shortest_goal, new_pos)
         internal_state = np.matmul(np.linalg.inv(rotation_matrix_new), relative_pos_agent_to_goal)
 
-        observation = [
+        observation = np.array([
             internal_state[0, 0],
             internal_state[1, 0]
-        ]
+        ])
 
         return observation, reward, done, {}
 
@@ -86,15 +86,15 @@ class SingleAgentEnv(gym.Env):
         reward = 0
         # detect collision with obstacles
         for obstacle in self.obstacles:
-            if self._collision_circle_rectangle(obstacle.x, obstacle.y, obstacle.width, obstacle.height, current_agent.pos[0], current_agent.pos[1], current_agent.radius):
+            if self._collision_circle_rectangle(obstacle.x, obstacle.y, obstacle.width, obstacle.height, current_agent.pos[0, 0], current_agent.pos[1, 0], current_agent.radius):
                 reward -= self.reward_collision
 
         # detect collision with other agents or if agent crosses world bounds
         for agent in self.steering_agents:
             if current_agent.id != agent.id:
-                if self._collision_circle_circle(current_agent.pos[0], current_agent.pos[1], current_agent.radius, agent.pos[0], agent.pos[1], current_agent.radius):
+                if self._collision_circle_circle(current_agent.pos[0, 0], current_agent.pos[1, 0], current_agent.radius, agent.pos[0, 0], agent.pos[1, 0], current_agent.radius):
                     reward -= self.reward_collision
-                if agent.pos[0] < self.bounds[0] or agent.pos[0] > self.bounds[1] or agent.pos[1] < self.bounds[2] or agent.pos[1] > self.bounds[3]:
+                if agent.pos[0, 0] < self.bounds[0] or agent.pos[0, 0] > self.bounds[1] or agent.pos[1, 0] < self.bounds[2] or agent.pos[1, 0] > self.bounds[3]:
                     reward -= self.reward_collision
 
         return reward
