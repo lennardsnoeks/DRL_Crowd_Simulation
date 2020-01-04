@@ -1,8 +1,9 @@
 import xml.etree.ElementTree as ET
+import numpy as np
 import random
 import math
-from utils.objects import Obstacle, Agent
-from utils.utils import Vec2
+from utils.objects import Obstacle, Agent, Vec2
+
 
 rainbow = [
     [148, 0, 211],
@@ -145,7 +146,8 @@ class XMLSimulationState:
             goal_config.find('steerbench:initialConditions', self.namespace).find('steerbench:speed',
                                                                                   self.namespace).text)
 
-        orientation = math.atan2(direction.y, direction.x)
+        #orientation = math.atan2(direction.y, direction.x)
+        orientation = math.atan2(direction[1, 0], direction[0, 0])
 
         color = rainbow[self.rainbow_index % 7]
         self.rainbow_index += 1
@@ -184,7 +186,8 @@ class XMLSimulationState:
                 goal_config.find('steerbench:initialConditions', self.namespace).find('steerbench:speed',
                                                                                      self.namespace).text)
 
-            orientation = math.atan2(direction.y, direction.x)
+            #orientation = math.atan2(direction[0][0], direction.x)
+            orientation = math.atan2(direction[1, 0], direction[0, 0])
 
             self.simulation_state.agents.append(
                 Agent(pos=pos, radius=0.3, orientation=orientation, goals=goals, initial_speed=speed, fov=self.fov,
@@ -192,7 +195,7 @@ class XMLSimulationState:
             )
 
     def parse_vector(self, element, bounds):
-        if element.find('steerbench:random', self.namespace) is not None:
+        """if element.find('steerbench:random', self.namespace) is not None:
             return Vec2(
                 random.uniform(bounds[0], bounds[1]),
                 random.uniform(bounds[2], bounds[3])
@@ -201,7 +204,17 @@ class XMLSimulationState:
             return Vec2(
                 float(element.find('steerbench:x', self.namespace).text),
                 float(element.find('steerbench:z', self.namespace).text),
-            )
+            )"""
+        if element.find('steerbench:random', self.namespace) is not None:
+            return np.array([
+                [random.uniform(bounds[0], bounds[1])],
+                [random.uniform(bounds[2], bounds[3])]
+            ])
+        else:
+            return np.array([
+                [float(element.find('steerbench:x', self.namespace).text)],
+                [float(element.find('steerbench:z', self.namespace).text)]
+            ])
 
     def parse_obstacles(self, root):
         obstacles = root.findall('steerbench:obstacle', self.namespace)
