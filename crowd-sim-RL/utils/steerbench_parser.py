@@ -23,27 +23,38 @@ class SimulationState:
         self.agents = []
         self.obstacles = []
         self.bounds = []
+        self.clipped_bounds = []
 
     def shift_center(self):
-        shift = Vec2(-self.bounds[0], -self.bounds[2])
+        #shift = Vec2(-self.bounds[0], -self.bounds[2])
+        shift = np.array([[-self.bounds[0]], [-self.bounds[2]]])
         for agent in self.agents:
-            agent.pos = agent.pos + shift
+            #agent.pos = agent.pos + shift
+            agent.pos = np.add(agent.pos, shift)
             for i in range(len(agent.goals)):
-                agent.goals[i] = agent.goals[i] + shift
+                #agent.goals[i] = agent.goals[i] + shift
+                agent.goals[i] = np.add(agent.goals[i], shift)
 
         for obstacle in self.obstacles:
-            obstacle.x = obstacle.x + shift.x
-            obstacle.y = obstacle.y + shift.y
+            obstacle.x = obstacle.x + shift[0, 0]
+            obstacle.y = obstacle.y + shift[1, 0]
 
-            for line in obstacle.lines:
+            """for line in obstacle.lines:
                 line.a = line.a + shift
-                line.b = line.b + shift
+                line.b = line.b + shift"""
 
         self.bounds = [
-            self.bounds[0] + shift.x,
-            self.bounds[1] + shift.x,
-            self.bounds[2] + shift.y,
-            self.bounds[3] + shift.y
+            self.bounds[0] + shift[0, 0],
+            self.bounds[1] + shift[0, 0],
+            self.bounds[2] + shift[1, 0],
+            self.bounds[3] + shift[1, 0]
+        ]
+
+        self.clipped_bounds = [
+            self.clipped_bounds[0] + shift[0, 0],
+            self.clipped_bounds[1] + shift[0, 0],
+            self.clipped_bounds[2] + shift[1, 0],
+            self.clipped_bounds[3] + shift[1, 0]
         ]
 
     def clip_bounds(self):
@@ -52,17 +63,17 @@ class SimulationState:
 
         for agent in self.agents:
             clipped_bounds = [
-                min(clipped_bounds[0], agent.pos.x),
-                max(clipped_bounds[1], agent.pos.x),
-                min(clipped_bounds[2], agent.pos.y),
-                max(clipped_bounds[3], agent.pos.y)
+                min(clipped_bounds[0], agent.pos[0, 0]),
+                max(clipped_bounds[1], agent.pos[0, 0]),
+                min(clipped_bounds[2], agent.pos[1, 0]),
+                max(clipped_bounds[3], agent.pos[1, 0])
             ]
             for goal in agent.goals:
                 clipped_bounds = [
-                    min(clipped_bounds[0], goal.x),
-                    max(clipped_bounds[1], goal.x),
-                    min(clipped_bounds[2], goal.y),
-                    max(clipped_bounds[3], goal.y)
+                    min(clipped_bounds[0], goal[0, 0]),
+                    max(clipped_bounds[1], goal[0, 0]),
+                    min(clipped_bounds[2], goal[1, 0]),
+                    max(clipped_bounds[3], goal[1, 0])
                 ]
 
         for obstacle in self.obstacles:
@@ -70,10 +81,10 @@ class SimulationState:
                 min(clipped_bounds[0], obstacle.x),
                 max(clipped_bounds[1], obstacle.x + obstacle.width),
                 min(clipped_bounds[2], obstacle.y),
-                max(clipped_bounds[3], obstacle.y + obstacle.heigth)
+                max(clipped_bounds[3], obstacle.y + obstacle.height)
             ]
 
-        self.bounds = [
+        self.clipped_bounds = [
             clipped_bounds[0] - (clipped_bounds[1] - clipped_bounds[0]) * margin,
             clipped_bounds[1] + (clipped_bounds[1] - clipped_bounds[0]) * margin,
             clipped_bounds[2] - (clipped_bounds[3] - clipped_bounds[2]) * margin,
@@ -83,24 +94,28 @@ class SimulationState:
     def move_agents_from_obstacles(self):
         for agent in self.agents:
             for obstacle in self.obstacles:
-                if obstacle.contains(agent.pos):
-                    agent.pos = Vec2(obstacle.x + obstacle.width + 1, obstacle.y + obstacle.heigth + 1)
+                if obstacle.contains(agent.pos[0, 0], agent.pos[1, 0]):
+                    agent.pos = np.array([[obstacle.x + obstacle.width + 1], [obstacle.y + obstacle.height + 1]])
+                    #agent.pos = Vec2(obstacle.x + obstacle.width + 1, obstacle.y + obstacle.heigth + 1)
 
             for goal_num, goal in enumerate(agent.goals):
                 for obstacle in self.obstacles:
-                    if obstacle.contains(goal):
-                        agent.goals[goal_num] = Vec2(obstacle.x + obstacle.width + 1, obstacle.y + obstacle.heigth + 1)
+                    if obstacle.contains(goal[0, 0], goal[1, 0]):
+                        agent.goals[goal_num] = np.array([[obstacle.x + obstacle.width + 1], [obstacle.y + obstacle.height + 1]])
+                        #agent.goals[goal_num] = Vec2(obstacle.x + obstacle.width + 1, obstacle.y + obstacle.heigth + 1)
 
 
 class XMLSimulationState:
 
-    def __init__(self):
+    def __init__(self, filename):
         self.simulation_state = SimulationState()
         self.namespace = {
             'steerbench': 'http://www.magix.ucla.edu/steerbench'
         }
         self.fov = 5
         self.rainbow_index = 0
+
+        self.parse_xml(filename)
 
     def parse_xml(self, filename):
         tree = ET.parse(filename)
@@ -109,11 +124,23 @@ class XMLSimulationState:
         self.parse_obstacles(root)
         self.parse_agents(root)
 
-        self.simulation_state.move_agents_from_obstacles()
-        self.simulation_state.shift_center()
         self.simulation_state.clip_bounds()
+        self.simulation_state.shift_center()
+        self.simulation_state.move_agents_from_obstacles()
 
-        return self.simulation_state.bounds, self.simulation_state.obstacles, self.simulation_state.agents
+        """self.simulation_state.move_agents_from_obstacles()
+           self.simulation_state.shift_center()
+           self.simulation_state.clip_bounds()
+
+           return self.simulation_state.bounds, self.simulation_state.clipped_bounds, \
+                  self.simulation_state.obstacles, self.simulation_state.agents"""
+
+    def get_sim_state(self):
+        return self.simulation_state
+
+    def parse_header(self, header_elem):
+        bounds = self.parse_bounds(header_elem.find('steerbench:worldBounds', self.namespace))
+        self.simulation_state.bounds = [bounds[0], bounds[1], bounds[4], bounds[5]]
 
     def parse_agents(self, root):
         agents = root.findall('steerbench:agent', self.namespace)
@@ -142,9 +169,7 @@ class XMLSimulationState:
         initial_speed = Vec2(speed, 0.0)
         initial_speed = initial_speed.rotate(initial_speed.directed_angle(direction))"""
 
-        speed = float(
-            goal_config.find('steerbench:initialConditions', self.namespace).find('steerbench:speed',
-                                                                                  self.namespace).text)
+        speed = float(initial_config.find('steerbench:speed', self.namespace).text)
 
         #orientation = math.atan2(direction.y, direction.x)
         orientation = math.atan2(direction[1, 0], direction[0, 0])
@@ -153,7 +178,7 @@ class XMLSimulationState:
         self.rainbow_index += 1
 
         self.simulation_state.agents.append(
-            Agent(pos=pos, radius=0.3, orientation=orientation, goals=goals, initial_speed=speed, fov=self.fov,
+            Agent(pos=pos, radius=1, orientation=orientation, goals=goals, initial_speed=speed, fov=self.fov,
                   id=len(self.simulation_state.agents), color=color)
         )
 
@@ -167,10 +192,11 @@ class XMLSimulationState:
         self.rainbow_index += 1
 
         for i in range(num):
-            pos = Vec2(
+            """pos = Vec2(
                 random.uniform(bounds[0], bounds[1]),
                 random.uniform(bounds[4], bounds[5])
-            )
+            )"""
+            pos = np.array([[random.uniform(bounds[0], bounds[1])], [random.uniform(bounds[4], bounds[5])]])
             direction = self.parse_vector(initial_config.find('steerbench:direction', self.namespace), [-1, 1, -1, 1])
 
             goal_config = element.find('steerbench:goalSequence', self.namespace)
@@ -182,15 +208,14 @@ class XMLSimulationState:
             """speed = float(
                 goal_config.find('steerbench:seekStaticTarget', self.namespace).find('steerbench:desiredSpeed',
                                                                                      self.namespace).text)"""
-            speed = float(
-                goal_config.find('steerbench:initialConditions', self.namespace).find('steerbench:speed',
-                                                                                     self.namespace).text)
+
+            speed = float(initial_config.find('steerbench:speed', self.namespace).text)
 
             #orientation = math.atan2(direction[0][0], direction.x)
             orientation = math.atan2(direction[1, 0], direction[0, 0])
 
             self.simulation_state.agents.append(
-                Agent(pos=pos, radius=0.3, orientation=orientation, goals=goals, initial_speed=speed, fov=self.fov,
+                Agent(pos=pos, radius=1, orientation=orientation, goals=goals, initial_speed=speed, fov=self.fov,
                       id=len(self.simulation_state.agents), color=color)
             )
 
@@ -237,10 +262,6 @@ class XMLSimulationState:
         for i in range(num):
             self.simulation_state.obstacles.append(
                 Obstacle(size, size, random.uniform(bounds[0], bounds[1]), random.uniform(bounds[4], bounds[5])))
-
-    def parse_header(self, header_elem):
-        bounds = self.parse_bounds(header_elem.find('steerbench:worldBounds', self.namespace))
-        self.simulation_state.bounds = [bounds[0], bounds[1], bounds[4], bounds[5]]
 
     def parse_bounds(self, bounds_elem):
         bounds = [min(float(bounds_elem.find('steerbench:xmin', self.namespace).text),

@@ -24,6 +24,9 @@ class Obstacle:
         self.x = x
         self.y = y
 
+    def contains(self, x, y):
+        return (self.x <= x <= (self.x + self.width)) and (self.y <= y <= (self.y + self.height))
+
 
 class Agent:
     pos = None

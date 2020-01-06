@@ -6,7 +6,7 @@ from gym import spaces
 from utils.steerbench_parser import XMLSimulationState, SimulationState
 
 
-class SingleAgentEnv(gym.Env):
+class SingleAgentEnvNorm(gym.Env):
 
     def __init__(self, test_file):
         self.step_count = 0
@@ -51,15 +51,21 @@ class SingleAgentEnv(gym.Env):
         new_ori = math.atan(new_ori_2d[1, 0] / new_ori_2d[0, 0])
 
         # reward for getting closer to goal, if there are multiple goals, take closest one in consideration
-        max_distance_to_goal = 1000000
+        shortest_distance_to_goal = 1000000
+        furthest_distance_to_goal = 0
         diff = 0
-        shortest_goal = None
+        first = True
         for goal in agent.goals:
             distance_to_goal = math.sqrt((agent.pos[0, 0] - goal[0, 0]) ** 2 + (agent.pos[1, 0] - goal[1, 0]) ** 2)
             new_distance_to_goal = math.sqrt((agent.pos[0, 0] - goal[0,0]) ** 2 + (agent.pos[1, 0] - goal[1, 0]) ** 2)
-            if distance_to_goal < max_distance_to_goal:
+            if distance_to_goal < shortest_distance_to_goal:
                 diff = distance_to_goal - new_distance_to_goal
-                shortest_goal = goal
+                shortest_distance_to_goal = distance_to_goal
+                if first:
+                    furthest_distance_to_goal = distance_to_goal
+                    first = False
+            else:
+                furthest_distance_to_goal = distance_to_goal
             if distance_to_goal == 0:
                 done = True
         reward += self.reward_goal * diff
@@ -76,9 +82,10 @@ class SingleAgentEnv(gym.Env):
         relative_pos_agent_to_goal = np.subtract(shortest_goal, new_pos)
         internal_state = np.matmul(np.linalg.inv(rotation_matrix_new), relative_pos_agent_to_goal)
 
+        # use furthest distance to goal to normalize the position
         observation = np.array([
-            internal_state[0, 0],
-            internal_state[1, 0]
+            internal_state[0, 0] / furthest_distance_to_goal[0, 0],
+            internal_state[1, 0] / furthest_distance_to_goal[1, 0]
         ])
 
         return observation, reward, done, {}
