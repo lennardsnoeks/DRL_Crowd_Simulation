@@ -29,14 +29,13 @@ SIM_COLORS = {
 
 
 class Visualization:
-    SCREEN_WIDTH, SCREEN_HEIGHT = 800, 800
     BOUNDARIES = 0, 0, 600, 600
 
     def __init__(self, sim_state: SimulationState):
         pygame.init()
 
         self.offset = 0.0
-        self.zoom_factor = 1.0
+        self.zoom_factor = 10
         self.background_color = SIM_COLORS['white']
         self.border_width = 1
         self.border_color = SIM_COLORS['light gray']
@@ -68,13 +67,15 @@ class Visualization:
             pygame.display.flip()
 
     def initialize_screen(self):
-        self.screen = pygame.display.set_mode((self.SCREEN_WIDTH, self.SCREEN_HEIGHT),
+        self.width = self.sim_state.clipped_bounds[1] - self.sim_state.clipped_bounds[0]
+        self.height = self.sim_state.clipped_bounds[3] - self.sim_state.clipped_bounds[2]
+        self.screen = pygame.display.set_mode((int(self.width) * self.zoom_factor, int(self.height) * self.zoom_factor),
                                               HWSURFACE | DOUBLEBUF | RESIZABLE, 32)
 
-        self.field = pygame.Rect(self.sim_state.bounds[0],
-                                 self.sim_state.bounds[2],
-                                 self.BOUNDARIES[2] * self.zoom_factor,
-                                 self.BOUNDARIES[3] * self.zoom_factor)
+        self.field = pygame.Rect(self.sim_state.clipped_bounds[0],
+                                 self.sim_state.clipped_bounds[2],
+                                 self.width * self.zoom_factor,
+                                 self.height * self.zoom_factor)
 
         self.internal_field = pygame.Rect(self.field.left + self.border_width,
                                           self.field.top + self.border_width,
@@ -95,18 +96,18 @@ class Visualization:
         self.draw_agents()
 
     def draw_background(self):
-        pygame.draw.rect(self.screen, SIM_COLORS['light gray'], [0, 0, self.SCREEN_WIDTH, self.SCREEN_HEIGHT])
-        pygame.draw.rect(self.screen, self.background_color, self.field)
+        #pygame.draw.rect(self.screen, SIM_COLORS['light gray'], [0, 0, self.width * self.zoom_factor, self.height * self.zoom_factor])
+        pygame.draw.rect(self.screen, SIM_COLORS['gray'], self.field)
 
     def draw_obstacles(self):
         for obstacle in self.sim_state.obstacles:
-            x_min = obstacle.x
-            y_min = obstacle.y
-            x_max = obstacle.x + obstacle.width
-            y_max = obstacle.y + obstacle.height
+            x_min = obstacle.x * self.zoom_factor
+            y_min = obstacle.y * self.zoom_factor
+            x_max = (obstacle.x + obstacle.width) * self.zoom_factor
+            y_max = (obstacle.y + obstacle.height) * self.zoom_factor
 
             # draw obstacle
-            pygame.draw.rect(self.screen, SIM_COLORS['gray'], (x_min, y_min, obstacle.width, obstacle.height))
+            pygame.draw.rect(self.screen, SIM_COLORS['light gray'], (x_min, y_min, obstacle.width * self.zoom_factor, obstacle.height * self.zoom_factor))
 
             # draw border
             pygame.draw.line(self.screen, SIM_COLORS['black'], (x_min, y_min), (x_max, y_min), 1)
@@ -117,16 +118,16 @@ class Visualization:
     def draw_agents(self):
         for agent in self.sim_state.agents:
             color = Color(agent.color[0], agent.color[1], agent.color[2])
-            agent_pos_x = agent.pos[0, 0]
-            agent_pos_y = agent.pos[1, 0]
-            print(agent_pos_x, agent_pos_y)
-            pygame.draw.circle(self.screen, color, (int(agent_pos_x), int(agent_pos_y)), int(agent.radius), 0)
+            agent_pos_x = agent.pos[0, 0] * self.zoom_factor
+            agent_pos_y = agent.pos[1, 0] * self.zoom_factor
+            pygame.draw.circle(self.screen, color, (int(agent_pos_x), int(agent_pos_y)), int(agent.radius * self.zoom_factor), 0)
 
             orientation_2d = np.array([math.cos(agent.orientation), math.sin(agent.orientation)])
-            point2_x = (agent_pos_x + orientation_2d[0]) * agent.radius
-            point2_y = (agent_pos_y + orientation_2d[1]) * agent.radius
+            point2_x = (agent_pos_x + (orientation_2d[0] * agent.radius * self.zoom_factor))
+            point2_y = (agent_pos_y + (orientation_2d[1] * agent.radius * self.zoom_factor))
 
-            pygame.draw.line(self.screen, SIM_COLORS['white'], (agent_pos_x, agent_pos_y), (point2_x, point2_y), 2)
+            print(agent_pos_x, agent_pos_y, point2_x, point2_y)
+            pygame.draw.line(self.screen, SIM_COLORS['white'], (agent_pos_x, agent_pos_y), (point2_x, point2_y), 1)
 
     def quit(self):
         sys.exit()

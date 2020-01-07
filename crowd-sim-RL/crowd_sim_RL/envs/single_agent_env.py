@@ -3,7 +3,8 @@ import numpy as np
 import math
 
 from gym import spaces
-from utils.steerbench_parser import XMLSimulationState, SimulationState
+
+from utils.steerbench_parser import SimulationState
 
 
 class SingleAgentEnv(gym.Env):
@@ -12,6 +13,7 @@ class SingleAgentEnv(gym.Env):
         self.step_count = 0
         self.time_step = 0.1
 
+        self.accumulated_reward = 0
         self.reward_goal = 4
         self.reward_collision = 3
 
@@ -19,16 +21,19 @@ class SingleAgentEnv(gym.Env):
         self.MAX_LIN_VELO = 1.5
         self.MAX_ANG_VELO = math.radians(45)
 
-        self.test_file = test_file
-        self.xml_sim_state = XMLSimulationState()
-
         self.reset()
 
         self.action_space = spaces.Box(np.array([self.MIN_LIN_VELO, -self.MAX_ANG_VELO]), np.array([self.MAX_LIN_VELO, self.MAX_ANG_VELO]))
         self.observation_space = spaces.Box(np.array([-np.inf, -np.inf]), np.array([np.inf, np.inf]))
 
+    def _load_params(self, sim_state: SimulationState):
+        self.sim_state = sim_state
+        self._load_world()
+
     def _load_world(self):
-        self.steering_agents, self.obstacles, self.bounds = self.xml_sim_state.parse_xml(self.test_file)
+        self.steering_agents = self.sim_state.agents
+        self.obstacles = self.sim_state.obstacles
+        self.bounds = self.sim_state.clipped_bounds
 
     def step(self, action):
         # action is [v,w] with v the linear velocity and w the angular velocity
@@ -56,7 +61,7 @@ class SingleAgentEnv(gym.Env):
         shortest_goal = None
         for goal in agent.goals:
             distance_to_goal = math.sqrt((agent.pos[0, 0] - goal[0, 0]) ** 2 + (agent.pos[1, 0] - goal[1, 0]) ** 2)
-            new_distance_to_goal = math.sqrt((agent.pos[0, 0] - goal[0,0]) ** 2 + (agent.pos[1, 0] - goal[1, 0]) ** 2)
+            new_distance_to_goal = math.sqrt((agent.pos[0, 0] - goal[0, 0]) ** 2 + (agent.pos[1, 0] - goal[1, 0]) ** 2)
             if distance_to_goal < max_distance_to_goal:
                 diff = distance_to_goal - new_distance_to_goal
                 shortest_goal = goal
@@ -80,6 +85,8 @@ class SingleAgentEnv(gym.Env):
             internal_state[0, 0],
             internal_state[1, 0]
         ])
+
+        self.accumulated_reward += reward
 
         return observation, reward, done, {}
 

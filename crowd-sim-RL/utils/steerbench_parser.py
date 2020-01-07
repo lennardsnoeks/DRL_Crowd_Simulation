@@ -27,7 +27,8 @@ class SimulationState:
 
     def shift_center(self):
         #shift = Vec2(-self.bounds[0], -self.bounds[2])
-        shift = np.array([[-self.bounds[0]], [-self.bounds[2]]])
+        #shift = np.array([[-self.bounds[0]], [-self.bounds[2]]])
+        shift = np.array([[-self.clipped_bounds[0]], [-self.clipped_bounds[2]]])
         for agent in self.agents:
             #agent.pos = agent.pos + shift
             agent.pos = np.add(agent.pos, shift)
@@ -94,13 +95,13 @@ class SimulationState:
     def move_agents_from_obstacles(self):
         for agent in self.agents:
             for obstacle in self.obstacles:
-                if obstacle.contains(agent.pos[0, 0], agent.pos[1, 0]):
+                if obstacle.contains(agent.pos):
                     agent.pos = np.array([[obstacle.x + obstacle.width + 1], [obstacle.y + obstacle.height + 1]])
                     #agent.pos = Vec2(obstacle.x + obstacle.width + 1, obstacle.y + obstacle.heigth + 1)
 
             for goal_num, goal in enumerate(agent.goals):
                 for obstacle in self.obstacles:
-                    if obstacle.contains(goal[0, 0], goal[1, 0]):
+                    if obstacle.contains(goal):
                         agent.goals[goal_num] = np.array([[obstacle.x + obstacle.width + 1], [obstacle.y + obstacle.height + 1]])
                         #agent.goals[goal_num] = Vec2(obstacle.x + obstacle.width + 1, obstacle.y + obstacle.heigth + 1)
 
@@ -178,7 +179,7 @@ class XMLSimulationState:
         self.rainbow_index += 1
 
         self.simulation_state.agents.append(
-            Agent(pos=pos, radius=1, orientation=orientation, goals=goals, initial_speed=speed, fov=self.fov,
+            Agent(pos=pos, radius=0.5, orientation=orientation, goals=goals, initial_speed=speed, fov=self.fov,
                   id=len(self.simulation_state.agents), color=color)
         )
 
@@ -215,7 +216,7 @@ class XMLSimulationState:
             orientation = math.atan2(direction[1, 0], direction[0, 0])
 
             self.simulation_state.agents.append(
-                Agent(pos=pos, radius=1, orientation=orientation, goals=goals, initial_speed=speed, fov=self.fov,
+                Agent(pos=pos, radius=0.5, orientation=orientation, goals=goals, initial_speed=speed, fov=self.fov,
                       id=len(self.simulation_state.agents), color=color)
             )
 
