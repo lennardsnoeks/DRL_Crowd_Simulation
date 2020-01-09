@@ -125,8 +125,8 @@ class Visualization:
             orientation_2d = np.array([math.cos(agent.orientation), math.sin(agent.orientation)])
             point2_x = (agent_pos_x + (orientation_2d[0] * agent.radius * self.zoom_factor))
             point2_y = (agent_pos_y + (orientation_2d[1] * agent.radius * self.zoom_factor))
+            print(orientation_2d)
 
-            print(agent_pos_x, agent_pos_y, point2_x, point2_y)
             pygame.draw.line(self.screen, SIM_COLORS['white'], (agent_pos_x, agent_pos_y), (point2_x, point2_y), 1)
 
     def quit(self):

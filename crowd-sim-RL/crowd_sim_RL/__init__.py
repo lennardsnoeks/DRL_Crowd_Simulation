@@ -1,17 +1,17 @@
 from gym.envs.registration import register
 
 register(
-    id='single-agent',
-    entry_point='crowd_sim_RL.crowd_sim_RL:SingleAgentEnv',
+    id='singleagent-v0',
+    entry_point='crowd_sim_RL.envs:SingleAgentEnv'
 )
 
 register(
-    id='single-agent-norm',
-    entry_point='crowd_sim_RL.crowd_sim_RL:SingleAgentEnvNorm',
+    id='singleagentnorm-v0',
+    entry_point='crowd_sim_RL.envs:SingleAgentEnvNorm'
 )
 
 
 """register(
     id='multi-agent',
-    entry_point='crowd_sim_RL.crowd_sim_RL:MultiAgentEnv',
+    entry_point='crowd_sim_RL.envs:MultiAgentEnv'
 )"""
