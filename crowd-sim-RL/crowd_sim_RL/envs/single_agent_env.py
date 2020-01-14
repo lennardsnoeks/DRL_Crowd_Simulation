@@ -1,10 +1,13 @@
 import gym
 import numpy as np
 import math
-
+import copy
+import socket
+import pickle
 from gym import spaces
 
 from utils.steerbench_parser import SimulationState
+from visualization.visualize_steerbench import Visualization
 
 
 class SingleAgentEnv(gym.Env):
@@ -15,12 +18,17 @@ class SingleAgentEnv(gym.Env):
         self.accumulated_reward = 0
         self.reward_goal = 4
         self.reward_collision = 3
+        self.reward_smooth1 = 4
+        self.reward_smooth2 = 1
 
         self.sim_state: SimulationState = SimulationState()
+        self.visualizer: Visualization
 
         self.MIN_LIN_VELO = -0.5
         self.MAX_LIN_VELO = 1.5
         self.MAX_ANG_VELO = math.radians(45)
+
+        self.goal_tolerance = 2
 
         self.WORLD_BOUND = 10000
 
@@ -29,12 +37,17 @@ class SingleAgentEnv(gym.Env):
         self.observation_space = spaces.Box(np.array([-self.WORLD_BOUND, -self.WORLD_BOUND]),
                                             np.array([self.WORLD_BOUND, self.WORLD_BOUND]))
 
+        #self.soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
     def load_params(self, sim_state):
         self.sim_state = sim_state
         self._load_world()
 
     def _load_world(self):
-        self.steering_agents = self.sim_state.agents
+        self.steering_agents = []
+        for agent in self.sim_state.agents:
+            agent_copy = copy.copy(agent)
+            self.steering_agents.append(agent_copy)
         self.obstacles = self.sim_state.obstacles
         self.bounds = self.sim_state.clipped_bounds
 
@@ -42,37 +55,52 @@ class SingleAgentEnv(gym.Env):
         # action is [v,w] with v the linear velocity and w the angular velocity
         done = False
         reward = 0
-        linear_vel = action[0]
-        angular_vel = action[1]
+
+        action_copy = action
+        #linear_vel = action[0]
+        #angular_vel = action[1]
+        linear_vel = np.clip(action, self.MIN_LIN_VELO, self.MAX_LIN_VELO)[0]
+        angular_vel = np.clip(action_copy, -self.MAX_ANG_VELO, self.MAX_ANG_VELO)[1]
         agent = self.steering_agents[0]
+
+        linear_vel_timestep = linear_vel * self.time_step
+        angular_vel_timestep = angular_vel * self.time_step
 
         # convert single orientation value (degrees or radians) to 2d representation | setup rotation matrix
         orientation_2d = np.array([[math.cos(agent.orientation)], [math.sin(agent.orientation)]])
-        angular_vel_timestep = angular_vel * self.time_step
         rotation_matrix = np.array([[math.cos(angular_vel_timestep), -math.sin(angular_vel_timestep)],
                                     [math.sin(angular_vel_timestep), math.cos(angular_vel_timestep)]])
 
         # calculate new position and orientation
-        new_pos = np.add(agent.pos, (linear_vel * self.time_step * orientation_2d))
+        new_pos = np.add(agent.pos, (linear_vel_timestep * orientation_2d))
         new_ori_2d = np.matmul(rotation_matrix, orientation_2d)
+
+        #print(new_pos[0, 0], new_pos[1, 0], linear_vel, angular_vel)
 
         # convert calculated orientation back to polar value
         new_ori = math.atan2(new_ori_2d[1, 0], new_ori_2d[0, 0])
 
         # reward for getting closer to goal, if there are multiple goals, take closest one in consideration
-        max_distance_to_goal = 1000000
         diff = 0
+        max_distance_to_goal = 0
         shortest_goal = None
+        first = True
         for goal in agent.goals:
-            distance_to_goal = math.sqrt((agent.pos[0, 0] - goal[0, 0]) ** 2 + (agent.pos[1, 0] - goal[1, 0]) ** 2)
+            previous_distance_to_goal = math.sqrt((agent.pos[0, 0] - goal[0, 0]) ** 2 + (agent.pos[1, 0] - goal[1, 0]) ** 2)
             new_distance_to_goal = math.sqrt((new_pos[0, 0] - goal[0, 0]) ** 2 + (new_pos[1, 0] - goal[1, 0]) ** 2)
-            if new_distance_to_goal < max_distance_to_goal:
-                diff = distance_to_goal - new_distance_to_goal
-                shortest_goal = goal
+            if first:
                 max_distance_to_goal = new_distance_to_goal
-            if distance_to_goal == 0:
+                first = False
+            if new_distance_to_goal <= max_distance_to_goal:
+                shortest_goal = goal
+                diff = previous_distance_to_goal - new_distance_to_goal
+            if new_distance_to_goal < self.goal_tolerance:
                 done = True
         reward += self.reward_goal * diff
+
+        # smooth out reward
+        reward += -self.reward_smooth1 * self._get_reward_smooth(linear_vel, self.MIN_LIN_VELO, self.MAX_LIN_VELO) \
+                  -self.reward_smooth2 * self._get_reward_smooth(angular_vel, -self.MAX_ANG_VELO, self.MAX_ANG_VELO)
 
         # assign new position and orientation to the agent
         agent.pos = new_pos
@@ -94,11 +122,16 @@ class SingleAgentEnv(gym.Env):
 
     @staticmethod
     def _get_internal_state(pos, orientation, goal):
-        rotation_matrix_new = np.array([[math.cos(orientation), -math.sin(orientation)], [math.sin(orientation), math.cos(orientation)]])
+        rotation_matrix_new = np.array([[math.cos(orientation), -math.sin(orientation)],
+                                        [math.sin(orientation), math.cos(orientation)]])
         relative_pos_agent_to_goal = np.subtract(goal, pos)
         internal_state = np.matmul(np.linalg.inv(rotation_matrix_new), relative_pos_agent_to_goal)
 
         return internal_state
+
+    @staticmethod
+    def _get_reward_smooth(x, x_min, x_max):
+        return abs(min(x - x_min, 0)) + abs(max(x - x_max, 0))
 
     def _detect_collisions(self, current_agent):
         reward = 0
@@ -114,9 +147,9 @@ class SingleAgentEnv(gym.Env):
                 if self._collision_circle_circle(current_agent.pos[0, 0], current_agent.pos[1, 0], current_agent.radius,
                                                  agent.pos[0, 0], agent.pos[1, 0], current_agent.radius):
                     reward -= self.reward_collision
-                if agent.pos[0, 0] < self.bounds[0] or agent.pos[0, 0] > self.bounds[1] or \
-                        agent.pos[1, 0] < self.bounds[2] or agent.pos[1, 0] > self.bounds[3]:
-                    reward -= self.reward_collision
+            if agent.pos[0, 0] < self.bounds[0] or agent.pos[0, 0] > self.bounds[1] or \
+                    agent.pos[1, 0] < self.bounds[2] or agent.pos[1, 0] > self.bounds[3]:
+                reward -= self.reward_collision
 
         return reward
 
@@ -151,16 +184,22 @@ class SingleAgentEnv(gym.Env):
         return value1 <= value2 <= value3
 
     def reset(self):
+        print("reset")
+        print(self.steering_agents[0].pos)
         self._load_world()
 
         agent = self.steering_agents[0]
-        max_distance_to_goal = 1000000
+        print(agent.pos)
+        max_distance_to_goal = 0
+        first = True
         shortest_goal = None
         for goal in agent.goals:
             distance_to_goal = math.sqrt((agent.pos[0, 0] - goal[0, 0]) ** 2 + (agent.pos[1, 0] - goal[1, 0]) ** 2)
-            if distance_to_goal < max_distance_to_goal:
-                shortest_goal = goal
+            if first:
                 max_distance_to_goal = distance_to_goal
+                first = False
+            if distance_to_goal <= max_distance_to_goal:
+                shortest_goal = goal
 
         internal_state = self._get_internal_state(agent.pos, agent.orientation, shortest_goal)
         observation = np.array([
@@ -171,4 +210,19 @@ class SingleAgentEnv(gym.Env):
         return observation
 
     def render(self, mode='human'):
-        pass
+        self.visualizer.update_agents(self.steering_agents)
+        #data_string = pickle.dumps(self.steering_agents)
+        #self.soc.send(data_string)
+
+    def set_visualizer(self, visualizer: Visualization):
+        self.visualizer = visualizer
+        #self.establish_connection()
+
+    """def establish_connection(self):
+        host = "127.0.0.1"
+        port = 8000
+        try:
+            self.soc.connect((host, port))
+            print("succesfully connected")
+        except:
+            print("Connection Error")"""

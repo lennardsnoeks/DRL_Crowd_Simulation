@@ -10,6 +10,11 @@ register(
     entry_point='crowd_sim_RL.envs:SingleAgentEnvNorm'
 )
 
+register(
+    id='pendulumtest-v0',
+    entry_point='crowd_sim_RL.envs:PendulumEnv'
+)
+
 
 """register(
     id='multi-agent',

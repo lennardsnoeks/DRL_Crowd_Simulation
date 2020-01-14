@@ -1,6 +1,9 @@
 import sys
 import pygame
 import math
+import copy
+import socket
+import pickle
 import numpy as np
 from pygame.locals import *
 from pygame import Color
@@ -34,6 +37,8 @@ class Visualization:
     def __init__(self, sim_state: SimulationState):
         pygame.init()
 
+        self.goals_visible = True
+
         self.offset = 0.0
         self.zoom_factor = 10
         self.background_color = SIM_COLORS['white']
@@ -53,6 +58,8 @@ class Visualization:
     def run(self):
         pygame.init()
 
+        #self.socket, self.connection = self.setup_socket()
+
         while True:
             self.time_passed = self.clock.tick()
 
@@ -64,6 +71,9 @@ class Visualization:
                     self.time -= self.timer_interval
                     self.simulation_update()
 
+            #updated_agents = self.connection.recv(4096)
+            #data_variable = pickle.loads(updated_agents)
+            #self.sim_state.agents = data_variable
             pygame.display.flip()
 
     def initialize_screen(self):
@@ -89,11 +99,15 @@ class Visualization:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.quit()
+            if event.type == pygame.USEREVENT:
+                self.sim_state.agents = event.data
 
     def draw(self):
         self.draw_background()
         self.draw_obstacles()
         self.draw_agents()
+        if self.goals_visible:
+            self.draw_goals()
 
     def draw_background(self):
         #pygame.draw.rect(self.screen, SIM_COLORS['light gray'], [0, 0, self.width * self.zoom_factor, self.height * self.zoom_factor])
@@ -125,9 +139,46 @@ class Visualization:
             orientation_2d = np.array([math.cos(agent.orientation), math.sin(agent.orientation)])
             point2_x = (agent_pos_x + (orientation_2d[0] * agent.radius * self.zoom_factor))
             point2_y = (agent_pos_y + (orientation_2d[1] * agent.radius * self.zoom_factor))
-            print(orientation_2d)
 
             pygame.draw.line(self.screen, SIM_COLORS['white'], (agent_pos_x, agent_pos_y), (point2_x, point2_y), 1)
+
+    def draw_goals(self):
+        unique_goals = []
+        for agent in self.sim_state.agents:
+            for goal in agent.goals:
+                if not (goal in unique_goals):
+                    unique_goals.append(goal)
+
+        for goal in unique_goals:
+            pygame.draw.circle(self.screen, SIM_COLORS['green'],
+                               (int(goal[0, 0] * self.zoom_factor), int(goal[1,0] * self.zoom_factor)),
+                               self.zoom_factor, 0)
+
+    def update_agents(self, updated_agents):
+        copy_agents = []
+        for agent in updated_agents:
+            copy_agents.append(copy.copy(agent))
+        self.sim_state.agents = copy_agents
+
+        ev = pygame.event.Event(pygame.USEREVENT, {'data': copy_agents})
+        pygame.event.post(ev)
+
+    """def setup_socket(self):
+        host = "127.0.0.1"
+        port = 8000
+        soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        soc.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        print("Socket created")
+        try:
+            soc.bind((host, port))
+        except:
+            print("Bind failed. Error : " + str(sys.exc_info()))
+            sys.exit()
+        soc.listen(6)
+        connection, address = soc.accept()
+        ip, port = str(address[0]), str(address[1])
+        print("Connected with " + ip + ":" + port)
+        return soc, connection"""
 
     def quit(self):
         sys.exit()
