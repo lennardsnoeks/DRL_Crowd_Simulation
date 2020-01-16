@@ -29,6 +29,7 @@ class SingleAgentEnv(gym.Env):
         self.MAX_ANG_VELO = math.radians(45)
 
         self.goal_tolerance = 2
+        self.laser_amount = 10
 
         self.WORLD_BOUND = 10000
 
@@ -56,11 +57,8 @@ class SingleAgentEnv(gym.Env):
         done = False
         reward = 0
 
-        action_copy = action
-        #linear_vel = action[0]
-        #angular_vel = action[1]
         linear_vel = np.clip(action, self.MIN_LIN_VELO, self.MAX_LIN_VELO)[0]
-        angular_vel = np.clip(action_copy, -self.MAX_ANG_VELO, self.MAX_ANG_VELO)[1]
+        angular_vel = np.clip(action, -self.MAX_ANG_VELO, self.MAX_ANG_VELO)[1]
         agent = self.steering_agents[0]
 
         linear_vel_timestep = linear_vel * self.time_step
@@ -74,8 +72,6 @@ class SingleAgentEnv(gym.Env):
         # calculate new position and orientation
         new_pos = np.add(agent.pos, (linear_vel_timestep * orientation_2d))
         new_ori_2d = np.matmul(rotation_matrix, orientation_2d)
-
-        #print(new_pos[0, 0], new_pos[1, 0], linear_vel, angular_vel)
 
         # convert calculated orientation back to polar value
         new_ori = math.atan2(new_ori_2d[1, 0], new_ori_2d[0, 0])
@@ -120,14 +116,49 @@ class SingleAgentEnv(gym.Env):
 
         return observation, reward, done, {}
 
-    @staticmethod
-    def _get_internal_state(pos, orientation, goal):
-        rotation_matrix_new = np.array([[math.cos(orientation), -math.sin(orientation)],
-                                        [math.sin(orientation), math.cos(orientation)]])
-        relative_pos_agent_to_goal = np.subtract(goal, pos)
+    def _get_internal_state(self, agent, goal):
+        rotation_matrix_new = np.array([[math.cos(agent.orientation), -math.sin(agent.orientation)],
+                                        [math.sin(agent.orientation), math.cos(agent.orientation)]])
+        relative_pos_agent_to_goal = np.subtract(goal, agent.pos)
         internal_state = np.matmul(np.linalg.inv(rotation_matrix_new), relative_pos_agent_to_goal)
 
         return internal_state
+
+    def _get_external_state(self, agent):
+        laser_distances = []
+
+        start_point = agent.orientation - math.radians(90)
+        increment = math.radians(180 / self.laser_amount)
+        for i in range(1, self.laser_amount + 1):
+            laser_ori = start_point + i * increment
+            x_ori = math.cos(laser_ori)
+            y_ori = math.sin(laser_ori)
+            distance = self._get_first_crossed_object(agent.pos[0, 0], agent.pos[1, 0], x_ori, y_ori)
+            laser_distances.append(distance)
+
+        agent.laser_history.append(laser_distances)
+        if len(laser_distances) == self.laser_amount:
+            agent.laser_history.pop(0)
+
+    def _get_first_crossed_object(self, x_agent, y_agent, x_ori, y_ori):
+        distance = 1000000
+        iteration_step = 0.1
+        while True:
+            distant_x = x_agent +  x_ori * iteration_step
+            distant_y = y_agent +  x_ori * iteration_step
+            for agent in self.steering_agents:
+
+                pass
+
+            for object in self.obstacles:
+                pass
+
+            for bound in self.bounds:
+                pass
+
+            break
+
+        return distance
 
     @staticmethod
     def _get_reward_smooth(x, x_min, x_max):
@@ -184,12 +215,9 @@ class SingleAgentEnv(gym.Env):
         return value1 <= value2 <= value3
 
     def reset(self):
-        print("reset")
-        print(self.steering_agents[0].pos)
         self._load_world()
 
         agent = self.steering_agents[0]
-        print(agent.pos)
         max_distance_to_goal = 0
         first = True
         shortest_goal = None
@@ -201,7 +229,7 @@ class SingleAgentEnv(gym.Env):
             if distance_to_goal <= max_distance_to_goal:
                 shortest_goal = goal
 
-        internal_state = self._get_internal_state(agent.pos, agent.orientation, shortest_goal)
+        internal_state = self._get_internal_state(agent, shortest_goal)
         observation = np.array([
             internal_state[0, 0],
             internal_state[1, 0]

@@ -102,7 +102,7 @@ def train(sim_state):
                       random_process=random_process, gamma=.95, batch_size=32, target_model_update=1e-3)
     agent.compile([Adam(lr=.0001, clipnorm=1.), Adam(lr=.001, clipnorm=1.)], metrics=['mae'])
 
-    agent.fit(env, nb_steps=100000, visualize=True, verbose=1, nb_max_episode_steps=1000)
+    agent.fit(env, nb_steps=50000, visualize=True, verbose=1, nb_max_episode_steps=1000)
 
     """memory = SequentialMemory(limit=100000, window_length=1)
     random_process = OrnsteinUhlenbeckProcess(size=nb_actions, theta=.5, mu=0., sigma=.5)

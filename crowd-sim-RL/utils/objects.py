@@ -37,6 +37,7 @@ class Agent:
     fov = 0.0
     id = 0.0
     color = []
+    laser_history = []
 
     def __init__(self, pos, radius, orientation, goals, initial_speed, fov, id, color):
         self.pos = pos
