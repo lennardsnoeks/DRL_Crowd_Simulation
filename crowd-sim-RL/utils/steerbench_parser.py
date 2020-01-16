@@ -26,14 +26,10 @@ class SimulationState:
         self.clipped_bounds = []
 
     def shift_center(self):
-        #shift = Vec2(-self.bounds[0], -self.bounds[2])
-        #shift = np.array([[-self.bounds[0]], [-self.bounds[2]]])
         shift = np.array([[-self.clipped_bounds[0]], [-self.clipped_bounds[2]]])
         for agent in self.agents:
-            #agent.pos = agent.pos + shift
             agent.pos = np.add(agent.pos, shift)
             for i in range(len(agent.goals)):
-                #agent.goals[i] = agent.goals[i] + shift
                 agent.goals[i] = np.add(agent.goals[i], shift)
 
         for obstacle in self.obstacles:
@@ -95,15 +91,13 @@ class SimulationState:
     def move_agents_from_obstacles(self):
         for agent in self.agents:
             for obstacle in self.obstacles:
-                if obstacle.contains(agent.pos):
+                if obstacle.contains(agent.pos[0, 0], agent.pos[1, 0]):
                     agent.pos = np.array([[obstacle.x + obstacle.width + 1], [obstacle.y + obstacle.height + 1]])
-                    #agent.pos = Vec2(obstacle.x + obstacle.width + 1, obstacle.y + obstacle.heigth + 1)
 
             for goal_num, goal in enumerate(agent.goals):
                 for obstacle in self.obstacles:
                     if obstacle.contains(goal):
                         agent.goals[goal_num] = np.array([[obstacle.x + obstacle.width + 1], [obstacle.y + obstacle.height + 1]])
-                        #agent.goals[goal_num] = Vec2(obstacle.x + obstacle.width + 1, obstacle.y + obstacle.heigth + 1)
 
 
 class XMLSimulationState:
@@ -154,7 +148,6 @@ class XMLSimulationState:
 
     def parse_agent(self, element):
         initial_config = element.find('steerbench:initialConditions', self.namespace)
-        radius = float(initial_config.find('steerbench:radius', self.namespace).text)
         pos = self.parse_vector(initial_config.find('steerbench:position', self.namespace),
                                 self.simulation_state.bounds)
         direction = self.parse_vector(initial_config.find('steerbench:direction', self.namespace), [-1, 1, -1, 1])
@@ -165,14 +158,8 @@ class XMLSimulationState:
             goals.append(self.parse_vector(target.find('steerbench:targetLocation', self.namespace),
                                            self.simulation_state.bounds))
 
-        """speed = float(goal_config.find('steerbench:seekStaticTarget', self.namespace).find('steerbench:desiredSpeed',
-                                                                                           self.namespace).text)
-        initial_speed = Vec2(speed, 0.0)
-        initial_speed = initial_speed.rotate(initial_speed.directed_angle(direction))"""
-
         speed = float(initial_config.find('steerbench:speed', self.namespace).text)
 
-        #orientation = math.atan2(direction.y, direction.x)
         orientation = math.atan2(direction[1, 0], direction[0, 0])
 
         color = rainbow[self.rainbow_index % 7]
@@ -187,16 +174,11 @@ class XMLSimulationState:
         num = int(element.find('steerbench:numAgents', self.namespace).text)
         bounds = self.parse_bounds(element.find('steerbench:regionBounds', self.namespace))
         initial_config = element.find('steerbench:initialConditions', self.namespace)
-        radius = float(initial_config.find('steerbench:radius', self.namespace).text)
 
         color = rainbow[self.rainbow_index % 7]
         self.rainbow_index += 1
 
         for i in range(num):
-            """pos = Vec2(
-                random.uniform(bounds[0], bounds[1]),
-                random.uniform(bounds[4], bounds[5])
-            )"""
             pos = np.array([[random.uniform(bounds[0], bounds[1])], [random.uniform(bounds[4], bounds[5])]])
             direction = self.parse_vector(initial_config.find('steerbench:direction', self.namespace), [-1, 1, -1, 1])
 
@@ -206,13 +188,8 @@ class XMLSimulationState:
                 goals.append(self.parse_vector(target.find('steerbench:targetLocation', self.namespace),
                                                [bounds[0], bounds[1], bounds[4], bounds[5]]))
 
-            """speed = float(
-                goal_config.find('steerbench:seekStaticTarget', self.namespace).find('steerbench:desiredSpeed',
-                                                                                     self.namespace).text)"""
-
             speed = float(initial_config.find('steerbench:speed', self.namespace).text)
 
-            #orientation = math.atan2(direction[0][0], direction.x)
             orientation = math.atan2(direction[1, 0], direction[0, 0])
 
             self.simulation_state.agents.append(
@@ -221,16 +198,6 @@ class XMLSimulationState:
             )
 
     def parse_vector(self, element, bounds):
-        """if element.find('steerbench:random', self.namespace) is not None:
-            return Vec2(
-                random.uniform(bounds[0], bounds[1]),
-                random.uniform(bounds[2], bounds[3])
-            )
-        else:
-            return Vec2(
-                float(element.find('steerbench:x', self.namespace).text),
-                float(element.find('steerbench:z', self.namespace).text),
-            )"""
         if element.find('steerbench:random', self.namespace) is not None:
             return np.array([
                 [random.uniform(bounds[0], bounds[1])],

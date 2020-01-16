@@ -2,8 +2,6 @@ import gym
 import numpy as np
 import math
 import copy
-import socket
-import pickle
 from gym import spaces
 
 from utils.steerbench_parser import SimulationState
@@ -29,16 +27,23 @@ class SingleAgentEnv(gym.Env):
         self.MAX_ANG_VELO = math.radians(45)
 
         self.goal_tolerance = 2
+        self.laser_history_amount = 3
         self.laser_amount = 10
 
         self.WORLD_BOUND = 10000
 
         self.action_space = spaces.Box(np.array([self.MIN_LIN_VELO, -self.MAX_ANG_VELO]),
                                        np.array([self.MAX_LIN_VELO, self.MAX_ANG_VELO]))
-        self.observation_space = spaces.Box(np.array([-self.WORLD_BOUND, -self.WORLD_BOUND]),
-                                            np.array([self.WORLD_BOUND, self.WORLD_BOUND]))
 
-        #self.soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        """self.observation_space = spaces.Box(np.array([-self.WORLD_BOUND, -self.WORLD_BOUND]),
+                                            np.array([self.WORLD_BOUND, self.WORLD_BOUND]))"""
+
+        self.observation_space = spaces.Dict({
+            'internal': spaces.Box(np.array([-self.WORLD_BOUND, -self.WORLD_BOUND]),
+                                   np.array([self.WORLD_BOUND, self.WORLD_BOUND])),
+            'external': spaces.Box(low=-self.WORLD_BOUND, max=self.WORLD_BOUND,
+                                   shape=(self.laser_history_amount, self.laser_amount))
+        })
 
     def load_params(self, sim_state):
         self.sim_state = sim_state
@@ -106,7 +111,9 @@ class SingleAgentEnv(gym.Env):
         reward += self._detect_collisions(agent)
 
         # represent the internal state of the agent (observation)
-        internal_state = self._get_internal_state(agent.pos, agent.orientation, shortest_goal)
+        internal_state = self._get_internal_state(agent, shortest_goal)
+        external_state = self._get_external_state(agent)
+
         observation = np.array([
             internal_state[0, 0],
             internal_state[1, 0]
@@ -137,24 +144,36 @@ class SingleAgentEnv(gym.Env):
             laser_distances.append(distance)
 
         agent.laser_history.append(laser_distances)
-        if len(laser_distances) == self.laser_amount:
+        if len(laser_distances) == self.laser_history_amount:
             agent.laser_history.pop(0)
+
+        return agent.laser_history
 
     def _get_first_crossed_object(self, x_agent, y_agent, x_ori, y_ori):
         distance = 1000000
-        iteration_step = 0.1
+        iteration_step = 0.01
         while True:
-            distant_x = x_agent +  x_ori * iteration_step
-            distant_y = y_agent +  x_ori * iteration_step
+            distant_x = x_agent + x_ori * iteration_step
+            distant_y = y_agent + y_ori * iteration_step
             for agent in self.steering_agents:
+                if x_agent != agent.pos[0, 0] and y_agent != agent.pos[1, 0]:
+                    if self._point_in_circle(distant_x, distant_y, agent.pos[0, 0], agent.pos[1, 0], agent.radius):
+                        distance_agent = math.sqrt((x_agent - distant_x) ** 2 + (y_agent - distant_y) ** 2)
+                        distance = distance_agent
+                        break
 
-                pass
+            for obstacle in self.obstacles:
+                if obstacle.contains(distant_x, distant_y):
+                    distance_obstacle = math.sqrt((x_agent - distant_x) ** 2 + (y_agent - distant_y) ** 2)
+                    if distance_obstacle < distance:
+                        distance = distance_obstacle
+                        break
 
-            for object in self.obstacles:
-                pass
-
-            for bound in self.bounds:
-                pass
+            if self._collision_bound(distant_x, distant_y,
+                                     self.bounds[0], self.bounds[1], self.bounds[2], self.bounds[3]):
+                distance_bound = math.sqrt((x_agent - distant_x) ** 2 + (y_agent - distant_y) ** 2)
+                if distance_bound < distance:
+                    distance = distance_bound
 
             break
 
@@ -178,8 +197,9 @@ class SingleAgentEnv(gym.Env):
                 if self._collision_circle_circle(current_agent.pos[0, 0], current_agent.pos[1, 0], current_agent.radius,
                                                  agent.pos[0, 0], agent.pos[1, 0], current_agent.radius):
                     reward -= self.reward_collision
-            if agent.pos[0, 0] < self.bounds[0] or agent.pos[0, 0] > self.bounds[1] or \
-                    agent.pos[1, 0] < self.bounds[2] or agent.pos[1, 0] > self.bounds[3]:
+
+            if self._collision_bound(agent.pos[0, 0], agent.pos[1, 0],
+                                     self.bounds[0], self.bounds[1], self.bounds[2], self.bounds[3]):
                 reward -= self.reward_collision
 
         return reward
@@ -214,6 +234,14 @@ class SingleAgentEnv(gym.Env):
 
         return value1 <= value2 <= value3
 
+    @staticmethod
+    def _point_in_circle(x_p, y_p, x_c, y_c, radius):
+        return (x_p - x_c) ** 2 + (y_p - y_c) ** 2 < radius ** 2
+
+    @staticmethod
+    def _collision_bound(x_p, y_p, x_min, x_max, y_min, y_max):
+        return x_p <= x_min or x_p >= x_max or y_p <= y_min or y_p >= y_max
+
     def reset(self):
         self._load_world()
 
@@ -239,18 +267,6 @@ class SingleAgentEnv(gym.Env):
 
     def render(self, mode='human'):
         self.visualizer.update_agents(self.steering_agents)
-        #data_string = pickle.dumps(self.steering_agents)
-        #self.soc.send(data_string)
 
     def set_visualizer(self, visualizer: Visualization):
         self.visualizer = visualizer
-        #self.establish_connection()
-
-    """def establish_connection(self):
-        host = "127.0.0.1"
-        port = 8000
-        try:
-            self.soc.connect((host, port))
-            print("succesfully connected")
-        except:
-            print("Connection Error")"""
