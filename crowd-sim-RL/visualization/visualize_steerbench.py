@@ -50,13 +50,15 @@ class Visualization:
         self.time = 0
         self.time_passed = 0
         self.timer_interval = 10
+        self.active = True
 
         self.initialize_screen()
+        self.run()
 
     def run(self):
         pygame.init()
 
-        while True:
+        while self.active:
             self.time_passed = self.clock.tick()
 
             self.process_events()
@@ -68,6 +70,10 @@ class Visualization:
                     self.simulation_update()
 
             pygame.display.flip()
+
+    def stop(self):
+        self.active = False
+        self.quit()
 
     def initialize_screen(self):
         self.width = self.sim_state.clipped_bounds[1] - self.sim_state.clipped_bounds[0]
@@ -145,7 +151,7 @@ class Visualization:
 
         for goal in unique_goals:
             pygame.draw.circle(self.screen, SIM_COLORS['green'],
-                               (int(goal[0, 0] * self.zoom_factor), int(goal[1,0] * self.zoom_factor)),
+                               (int(goal[0, 0] * self.zoom_factor), int(goal[1, 0] * self.zoom_factor)),
                                self.zoom_factor, 0)
 
     def update_agents(self, updated_agents):
@@ -154,8 +160,13 @@ class Visualization:
             copy_agents.append(copy.copy(agent))
         self.sim_state.agents = copy_agents
 
-        #ev = pygame.event.Event(pygame.USEREVENT, {'data': copy_agents})
-        #pygame.event.post(ev)
+        print(self.sim_state.agents[0].pos)
+
+        try:
+            ev = pygame.event.Event(pygame.USEREVENT, {'data': copy_agents})
+            pygame.event.post(ev)
+        except pygame.error:
+            pass
 
     def quit(self):
         sys.exit()

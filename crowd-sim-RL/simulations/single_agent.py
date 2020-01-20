@@ -13,6 +13,7 @@ from rl.agents import DDPGAgent
 from rl.memory import SequentialMemory
 from rl.random import OrnsteinUhlenbeckProcess, GaussianWhiteNoiseProcess
 from threading import Thread
+import matplotlib.pyplot as plt
 
 
 def main():
@@ -102,7 +103,24 @@ def train(sim_state):
                       random_process=random_process, gamma=.95, batch_size=32, target_model_update=1e-3)
     agent.compile([Adam(lr=.0001, clipnorm=1.), Adam(lr=.001, clipnorm=1.)], metrics=['mae'])
 
-    agent.fit(env, nb_steps=50000, visualize=True, verbose=1, nb_max_episode_steps=1000)
+    history = agent.fit(env, nb_steps=100000, visualize=True, verbose=1, nb_max_episode_steps=1000)
+    print(history.history.keys())
+
+
+    """plt.plot(history.history['acc'])
+    plt.title('Model accuracy')
+    plt.ylabel('Accuracy')
+    plt.xlabel('Epoch')
+    plt.legend(['Train'], loc='upper left')
+    plt.show()
+
+    # Plot training & validation loss values
+    plt.plot(history.history['loss'])
+    plt.title('Model loss')
+    plt.ylabel('Loss')
+    plt.xlabel('Epoch')
+    plt.legend(['Train'], loc='upper left')
+    plt.show()"""
 
     """memory = SequentialMemory(limit=100000, window_length=1)
     random_process = OrnsteinUhlenbeckProcess(size=nb_actions, theta=.5, mu=0., sigma=.5)
@@ -115,6 +133,9 @@ def train(sim_state):
     # slows down training quite a lot. You can always safely abort the training prematurely using
     # Ctrl + C.
     #agent.fit(env, nb_steps=50000, visualize=True, verbose=1, nb_max_episode_steps=200)
+
+    visualization.stop()
+    thread.join()
 
 
 if __name__ == "__main__":

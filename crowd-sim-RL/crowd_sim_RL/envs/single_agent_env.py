@@ -30,7 +30,7 @@ class SingleAgentEnv(gym.Env):
         self.laser_history_amount = 3
         self.laser_amount = 10
 
-        self.WORLD_BOUND = 10000
+        self.WORLD_BOUND = 0
 
         self.action_space = spaces.Box(np.array([self.MIN_LIN_VELO, -self.MAX_ANG_VELO]),
                                        np.array([self.MAX_LIN_VELO, self.MAX_ANG_VELO]))
@@ -38,12 +38,19 @@ class SingleAgentEnv(gym.Env):
         """self.observation_space = spaces.Box(np.array([-self.WORLD_BOUND, -self.WORLD_BOUND]),
                                             np.array([self.WORLD_BOUND, self.WORLD_BOUND]))"""
 
-        self.observation_space = spaces.Dict({
+        """self.observation_space = spaces.Dict({
             'internal': spaces.Box(np.array([-self.WORLD_BOUND, -self.WORLD_BOUND]),
                                    np.array([self.WORLD_BOUND, self.WORLD_BOUND])),
             'external': spaces.Box(low=-self.WORLD_BOUND, max=self.WORLD_BOUND,
                                    shape=(self.laser_history_amount, self.laser_amount))
-        })
+        })"""
+
+        """self.observation_space = spaces.Tuple(
+            spaces.Box(low=-self.WORLD_BOUND, high=self.WORLD_BOUND,
+                       shape=(2,)),
+            spaces.Box(low=-self.WORLD_BOUND, high=self.WORLD_BOUND,
+                       shape=(self.laser_history_amount, self.laser_amount))
+        )"""
 
     def load_params(self, sim_state):
         self.sim_state = sim_state
@@ -56,6 +63,15 @@ class SingleAgentEnv(gym.Env):
             self.steering_agents.append(agent_copy)
         self.obstacles = self.sim_state.obstacles
         self.bounds = self.sim_state.clipped_bounds
+
+        x_diff = self.bounds[1] - self.bounds[0]
+        y_diff = self.bounds[3] - self.bounds[2]
+        x_diff = x_diff * 0.1 + x_diff
+        y_diff = y_diff * 0.1 + y_diff
+        self.WORLD_BOUND = max(x_diff, y_diff)
+
+        self.observation_space = spaces.Box(np.array([-self.WORLD_BOUND, -self.WORLD_BOUND]),
+                                            np.array([self.WORLD_BOUND, self.WORLD_BOUND]))
 
     def step(self, action):
         # action is [v,w] with v the linear velocity and w the angular velocity
@@ -87,7 +103,8 @@ class SingleAgentEnv(gym.Env):
         shortest_goal = None
         first = True
         for goal in agent.goals:
-            previous_distance_to_goal = math.sqrt((agent.pos[0, 0] - goal[0, 0]) ** 2 + (agent.pos[1, 0] - goal[1, 0]) ** 2)
+            previous_distance_to_goal = math.sqrt(
+                (agent.pos[0, 0] - goal[0, 0]) ** 2 + (agent.pos[1, 0] - goal[1, 0]) ** 2)
             new_distance_to_goal = math.sqrt((new_pos[0, 0] - goal[0, 0]) ** 2 + (new_pos[1, 0] - goal[1, 0]) ** 2)
             if first:
                 max_distance_to_goal = new_distance_to_goal
@@ -101,7 +118,7 @@ class SingleAgentEnv(gym.Env):
 
         # smooth out reward
         reward += -self.reward_smooth1 * self._get_reward_smooth(linear_vel, self.MIN_LIN_VELO, self.MAX_LIN_VELO) \
-                  -self.reward_smooth2 * self._get_reward_smooth(angular_vel, -self.MAX_ANG_VELO, self.MAX_ANG_VELO)
+                  - self.reward_smooth2 * self._get_reward_smooth(angular_vel, -self.MAX_ANG_VELO, self.MAX_ANG_VELO)
 
         # assign new position and orientation to the agent
         agent.pos = new_pos
@@ -112,12 +129,9 @@ class SingleAgentEnv(gym.Env):
 
         # represent the internal state of the agent (observation)
         internal_state = self._get_internal_state(agent, shortest_goal)
-        external_state = self._get_external_state(agent)
-
-        observation = np.array([
-            internal_state[0, 0],
-            internal_state[1, 0]
-        ])
+        #external_state = self._get_external_state(agent)
+        #observation = [internal_state, external_state]
+        observation = internal_state
 
         self.accumulated_reward += reward
 
@@ -129,14 +143,19 @@ class SingleAgentEnv(gym.Env):
         relative_pos_agent_to_goal = np.subtract(goal, agent.pos)
         internal_state = np.matmul(np.linalg.inv(rotation_matrix_new), relative_pos_agent_to_goal)
 
-        return internal_state
+        observation = np.array([
+            internal_state[0, 0],
+            internal_state[1, 0]
+        ])
+
+        return observation
 
     def _get_external_state(self, agent):
         laser_distances = []
 
         start_point = agent.orientation - math.radians(90)
         increment = math.radians(180 / self.laser_amount)
-        for i in range(1, self.laser_amount + 1):
+        for i in range(0, self.laser_amount + 1):
             laser_ori = start_point + i * increment
             x_ori = math.cos(laser_ori)
             y_ori = math.sin(laser_ori)
@@ -147,7 +166,9 @@ class SingleAgentEnv(gym.Env):
         if len(laser_distances) == self.laser_history_amount:
             agent.laser_history.pop(0)
 
-        return agent.laser_history
+        observation = np.array(agent.laser_history)
+
+        return observation
 
     def _get_first_crossed_object(self, x_agent, y_agent, x_ori, y_ori):
         distance = 1000000
@@ -258,10 +279,10 @@ class SingleAgentEnv(gym.Env):
                 shortest_goal = goal
 
         internal_state = self._get_internal_state(agent, shortest_goal)
-        observation = np.array([
-            internal_state[0, 0],
-            internal_state[1, 0]
-        ])
+        #external_state = self._get_external_state(agent)
+
+        #observation = [internal_state, external_state]
+        observation = internal_state
 
         return observation
 

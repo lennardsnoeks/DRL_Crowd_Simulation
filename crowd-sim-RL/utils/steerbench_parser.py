@@ -92,12 +92,14 @@ class SimulationState:
         for agent in self.agents:
             for obstacle in self.obstacles:
                 if obstacle.contains(agent.pos[0, 0], agent.pos[1, 0]):
-                    agent.pos = np.array([[obstacle.x + obstacle.width + 1], [obstacle.y + obstacle.height + 1]])
+                    agent.pos = np.array([[obstacle.x + obstacle.width + 1],
+                                          [obstacle.y + obstacle.height + 1]])
 
             for goal_num, goal in enumerate(agent.goals):
                 for obstacle in self.obstacles:
-                    if obstacle.contains(goal):
-                        agent.goals[goal_num] = np.array([[obstacle.x + obstacle.width + 1], [obstacle.y + obstacle.height + 1]])
+                    if obstacle.contains(goal[0, 0], goal[1, 0]):
+                        agent.goals[goal_num] = np.array([[obstacle.x + obstacle.width + 1],
+                                                          [obstacle.y + obstacle.height + 1]])
 
 
 class XMLSimulationState:
