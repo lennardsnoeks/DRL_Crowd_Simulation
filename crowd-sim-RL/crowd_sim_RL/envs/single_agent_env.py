@@ -4,14 +4,14 @@ import math
 import copy
 from gym import spaces
 from utils.steerbench_parser import SimulationState
-from visualization.visualize_steerbench import Visualization
+from visualization.visualize_steerbench import VisualizationLive
 
 
 class SingleAgentEnv(gym.Env):
 
     def __init__(self, env_config):
-        self.time_step = 0.1
         self.step_count = 0
+        self.time_step = 0.1
         self.max_step_count = env_config["timesteps_per_iteration"]
 
         self.reward_goal = 4
@@ -21,15 +21,11 @@ class SingleAgentEnv(gym.Env):
         self.reward_goal_reached = 10
 
         self.sim_state: SimulationState
-        self.visualizer: Visualization
+        self.visualizer: VisualizationLive
 
         self.MIN_LIN_VELO = -0.5
         self.MAX_LIN_VELO = 1.5
         self.MAX_ANG_VELO = math.radians(45)
-
-        self.goal_tolerance = 2
-        self.laser_history_amount = 3
-        self.laser_amount = 10
 
         self.WORLD_BOUND = 0
 
@@ -43,7 +39,7 @@ class SingleAgentEnv(gym.Env):
         self.sim_state = sim_state
         self._load_world()
 
-    def _set_visualizer(self, visualizer: Visualization):
+    def _set_visualizer(self, visualizer: VisualizationLive):
         self.visualizer = visualizer
 
     def _load_world(self):
@@ -62,7 +58,7 @@ class SingleAgentEnv(gym.Env):
             spaces.Box(np.array([-self.WORLD_BOUND, -self.WORLD_BOUND]),
                        np.array([self.WORLD_BOUND, self.WORLD_BOUND])),
             spaces.Box(low=-self.WORLD_BOUND, high=self.WORLD_BOUND,
-                       shape=(self.laser_history_amount, self.laser_amount + 1))
+                       shape=(self.sim_state.laser_history_amount, self.sim_state.laser_amount + 1))
         ))
 
     def step(self, action):
@@ -110,7 +106,7 @@ class SingleAgentEnv(gym.Env):
             if new_distance_to_goal <= max_distance_to_goal:
                 shortest_goal = goal
                 diff = previous_distance_to_goal - new_distance_to_goal
-            if new_distance_to_goal < self.goal_tolerance:
+            if new_distance_to_goal < self.sim_state.goal_tolerance:
                 done = True
                 reward += self.reward_goal_reached
         reward += self.reward_goal * diff
@@ -168,8 +164,8 @@ class SingleAgentEnv(gym.Env):
         agent.laser_lines = []
 
         start_point = agent.orientation - math.radians(90)
-        increment = math.radians(180 / self.laser_amount)
-        for i in range(0, self.laser_amount + 1):
+        increment = math.radians(180 / self.sim_state.laser_amount)
+        for i in range(0, self.sim_state.laser_amount + 1):
             laser_ori = start_point + i * increment
             x_ori = math.cos(laser_ori)
             y_ori = math.sin(laser_ori)
@@ -177,11 +173,11 @@ class SingleAgentEnv(gym.Env):
             laser_distances.append(distance)
             agent.laser_lines.append(np.array([x_end, y_end]))
 
-        if len(agent.laser_history) == self.laser_history_amount:
+        if len(agent.laser_history) == self.sim_state.laser_history_amount:
             agent.laser_history.pop(0)
         else:
-            while len(agent.laser_history) < self.laser_history_amount - 1:
-                agent.laser_history.append(np.zeros(self.laser_amount + 1))
+            while len(agent.laser_history) < self.sim_state.laser_history_amount - 1:
+                agent.laser_history.append(np.zeros(self.sim_state.laser_amount + 1))
         agent.laser_history.append(np.array(laser_distances))
 
         observation = np.array(agent.laser_history)

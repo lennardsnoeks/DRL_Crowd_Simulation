@@ -5,9 +5,9 @@ import ray.rllib.agents.ppo as ppo
 from ray.tune.logger import pretty_print
 from crowd_sim_RL.envs import SingleAgentEnv
 from utils.steerbench_parser import XMLSimulationState
-from visualization.visualize_steerbench import Visualization
+from visualization.visualize_steerbench import VisualizationLive
 from threading import Thread
-from simulations import DDPG_CONFIG
+from simulations import ddpg_config
 
 
 def main():
@@ -23,10 +23,10 @@ def initial_visualization(visualization):
 
 
 def train(sim_state):
-    visualization = Visualization(sim_state)
+    visualization = VisualizationLive(sim_state)
 
     #config = ddpg.DEFAULT_CONFIG.copy()
-    config = DDPG_CONFIG.DDPG_CONFIG.copy()
+    config = ddpg_config.DDPG_CONFIG.copy()
     #config = ppo.DEFAULT_CONFIG.copy()
     config["num_workers"] = 0
 

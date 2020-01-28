@@ -25,6 +25,10 @@ class SimulationState:
         self.bounds = []
         self.clipped_bounds = []
 
+        self.goal_tolerance = 2
+        self.laser_history_amount = 3
+        self.laser_amount = 10
+
     def shift_center(self):
         shift = np.array([[-self.clipped_bounds[0]], [-self.clipped_bounds[2]]])
         for agent in self.agents:

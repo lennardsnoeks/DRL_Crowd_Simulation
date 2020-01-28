@@ -5,35 +5,13 @@ import copy
 import numpy as np
 from pygame.locals import *
 from pygame import Color
-
 from utils.steerbench_parser import SimulationState
-
-SIM_COLORS = {
-    'aqua': Color(0, 255, 255),
-    'black': Color(0, 0, 0),
-    'blue': Color(0, 0, 255),
-    'fuchsia': Color(255, 0, 255),
-    'gray': Color(128, 128, 128),
-    'light gray': Color(50, 50, 50),
-    'green': Color(0, 128, 0),
-    'lime': Color(0, 255, 0),
-    'maroon': Color(128, 0, 0),
-    'navy blue': Color(0, 0, 128),
-    'olive': Color(128, 128, 0),
-    'purple': Color(128, 0, 128),
-    'red': Color(255, 0, 0),
-    'silver': Color(192, 192, 192),
-    'teal': Color(0, 128, 128),
-    'white': Color(255, 255, 255),
-    'yellow': Color(255, 255, 0)
-}
+from visualization.visualize_config import SIM_COLORS
 
 
-class Visualization:
-    #BOUNDARIES = 0, 0, 600, 600
+class VisualizationLive:
 
     def __init__(self, sim_state: SimulationState):
-        print("test")
         pygame.init()
 
         self.goals_visible = True
