@@ -11,9 +11,11 @@ class SingleAgentEnv(gym.Env):
 
     def __init__(self, env_config):
         self.time_step = 0.1
+        self.step_count = 0
+        self.max_step_count = env_config["timesteps_per_iteration"]
 
         self.reward_goal = 4
-        self.reward_collision = 3
+        self.reward_collision = 5
         self.reward_smooth1 = 4
         self.reward_smooth2 = 1
         self.reward_goal_reached = 10
@@ -36,16 +38,6 @@ class SingleAgentEnv(gym.Env):
 
         self._load_params(env_config["sim_state"])
         self._set_visualizer(env_config["visualization"])
-
-        """self.observation_space = spaces.Box(np.array([-self.WORLD_BOUND, -self.WORLD_BOUND]),
-                                            np.array([self.WORLD_BOUND, self.WORLD_BOUND]))"""
-
-        """self.observation_space = spaces.Dict({
-            'internal': spaces.Box(np.array([-self.WORLD_BOUND, -self.WORLD_BOUND]),
-                                   np.array([self.WORLD_BOUND, self.WORLD_BOUND])),
-            'external': spaces.Box(low=-self.WORLD_BOUND, high=self.WORLD_BOUND,
-                                   shape=(self.laser_history_amount, self.laser_amount))
-        })"""
 
     def _load_params(self, sim_state: SimulationState):
         self.sim_state = sim_state
@@ -74,12 +66,18 @@ class SingleAgentEnv(gym.Env):
         ))
 
     def step(self, action):
+        # do manual reset once amount of step per iteration is reached because RLLIB only resets when goal is reached
+        if self.step_count == self.max_step_count:
+            self.step_count = 0
+            self.reset()
+        self.step_count += 1
+
         # action is [v,w] with v the linear velocity and w the angular velocity
         done = False
         reward = 0
 
-        linear_vel = np.clip(action, self.MIN_LIN_VELO, self.MAX_LIN_VELO)[0]
-        angular_vel = np.clip(action, -self.MAX_ANG_VELO, self.MAX_ANG_VELO)[1]
+        linear_vel = action[0]
+        angular_vel = action[1]
         agent = self.steering_agents[0]
 
         linear_vel_timestep = linear_vel * self.time_step
@@ -300,6 +298,7 @@ class SingleAgentEnv(gym.Env):
         return x_p <= x_min or x_p >= x_max or y_p <= y_min or y_p >= y_max
 
     def reset(self):
+        print("reset")
         self._load_world()
 
         agent = self.steering_agents[0]

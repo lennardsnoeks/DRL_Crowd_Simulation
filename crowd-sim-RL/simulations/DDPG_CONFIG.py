@@ -79,7 +79,7 @@ DDPG_CONFIG = with_common_config({
     "exploration_gaussian_sigma": 0.1,
     # If True parameter space noise will be used for exploration
     # See https://blog.openai.com/better-exploration-with-parameter-noise/
-    "parameter_noise": True,
+    "parameter_noise": False,
     # Until this many timesteps have elapsed, the agent's policy will be
     # ignored & it will instead take uniform random actions. Can be used in
     # conjunction with learning_starts (which controls when the first
