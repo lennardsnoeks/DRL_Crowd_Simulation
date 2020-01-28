@@ -2,3 +2,9 @@
 crowd_sim_RL/.idea/
 
 crowd-sim-RL/.idea/
+
+*.iml
+
+.idea/
+
+*.pyc

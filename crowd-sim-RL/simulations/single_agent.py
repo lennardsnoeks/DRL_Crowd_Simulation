@@ -1,6 +1,5 @@
 import os
 import gym
-import crowd_sim_RL
 import numpy as np
 
 from crowd_sim_RL.envs import SingleAgentEnv
@@ -105,7 +104,6 @@ def train(sim_state):
 
     history = agent.fit(env, nb_steps=100000, visualize=True, verbose=1, nb_max_episode_steps=1000)
     print(history.history.keys())
-
 
     """plt.plot(history.history['acc'])
     plt.title('Model accuracy')

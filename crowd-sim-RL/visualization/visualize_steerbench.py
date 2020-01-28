@@ -30,12 +30,14 @@ SIM_COLORS = {
 
 
 class Visualization:
-    BOUNDARIES = 0, 0, 600, 600
+    #BOUNDARIES = 0, 0, 600, 600
 
     def __init__(self, sim_state: SimulationState):
+        print("test")
         pygame.init()
 
         self.goals_visible = True
+        self.lasers_visible = True
 
         self.offset = 0.0
         self.zoom_factor = 10
@@ -45,21 +47,21 @@ class Visualization:
         self.obstacle_color = SIM_COLORS['gray']
         self.sim_state = copy.deepcopy(sim_state)
 
-        self.clock = pygame.time.Clock()
         self.paused = False
         self.time = 0
         self.time_passed = 0
         self.timer_interval = 10
         self.active = True
 
-        self.initialize_screen()
-        self.run()
-
     def run(self):
         pygame.init()
+        
+        self.initialize_screen()
+
+        clock = pygame.time.Clock()
 
         while self.active:
-            self.time_passed = self.clock.tick()
+            self.time_passed = clock.tick()
 
             self.process_events()
 
@@ -107,6 +109,8 @@ class Visualization:
         self.draw_agents()
         if self.goals_visible:
             self.draw_goals()
+        if self.lasers_visible:
+            self.draw_lasers()
 
     def draw_background(self):
         pygame.draw.rect(self.screen, SIM_COLORS['gray'], self.field)
@@ -154,13 +158,22 @@ class Visualization:
                                (int(goal[0, 0] * self.zoom_factor), int(goal[1, 0] * self.zoom_factor)),
                                self.zoom_factor, 0)
 
+    def draw_lasers(self):
+        for agent in self.sim_state.agents:
+            agent_pos_x = agent.pos[0, 0] * self.zoom_factor
+            agent_pos_y = agent.pos[1, 0] * self.zoom_factor
+
+            for laser in agent.laser_lines:
+                laser_end_x = laser[0] * self.zoom_factor
+                laser_end_y = laser[1] * self.zoom_factor
+                pygame.draw.line(self.screen, SIM_COLORS['white'],
+                                 (agent_pos_x, agent_pos_y), (laser_end_x, laser_end_y), 1)
+
     def update_agents(self, updated_agents):
         copy_agents = []
         for agent in updated_agents:
             copy_agents.append(copy.copy(agent))
         self.sim_state.agents = copy_agents
-
-        print(self.sim_state.agents[0].pos)
 
         try:
             ev = pygame.event.Event(pygame.USEREVENT, {'data': copy_agents})

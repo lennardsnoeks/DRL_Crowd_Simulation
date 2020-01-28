@@ -3,23 +3,22 @@ import numpy as np
 import math
 import copy
 from gym import spaces
-
 from utils.steerbench_parser import SimulationState
 from visualization.visualize_steerbench import Visualization
 
 
 class SingleAgentEnv(gym.Env):
 
-    def __init__(self):
+    def __init__(self, env_config):
         self.time_step = 0.1
 
-        self.accumulated_reward = 0
         self.reward_goal = 4
         self.reward_collision = 3
         self.reward_smooth1 = 4
         self.reward_smooth2 = 1
+        self.reward_goal_reached = 10
 
-        self.sim_state: SimulationState = SimulationState()
+        self.sim_state: SimulationState
         self.visualizer: Visualization
 
         self.MIN_LIN_VELO = -0.5
@@ -35,26 +34,25 @@ class SingleAgentEnv(gym.Env):
         self.action_space = spaces.Box(np.array([self.MIN_LIN_VELO, -self.MAX_ANG_VELO]),
                                        np.array([self.MAX_LIN_VELO, self.MAX_ANG_VELO]))
 
+        self._load_params(env_config["sim_state"])
+        self._set_visualizer(env_config["visualization"])
+
         """self.observation_space = spaces.Box(np.array([-self.WORLD_BOUND, -self.WORLD_BOUND]),
                                             np.array([self.WORLD_BOUND, self.WORLD_BOUND]))"""
 
         """self.observation_space = spaces.Dict({
             'internal': spaces.Box(np.array([-self.WORLD_BOUND, -self.WORLD_BOUND]),
                                    np.array([self.WORLD_BOUND, self.WORLD_BOUND])),
-            'external': spaces.Box(low=-self.WORLD_BOUND, max=self.WORLD_BOUND,
+            'external': spaces.Box(low=-self.WORLD_BOUND, high=self.WORLD_BOUND,
                                    shape=(self.laser_history_amount, self.laser_amount))
         })"""
 
-        """self.observation_space = spaces.Tuple(
-            spaces.Box(low=-self.WORLD_BOUND, high=self.WORLD_BOUND,
-                       shape=(2,)),
-            spaces.Box(low=-self.WORLD_BOUND, high=self.WORLD_BOUND,
-                       shape=(self.laser_history_amount, self.laser_amount))
-        )"""
-
-    def load_params(self, sim_state):
+    def _load_params(self, sim_state: SimulationState):
         self.sim_state = sim_state
         self._load_world()
+
+    def _set_visualizer(self, visualizer: Visualization):
+        self.visualizer = visualizer
 
     def _load_world(self):
         self.steering_agents = []
@@ -64,14 +62,16 @@ class SingleAgentEnv(gym.Env):
         self.obstacles = self.sim_state.obstacles
         self.bounds = self.sim_state.clipped_bounds
 
-        x_diff = self.bounds[1] - self.bounds[0]
-        y_diff = self.bounds[3] - self.bounds[2]
-        x_diff = x_diff * 0.1 + x_diff
-        y_diff = y_diff * 0.1 + y_diff
+        x_diff = (self.bounds[1] - self.bounds[0]) * 1.2
+        y_diff = (self.bounds[3] - self.bounds[2]) * 1.2
         self.WORLD_BOUND = max(x_diff, y_diff)
 
-        self.observation_space = spaces.Box(np.array([-self.WORLD_BOUND, -self.WORLD_BOUND]),
-                                            np.array([self.WORLD_BOUND, self.WORLD_BOUND]))
+        self.observation_space = spaces.Tuple((
+            spaces.Box(np.array([-self.WORLD_BOUND, -self.WORLD_BOUND]),
+                       np.array([self.WORLD_BOUND, self.WORLD_BOUND])),
+            spaces.Box(low=-self.WORLD_BOUND, high=self.WORLD_BOUND,
+                       shape=(self.laser_history_amount, self.laser_amount + 1))
+        ))
 
     def step(self, action):
         # action is [v,w] with v the linear velocity and w the angular velocity
@@ -114,13 +114,15 @@ class SingleAgentEnv(gym.Env):
                 diff = previous_distance_to_goal - new_distance_to_goal
             if new_distance_to_goal < self.goal_tolerance:
                 done = True
+                reward += self.reward_goal_reached
         reward += self.reward_goal * diff
 
         # smooth out reward
         reward += -self.reward_smooth1 * self._get_reward_smooth(linear_vel, self.MIN_LIN_VELO, self.MAX_LIN_VELO) \
                   - self.reward_smooth2 * self._get_reward_smooth(angular_vel, -self.MAX_ANG_VELO, self.MAX_ANG_VELO)
 
-        # assign new position and orientation to the agent
+        # clip and assign new position and orientation to the agent
+        new_pos = self._clip_pos(new_pos)
         agent.pos = new_pos
         agent.orientation = new_ori
 
@@ -129,15 +131,28 @@ class SingleAgentEnv(gym.Env):
 
         # represent the internal state of the agent (observation)
         internal_state = self._get_internal_state(agent, shortest_goal)
-        #external_state = self._get_external_state(agent)
-        #observation = [internal_state, external_state]
-        observation = internal_state
+        external_state = self._get_external_state(agent)
+        observation = [internal_state, external_state]
 
-        self.accumulated_reward += reward
+        self.render()
 
         return observation, reward, done, {}
 
-    def _get_internal_state(self, agent, goal):
+    def _clip_pos(self, pos):
+        if pos[0, 0] < self.bounds[0]:
+            pos[0, 0] = self.bounds[0]
+        elif pos[0, 0] > self.bounds[1]:
+            pos[0, 0] = self.bounds[1]
+
+        if pos[1, 0] < self.bounds[2]:
+            pos[1, 0] = self.bounds[2]
+        elif pos[1, 0] > self.bounds[3]:
+            pos[1, 0] = self.bounds[3]
+
+        return pos
+
+    @staticmethod
+    def _get_internal_state(agent, goal):
         rotation_matrix_new = np.array([[math.cos(agent.orientation), -math.sin(agent.orientation)],
                                         [math.sin(agent.orientation), math.cos(agent.orientation)]])
         relative_pos_agent_to_goal = np.subtract(goal, agent.pos)
@@ -152,6 +167,7 @@ class SingleAgentEnv(gym.Env):
 
     def _get_external_state(self, agent):
         laser_distances = []
+        agent.laser_lines = []
 
         start_point = agent.orientation - math.radians(90)
         increment = math.radians(180 / self.laser_amount)
@@ -159,12 +175,16 @@ class SingleAgentEnv(gym.Env):
             laser_ori = start_point + i * increment
             x_ori = math.cos(laser_ori)
             y_ori = math.sin(laser_ori)
-            distance = self._get_first_crossed_object(agent.pos[0, 0], agent.pos[1, 0], x_ori, y_ori)
+            distance, x_end, y_end = self._get_first_crossed_object(agent.pos[0, 0], agent.pos[1, 0], x_ori, y_ori)
             laser_distances.append(distance)
+            agent.laser_lines.append(np.array([x_end, y_end]))
 
-        agent.laser_history.append(laser_distances)
-        if len(laser_distances) == self.laser_history_amount:
+        if len(agent.laser_history) == self.laser_history_amount:
             agent.laser_history.pop(0)
+        else:
+            while len(agent.laser_history) < self.laser_history_amount - 1:
+                agent.laser_history.append(np.zeros(self.laser_amount + 1))
+        agent.laser_history.append(np.array(laser_distances))
 
         observation = np.array(agent.laser_history)
 
@@ -172,15 +192,24 @@ class SingleAgentEnv(gym.Env):
 
     def _get_first_crossed_object(self, x_agent, y_agent, x_ori, y_ori):
         distance = 1000000
-        iteration_step = 0.01
+        x_end = 1000000
+        y_end = 1000000
+        iteration_step = 0.05
+        collision = False
+
+        distant_x = x_agent
+        distant_y = y_agent
         while True:
-            distant_x = x_agent + x_ori * iteration_step
-            distant_y = y_agent + y_ori * iteration_step
+            distant_x += x_ori * iteration_step
+            distant_y += y_ori * iteration_step
             for agent in self.steering_agents:
                 if x_agent != agent.pos[0, 0] and y_agent != agent.pos[1, 0]:
                     if self._point_in_circle(distant_x, distant_y, agent.pos[0, 0], agent.pos[1, 0], agent.radius):
                         distance_agent = math.sqrt((x_agent - distant_x) ** 2 + (y_agent - distant_y) ** 2)
                         distance = distance_agent
+                        x_end = distant_x
+                        y_end = distant_y
+                        collision = True
                         break
 
             for obstacle in self.obstacles:
@@ -188,17 +217,24 @@ class SingleAgentEnv(gym.Env):
                     distance_obstacle = math.sqrt((x_agent - distant_x) ** 2 + (y_agent - distant_y) ** 2)
                     if distance_obstacle < distance:
                         distance = distance_obstacle
+                        x_end = distant_x
+                        y_end = distant_y
+                        collision = True
                         break
 
-            if self._collision_bound(distant_x, distant_y,
-                                     self.bounds[0], self.bounds[1], self.bounds[2], self.bounds[3]):
-                distance_bound = math.sqrt((x_agent - distant_x) ** 2 + (y_agent - distant_y) ** 2)
-                if distance_bound < distance:
-                    distance = distance_bound
+            if collision:
+                break
+            else:
+                if self._collision_bound(distant_x, distant_y,
+                                         self.bounds[0], self.bounds[1], self.bounds[2], self.bounds[3]):
+                    distance_bound = math.sqrt((x_agent - distant_x) ** 2 + (y_agent - distant_y) ** 2)
+                    if distance_bound < distance:
+                        distance = distance_bound
+                        x_end = distant_x
+                        y_end = distant_y
+                    break
 
-            break
-
-        return distance
+        return distance, x_end, y_end
 
     @staticmethod
     def _get_reward_smooth(x, x_min, x_max):
@@ -279,15 +315,11 @@ class SingleAgentEnv(gym.Env):
                 shortest_goal = goal
 
         internal_state = self._get_internal_state(agent, shortest_goal)
-        #external_state = self._get_external_state(agent)
+        external_state = self._get_external_state(agent)
 
-        #observation = [internal_state, external_state]
-        observation = internal_state
+        observation = [internal_state, external_state]
 
         return observation
 
     def render(self, mode='human'):
         self.visualizer.update_agents(self.steering_agents)
-
-    def set_visualizer(self, visualizer: Visualization):
-        self.visualizer = visualizer

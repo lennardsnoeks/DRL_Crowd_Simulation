@@ -71,7 +71,7 @@
     <zmax>24</zmax>
   </obstacle>
 
-  <obstacleRegion>
+  <!--<obstacleRegion>
     <numObstacles>10</numObstacles>
     <obstacleSize>2.0</obstacleSize>
     <obstacleHeight>0.2</obstacleHeight>
@@ -83,7 +83,7 @@
       <zmin>-5</zmin>
       <zmax>15</zmax>
     </regionBounds>
-  </obstacleRegion>
+  </obstacleRegion>-->
 
   <agent>
     <name>A</name>
