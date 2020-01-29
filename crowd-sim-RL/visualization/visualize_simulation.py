@@ -6,11 +6,15 @@ import numpy as np
 from pygame.locals import *
 from ray.rllib.agents import Trainer
 
+from crowd_sim_RL.envs import SingleAgentEnv
 from utils.steerbench_parser import SimulationState
 from visualization.visualize_config import SIM_COLORS
 
 
 class VisualizationSim:
+
+    FPS_FONT = pygame.font.SysFont("Verdana", 20)
+    GOLDENROD = pygame.Color("goldenrod")
 
     def __init__(self, sim_state: SimulationState, trainer: Trainer):
         pygame.init()
@@ -29,175 +33,58 @@ class VisualizationSim:
         self.sim_state = copy.deepcopy(sim_state)
         self.trainer = trainer
 
-        self.paused = False
-        self.time = 0
-        self.time_passed = 0
-        self.timer_interval = 10
-        self.active = True
-
-    def retrieve_action(self, current_agent):
-
-        for agent in self.sim_state.agents:
-            if agent.id == current_agent.id:
-                shortest_goal = self._get_shortest_goal(agent)
-                internal_state = self._get_internal_state(agent, shortest_goal)
-                external_state = self._get_external_state(agent)
-                observation = [internal_state, external_state]
-                self.trainer.compute_action(observation, state=None, prev_action=None, prev_reward=None, info=None, policy_id=DEFAULT_POLICY_ID, full_fetch=False)
-
-    @staticmethod
-    def _get_shortest_goal(agent):
-        max_goal_distance = 1000000
-        shortest_goal = None
-
-        for goal in agent.goals:
-            distance_to_goal = math.sqrt((agent.pos[0, 0] - goal[0, 0]) ** 2 + (agent.pos[1, 0] - goal[1, 0]) ** 2)
-            if distance_to_goal < max_goal_distance:
-                shortest_goal = goal
-
-        return shortest_goal
-
-    @staticmethod
-    def _get_internal_state(agent, goal):
-        rotation_matrix_new = np.array([[math.cos(agent.orientation), -math.sin(agent.orientation)],
-                                        [math.sin(agent.orientation), math.cos(agent.orientation)]])
-        relative_pos_agent_to_goal = np.subtract(goal, agent.pos)
-        internal_state = np.matmul(np.linalg.inv(rotation_matrix_new), relative_pos_agent_to_goal)
-
-        observation = np.array([
-            internal_state[0, 0],
-            internal_state[1, 0]
-        ])
-
-        return observation
-
-    def _get_external_state(self, agent):
-        laser_distances = []
-        agent.laser_lines = []
-
-        start_point = agent.orientation - math.radians(90)
-        increment = math.radians(180 / self.sim_state.laser_amount)
-        for i in range(0, self.sim_state.laser_amount + 1):
-            laser_ori = start_point + i * increment
-            x_ori = math.cos(laser_ori)
-            y_ori = math.sin(laser_ori)
-            distance, x_end, y_end = self._get_first_crossed_object(agent.pos[0, 0], agent.pos[1, 0], x_ori, y_ori)
-            laser_distances.append(distance)
-            agent.laser_lines.append(np.array([x_end, y_end]))
-
-        if len(agent.laser_history) == self.sim_state.laser_history_amount:
-            agent.laser_history.pop(0)
-        else:
-            while len(agent.laser_history) < self.sim_state.laser_history_amount - 1:
-                agent.laser_history.append(np.zeros(self.sim_state.laser_amount + 1))
-        agent.laser_history.append(np.array(laser_distances))
-
-        observation = np.array(agent.laser_history)
-
-        return observation
-
-    def _get_first_crossed_object(self, x_agent, y_agent, x_ori, y_ori):
-        distance = 1000000
-        x_end = 1000000
-        y_end = 1000000
-        iteration_step = 0.05
-        collision = False
-
-        distant_x = x_agent
-        distant_y = y_agent
-        while True:
-            distant_x += x_ori * iteration_step
-            distant_y += y_ori * iteration_step
-            for agent in self.sim_state.agents:
-                if x_agent != agent.pos[0, 0] and y_agent != agent.pos[1, 0]:
-                    if self._point_in_circle(distant_x, distant_y, agent.pos[0, 0], agent.pos[1, 0], agent.radius):
-                        distance_agent = math.sqrt((x_agent - distant_x) ** 2 + (y_agent - distant_y) ** 2)
-                        distance = distance_agent
-                        x_end = distant_x
-                        y_end = distant_y
-                        collision = True
-                        break
-
-            for obstacle in self.sim_state.obstacles:
-                if obstacle.contains(distant_x, distant_y):
-                    distance_obstacle = math.sqrt((x_agent - distant_x) ** 2 + (y_agent - distant_y) ** 2)
-                    if distance_obstacle < distance:
-                        distance = distance_obstacle
-                        x_end = distant_x
-                        y_end = distant_y
-                        collision = True
-                        break
-
-            if collision:
-                break
-            else:
-                if self._collision_bound(distant_x, distant_y,
-                                         self.sim_state.bounds[0], self.sim_state.bounds[1],
-                                         self.sim_state.bounds[2], self.sim_state.bounds[3]):
-                    distance_bound = math.sqrt((x_agent - distant_x) ** 2 + (y_agent - distant_y) ** 2)
-                    if distance_bound < distance:
-                        distance = distance_bound
-                        x_end = distant_x
-                        y_end = distant_y
-                    break
-
-        return distance, x_end, y_end
-
-    @staticmethod
-    def _collision_circle_rectangle(x_rect, y_rect, width, height, x_circle, y_circle, r):
-        x_test = x_circle
-        y_test = y_circle
-
-        if x_circle < x_rect:
-            x_test = x_rect
-        elif x_circle > x_rect + width:
-            x_test = x_rect + width
-
-        if y_circle < y_rect:
-            y_test = y_rect
-        elif y_circle > y_rect + height:
-            y_test = y_rect + height
-
-        distance = math.sqrt((x_circle - x_test) ** 2 + (y_circle - y_test) ** 2)
-
-        if distance <= r:
-            return True
-
-        return False
-
-    @staticmethod
-    def _collision_circle_circle(x_c1, y_c1, r_c1, x_c2, y_c2, r_c2):
-        value1 = abs(r_c1 - r_c2)
-        value2 = math.sqrt((x_c1 - x_c2) ** 2 + (y_c1 - y_c2) ** 2)
-        value3 = abs(r_c1 + r_c2)
-
-        return value1 <= value2 <= value3
-
-    @staticmethod
-    def _point_in_circle(x_p, y_p, x_c, y_c, radius):
-        return (x_p - x_c) ** 2 + (y_p - y_c) ** 2 < radius ** 2
-
-    @staticmethod
-    def _collision_bound(x_p, y_p, x_min, x_max, y_min, y_max):
-        return x_p <= x_min or x_p >= x_max or y_p <= y_min or y_p >= y_max
-
     def run(self):
         pygame.init()
-
         self.initialize_screen()
-
         clock = pygame.time.Clock()
 
-        dt = 0
+        config = {"env_config": {
+            "sim_state": self.sim_state,
+            "mode": "sim"
+        }}
 
-        while self.active:
+        env = SingleAgentEnv(config)
+        observation = env.reset()
+        done = False
+        prev_action = np.zeros_like(env.action_space.sample())
+        prev_reward = 0
+        info = {}
+        state = self.trainer.get_policy().get_initial_state()
+
+        while not done:
+            self.show_fps(self.screen, clock)
+            self.show_size(self.screen)
+
             dt = clock.tick(self.framerate)
 
             self.process_events()
 
+            action, state, fetch = self.trainer.compute_action(observation, state=state, prev_action=prev_action,
+                                                               prev_reward=prev_reward, info=info)
+            action[0] = action[0] * (dt / 1000)
+            action[1] = action[1] * (dt / 1000)
+            observation, reward, done, info = env.step(action)
 
+            prev_action = action
+            prev_reward = reward
+
+            agents = env.get_agents()
+            # maybe adjust with copy, adjusts sim_state in env, no problem for now (i think)
+            self.sim_state = agents
+
+            self.simulation_update()
 
             pygame.display.flip()
+
+    def show_fps(self, window, clock):
+        fps_overlay = self.FPS_FONT.render(str(clock.get_fps()), True, self.GOLDENROD)
+        window.blit(fps_overlay, (0, 0))
+
+    def show_size(self, window):
+        x_size = self.sim_state.clipped_bounds[1] - self.sim_state.clipped_bounds[0]
+        y_size = self.sim_state.clipped_bounds[3] - self.sim_state.clipped_bounds[2]
+        size_overlay = self.FPS_FONT.render(str(x_size) + " x " + str(y_size), True, self.GOLDENROD)
+        window.blit(size_overlay, (10, 0))
 
     def stop(self):
         self.active = False
@@ -295,17 +182,16 @@ class VisualizationSim:
                 pygame.draw.line(self.screen, SIM_COLORS['white'],
                                  (agent_pos_x, agent_pos_y), (laser_end_x, laser_end_y), 1)
 
-    def update_agents(self, updated_agents):
+    """def update_agents(self, updated_agents):
         copy_agents = []
         for agent in updated_agents:
             copy_agents.append(copy.copy(agent))
-        self.sim_state.agents = copy_agents
 
         try:
             ev = pygame.event.Event(pygame.USEREVENT, {'data': copy_agents})
             pygame.event.post(ev)
         except pygame.error:
-            pass
+            pass"""
 
     def quit(self):
         sys.exit()

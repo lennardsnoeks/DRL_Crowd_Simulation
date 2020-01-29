@@ -12,7 +12,6 @@ class SingleAgentEnv(gym.Env):
     def __init__(self, env_config):
         self.step_count = 0
         self.time_step = 0.1
-        self.max_step_count = env_config["timesteps_per_iteration"]
 
         self.reward_goal = 4
         self.reward_collision = 5
@@ -33,7 +32,10 @@ class SingleAgentEnv(gym.Env):
                                        np.array([self.MAX_LIN_VELO, self.MAX_ANG_VELO]))
 
         self._load_params(env_config["sim_state"])
-        self._set_visualizer(env_config["visualization"])
+        self.mode = env_config["mode"]
+        if self.mode == "train":
+            self.max_step_count = env_config["timesteps_per_iteration"]
+            self._set_visualizer(env_config["visualization"])
 
     def _load_params(self, sim_state: SimulationState):
         self.sim_state = sim_state
@@ -62,30 +64,26 @@ class SingleAgentEnv(gym.Env):
         ))
 
     def step(self, action):
-        # do manual reset once amount of step per iteration is reached because RLLIB only resets when goal is reached
-        if self.step_count == self.max_step_count:
-            self.step_count = 0
-            self.reset()
-        self.step_count += 1
-
         # action is [v,w] with v the linear velocity and w the angular velocity
         done = False
         reward = 0
 
         linear_vel = action[0]
         angular_vel = action[1]
+        print(linear_vel, angular_vel)
         agent = self.steering_agents[0]
 
-        linear_vel_timestep = linear_vel * self.time_step
-        angular_vel_timestep = angular_vel * self.time_step
+        if self.mode == "train":
+            linear_vel *= self.time_step
+            angular_vel *= self.time_step
 
         # convert single orientation value (degrees or radians) to 2d representation | setup rotation matrix
         orientation_2d = np.array([[math.cos(agent.orientation)], [math.sin(agent.orientation)]])
-        rotation_matrix = np.array([[math.cos(angular_vel_timestep), -math.sin(angular_vel_timestep)],
-                                    [math.sin(angular_vel_timestep), math.cos(angular_vel_timestep)]])
+        rotation_matrix = np.array([[math.cos(angular_vel), -math.sin(angular_vel)],
+                                    [math.sin(angular_vel), math.cos(angular_vel)]])
 
         # calculate new position and orientation
-        new_pos = np.add(agent.pos, (linear_vel_timestep * orientation_2d))
+        new_pos = np.add(agent.pos, (linear_vel * orientation_2d))
         new_ori_2d = np.matmul(rotation_matrix, orientation_2d)
 
         # convert calculated orientation back to polar value
@@ -112,8 +110,8 @@ class SingleAgentEnv(gym.Env):
         reward += self.reward_goal * diff
 
         # smooth out reward
-        reward += -self.reward_smooth1 * self._get_reward_smooth(linear_vel, self.MIN_LIN_VELO, self.MAX_LIN_VELO) \
-                  - self.reward_smooth2 * self._get_reward_smooth(angular_vel, -self.MAX_ANG_VELO, self.MAX_ANG_VELO)
+        reward += -self.reward_smooth1 * self._get_reward_smooth(action[0], self.MIN_LIN_VELO, self.MAX_LIN_VELO) \
+                  - self.reward_smooth2 * self._get_reward_smooth(action[1], -self.MAX_ANG_VELO, self.MAX_ANG_VELO)
 
         # clip and assign new position and orientation to the agent
         new_pos = self._clip_pos(new_pos)
@@ -128,7 +126,15 @@ class SingleAgentEnv(gym.Env):
         external_state = self._get_external_state(agent)
         observation = [internal_state, external_state]
 
-        self.render()
+        # When training, do manual reset once max steps/iter is reached because RLLIB only resets when goal is reached
+        if self.mode == "train":
+            self.step_count += 1
+            if self.step_count == self.max_step_count:
+                self.step_count = 0
+                observation = self.reset()
+                reward = 0
+                done = False
+            self.render()
 
         return observation, reward, done, {}
 
@@ -294,7 +300,6 @@ class SingleAgentEnv(gym.Env):
         return x_p <= x_min or x_p >= x_max or y_p <= y_min or y_p >= y_max
 
     def reset(self):
-        print("reset")
         self._load_world()
 
         agent = self.steering_agents[0]
@@ -315,6 +320,9 @@ class SingleAgentEnv(gym.Env):
         observation = [internal_state, external_state]
 
         return observation
+
+    def get_agents(self):
+        return self.steering_agents
 
     def render(self, mode='human'):
         self.visualizer.update_agents(self.steering_agents)

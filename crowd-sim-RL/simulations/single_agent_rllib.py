@@ -37,7 +37,11 @@ def train(sim_state):
     config["clip_actions"] = True
     config["env_config"] = {
         "sim_state": sim_state,
-        "visualization": visualization
+        "visualization": visualization,
+        "mode": "train"
+    }
+    config["model"] = {
+        "squash_to_range": True
     }
 
     ray.init()
