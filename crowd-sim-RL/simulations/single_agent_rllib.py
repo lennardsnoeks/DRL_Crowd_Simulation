@@ -1,5 +1,6 @@
 import os
 import ray
+import copy
 import ray.rllib.agents.ddpg as ddpg
 import ray.rllib.agents.ppo as ppo
 from ray.tune.logger import pretty_print
@@ -13,7 +14,7 @@ from simulations import ddpg_config
 
 def main():
     dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, "../test_XML_files/obstacles.xml")
+    filename = os.path.join(dirname, "../test_XML_files/obstacles2.xml")
     sim_state = XMLSimulationState(filename).simulation_state
 
     train(sim_state)
@@ -25,6 +26,7 @@ def initial_visualization(visualization):
 
 def train(sim_state):
     visualization = VisualizationLive(sim_state)
+    copy_sim_state = copy.deepcopy(sim_state)
 
     #config = ddpg.DEFAULT_CONFIG.copy()
     config = ddpg_config.DDPG_CONFIG.copy()
@@ -53,13 +55,15 @@ def train(sim_state):
     for i in range(1):
         result = trainer.train()
         print(pretty_print(result))
-        if i == 9:
+        if i == 19:
             checkpoint = trainer.save()
 
     """trainer = ddpg.DDPGTrainer(env=SingleAgentEnv, config=config)
     trainer.restore("/home/lennard/ray_results/DDPG_SingleAgentEnv_2020-01-29_23-59-26rqx4q006/checkpoint_10/checkpoint-10")"""
 
-    visualization_sim = VisualizationSim(sim_state, trainer)
+    print("test")
+
+    visualization_sim = VisualizationSim(copy_sim_state, trainer)
     thread2 = Thread(target=initial_visualization, args=(visualization_sim,))
     thread2.start()
 

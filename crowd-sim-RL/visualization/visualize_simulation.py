@@ -30,7 +30,7 @@ class VisualizationSim:
         self.border_width = 1
         self.border_color = SIM_COLORS['light gray']
         self.obstacle_color = SIM_COLORS['gray']
-        self.sim_state = copy.deepcopy(sim_state)
+        self.sim_state = sim_state
         self.trainer = trainer
 
     def run(self):
@@ -49,7 +49,6 @@ class VisualizationSim:
         prev_action = np.zeros_like(env.action_space.sample())
         prev_reward = 0
         state = self.trainer.get_policy().get_initial_state()
-        print(state)
 
         while not done:
             self.show_fps(self.screen, clock)
@@ -60,9 +59,9 @@ class VisualizationSim:
             self.process_events()
 
             linear_vel, angular_vel = self.trainer.compute_action(observation, state=state, prev_action=prev_action,
-                                                              prev_reward=prev_reward)
+                                                                  prev_reward=prev_reward)
             action = [linear_vel, angular_vel]
-            
+
             linear_vel *= (dt / 1000)
             angular_vel *= (dt / 1000)
             observation, reward, done, info = env.step([linear_vel, angular_vel])
@@ -71,8 +70,7 @@ class VisualizationSim:
             prev_reward = reward
 
             agents = env.get_agents()
-            # maybe adjust with copy, adjusts sim_state in env, no problem for now (i think)
-            self.sim_state = agents
+            self.sim_state.agents = agents
 
             self.simulation_update()
 

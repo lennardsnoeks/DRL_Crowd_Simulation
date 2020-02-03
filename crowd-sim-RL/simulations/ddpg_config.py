@@ -61,7 +61,7 @@ DDPG_CONFIG = with_common_config({
     "timesteps_per_iteration": 1000,
     # Fraction of entire training period over which the exploration rate is
     # annealed
-    "exploration_fraction": 0.1,
+    "exploration_fraction": 1.0,
     # Final scaling multiplier for action noise (initial is 1.0)
     "exploration_final_scale": 0.02,
     # valid values: "ou" (time-correlated, like original DDPG paper),
