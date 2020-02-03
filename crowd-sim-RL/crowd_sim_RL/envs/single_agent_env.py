@@ -17,6 +17,9 @@ class SingleAgentEnv(gym.Env):
         self.reward_collision = 5
         self.reward_smooth1 = 4
         self.reward_smooth2 = 1
+        self.reward_promote_forward1 = 2
+        self.reward_promote_forward2 = 2
+        self.reward_promote_forward3 = 0.1
         self.reward_goal_reached = 10
 
         self.sim_state: SimulationState
@@ -38,7 +41,7 @@ class SingleAgentEnv(gym.Env):
             self._set_visualizer(env_config["visualization"])
 
     def _load_params(self, sim_state: SimulationState):
-        self.sim_state = sim_state
+        self.sim_state = copy.deepcopy(sim_state)
         self._load_world()
 
     def _set_visualizer(self, visualizer: VisualizationLive):
@@ -60,17 +63,20 @@ class SingleAgentEnv(gym.Env):
             spaces.Box(np.array([-self.WORLD_BOUND, -self.WORLD_BOUND]),
                        np.array([self.WORLD_BOUND, self.WORLD_BOUND])),
             spaces.Box(low=-self.WORLD_BOUND, high=self.WORLD_BOUND,
-                       shape=(self.sim_state.laser_history_amount, self.sim_state.laser_amount + 1))
+                       shape=(self.sim_state.laser_history_amount, self.sim_state.laser_amount + 1)),
+            spaces.Box(low=0, high=3, shape=(self.sim_state.laser_history_amount, self.sim_state.laser_amount + 1))
         ))
+
+        """self.observation_space = spaces.Box(np.array([-self.WORLD_BOUND, -self.WORLD_BOUND]),
+                                            np.array([self.WORLD_BOUND, self.WORLD_BOUND]))"""
 
     def step(self, action):
         # action is [v,w] with v the linear velocity and w the angular velocity
-        done = False
         reward = 0
+        done = False
 
         linear_vel = action[0]
         angular_vel = action[1]
-        print(linear_vel, angular_vel)
         agent = self.steering_agents[0]
 
         if self.mode == "train":
@@ -98,20 +104,26 @@ class SingleAgentEnv(gym.Env):
             previous_distance_to_goal = math.sqrt(
                 (agent.pos[0, 0] - goal[0, 0]) ** 2 + (agent.pos[1, 0] - goal[1, 0]) ** 2)
             new_distance_to_goal = math.sqrt((new_pos[0, 0] - goal[0, 0]) ** 2 + (new_pos[1, 0] - goal[1, 0]) ** 2)
+            diff = previous_distance_to_goal - new_distance_to_goal
             if first:
                 max_distance_to_goal = new_distance_to_goal
                 first = False
             if new_distance_to_goal <= max_distance_to_goal:
                 shortest_goal = goal
-                diff = previous_distance_to_goal - new_distance_to_goal
             if new_distance_to_goal < self.sim_state.goal_tolerance:
                 done = True
                 reward += self.reward_goal_reached
         reward += self.reward_goal * diff
 
-        # smooth out reward
-        reward += -self.reward_smooth1 * self._get_reward_smooth(action[0], self.MIN_LIN_VELO, self.MAX_LIN_VELO) \
-                  - self.reward_smooth2 * self._get_reward_smooth(action[1], -self.MAX_ANG_VELO, self.MAX_ANG_VELO)
+        """test = self.reward_promote_forward1 * (linear_vel ** 2) * \
+        math.cos(self.reward_promote_forward2 * linear_vel * angular_vel) - self.reward_promote_forward3
+
+        # promote forward motion
+        linear_vel_pre_timestep = linear_vel / self.time_step
+        angular_vel_pre_timestep = angular_vel / self.time_step
+        reward += self.reward_promote_forward1 * (linear_vel_pre_timestep ** 2) * \
+                  math.cos(self.reward_promote_forward2 * linear_vel_pre_timestep * angular_vel_pre_timestep) - \
+                  self.reward_promote_forward3"""
 
         # clip and assign new position and orientation to the agent
         new_pos = self._clip_pos(new_pos)
@@ -123,17 +135,17 @@ class SingleAgentEnv(gym.Env):
 
         # represent the internal state of the agent (observation)
         internal_state = self._get_internal_state(agent, shortest_goal)
-        external_state = self._get_external_state(agent)
-        observation = [internal_state, external_state]
+        external_state_laser, external_state_type = self._get_external_state(agent)
+        observation = [internal_state, external_state_laser, external_state_type]
 
-        # When training, do manual reset once max steps/iter is reached because RLLIB only resets when goal is reached
         if self.mode == "train":
+            """# When training, do manual reset once max steps/iter is reached because RLLIB only resets when goal is reached
             self.step_count += 1
             if self.step_count == self.max_step_count:
                 self.step_count = 0
                 observation = self.reset()
                 reward = 0
-                done = False
+                done = False"""
             self.render()
 
         return observation, reward, done, {}
@@ -168,6 +180,7 @@ class SingleAgentEnv(gym.Env):
     def _get_external_state(self, agent):
         laser_distances = []
         agent.laser_lines = []
+        types = []
 
         start_point = agent.orientation - math.radians(90)
         increment = math.radians(180 / self.sim_state.laser_amount)
@@ -175,51 +188,64 @@ class SingleAgentEnv(gym.Env):
             laser_ori = start_point + i * increment
             x_ori = math.cos(laser_ori)
             y_ori = math.sin(laser_ori)
-            distance, x_end, y_end = self._get_first_crossed_object(agent.pos[0, 0], agent.pos[1, 0], x_ori, y_ori)
+            distance, x_end, y_end, type = self._get_first_crossed_object(agent.pos[0, 0],
+                                                                          agent.pos[1, 0],
+                                                                          x_ori, y_ori)
             laser_distances.append(distance)
+            types.append(type)
             agent.laser_lines.append(np.array([x_end, y_end]))
 
         if len(agent.laser_history) == self.sim_state.laser_history_amount:
             agent.laser_history.pop(0)
+            agent.type_history.pop(0)
         else:
             while len(agent.laser_history) < self.sim_state.laser_history_amount - 1:
                 agent.laser_history.append(np.zeros(self.sim_state.laser_amount + 1))
+                agent.type_history.append(np.zeros(self.sim_state.laser_amount + 1))
         agent.laser_history.append(np.array(laser_distances))
+        agent.type_history.append(np.array(types))
 
-        observation = np.array(agent.laser_history)
+        observation_laser = np.array(agent.laser_history)
+        observation_type = np.array(agent.type_history)
 
-        return observation
+        return observation_laser, observation_type
 
     def _get_first_crossed_object(self, x_agent, y_agent, x_ori, y_ori):
         distance = 1000000
-        x_end = 1000000
-        y_end = 1000000
+        x_end = 0
+        y_end = 0
+        type = 0
         iteration_step = 0.05
         collision = False
 
         distant_x = x_agent
         distant_y = y_agent
+        distance_to_object = math.sqrt((x_agent - distant_x) ** 2 + (y_agent - distant_y) ** 2)
+
+        #while distance_to_object < 10:
         while True:
             distant_x += x_ori * iteration_step
             distant_y += y_ori * iteration_step
+            distance_to_object = math.sqrt((x_agent - distant_x) ** 2 + (y_agent - distant_y) ** 2)
+
             for agent in self.steering_agents:
                 if x_agent != agent.pos[0, 0] and y_agent != agent.pos[1, 0]:
                     if self._point_in_circle(distant_x, distant_y, agent.pos[0, 0], agent.pos[1, 0], agent.radius):
-                        distance_agent = math.sqrt((x_agent - distant_x) ** 2 + (y_agent - distant_y) ** 2)
-                        distance = distance_agent
+                        distance = distance_to_object
                         x_end = distant_x
                         y_end = distant_y
                         collision = True
+                        type = 1
                         break
 
             for obstacle in self.obstacles:
                 if obstacle.contains(distant_x, distant_y):
-                    distance_obstacle = math.sqrt((x_agent - distant_x) ** 2 + (y_agent - distant_y) ** 2)
-                    if distance_obstacle < distance:
-                        distance = distance_obstacle
+                    if distance_to_object < distance:
+                        distance = distance_to_object
                         x_end = distant_x
                         y_end = distant_y
                         collision = True
+                        type = 2
                         break
 
             if collision:
@@ -227,18 +253,20 @@ class SingleAgentEnv(gym.Env):
             else:
                 if self._collision_bound(distant_x, distant_y,
                                          self.bounds[0], self.bounds[1], self.bounds[2], self.bounds[3]):
-                    distance_bound = math.sqrt((x_agent - distant_x) ** 2 + (y_agent - distant_y) ** 2)
-                    if distance_bound < distance:
-                        distance = distance_bound
+                    if distance_to_object < distance:
+                        distance = distance_to_object
                         x_end = distant_x
                         y_end = distant_y
+                        type = 3
+                        collision = True
                     break
 
-        return distance, x_end, y_end
+        """if distance_to_object >= 10 and not collision:
+            distance = 0
+            x_end = distant_x
+            y_end = distant_y"""
 
-    @staticmethod
-    def _get_reward_smooth(x, x_min, x_max):
-        return abs(min(x - x_min, 0)) + abs(max(x - x_max, 0))
+        return distance, x_end, y_end, type
 
     def _detect_collisions(self, current_agent):
         reward = 0
@@ -315,9 +343,8 @@ class SingleAgentEnv(gym.Env):
                 shortest_goal = goal
 
         internal_state = self._get_internal_state(agent, shortest_goal)
-        external_state = self._get_external_state(agent)
-
-        observation = [internal_state, external_state]
+        external_state_laser, external_state_type = self._get_external_state(agent)
+        observation = [internal_state, external_state_laser, external_state_type]
 
         return observation
 

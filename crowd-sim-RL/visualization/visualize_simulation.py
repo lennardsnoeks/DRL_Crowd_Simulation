@@ -13,11 +13,11 @@ from visualization.visualize_config import SIM_COLORS
 
 class VisualizationSim:
 
-    FPS_FONT = pygame.font.SysFont("Verdana", 20)
-    GOLDENROD = pygame.Color("goldenrod")
-
     def __init__(self, sim_state: SimulationState, trainer: Trainer):
         pygame.init()
+
+        self.FPS_FONT = pygame.font.SysFont("Verdana", 20)
+        self.GOLDENROD = pygame.Color("goldenrod")
 
         self.goals_visible = True
         self.lasers_visible = True
@@ -38,18 +38,18 @@ class VisualizationSim:
         self.initialize_screen()
         clock = pygame.time.Clock()
 
-        config = {"env_config": {
+        config = {
             "sim_state": self.sim_state,
             "mode": "sim"
-        }}
+        }
 
         env = SingleAgentEnv(config)
         observation = env.reset()
         done = False
         prev_action = np.zeros_like(env.action_space.sample())
         prev_reward = 0
-        info = {}
         state = self.trainer.get_policy().get_initial_state()
+        print(state)
 
         while not done:
             self.show_fps(self.screen, clock)
@@ -59,11 +59,13 @@ class VisualizationSim:
 
             self.process_events()
 
-            action, state, fetch = self.trainer.compute_action(observation, state=state, prev_action=prev_action,
-                                                               prev_reward=prev_reward, info=info)
-            action[0] = action[0] * (dt / 1000)
-            action[1] = action[1] * (dt / 1000)
-            observation, reward, done, info = env.step(action)
+            linear_vel, angular_vel = self.trainer.compute_action(observation, state=state, prev_action=prev_action,
+                                                              prev_reward=prev_reward)
+            action = [linear_vel, angular_vel]
+            
+            linear_vel *= (dt / 1000)
+            angular_vel *= (dt / 1000)
+            observation, reward, done, info = env.step([linear_vel, angular_vel])
 
             prev_action = action
             prev_reward = reward
@@ -176,11 +178,14 @@ class VisualizationSim:
             agent_pos_x = agent.pos[0, 0] * self.zoom_factor
             agent_pos_y = agent.pos[1, 0] * self.zoom_factor
 
+            i = 0
             for laser in agent.laser_lines:
-                laser_end_x = laser[0] * self.zoom_factor
-                laser_end_y = laser[1] * self.zoom_factor
-                pygame.draw.line(self.screen, SIM_COLORS['white'],
-                                 (agent_pos_x, agent_pos_y), (laser_end_x, laser_end_y), 1)
+                if agent.laser_history[self.sim_state.laser_history_amount][i] > 0:
+                    laser_end_x = laser[0] * self.zoom_factor
+                    laser_end_y = laser[1] * self.zoom_factor
+                    pygame.draw.line(self.screen, SIM_COLORS['white'],
+                                     (agent_pos_x, agent_pos_y), (laser_end_x, laser_end_y), 1)
+                i += 1
 
     """def update_agents(self, updated_agents):
         copy_agents = []

@@ -1,17 +1,3 @@
-import numpy as np
-
-
-class Vec2:
-    x = 0.0
-    y = 0.0
-    matrix_form = []
-
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-        self.matrix_form = np.array([[self.x], [self.y]])
-
-
 class Obstacle:
     x = 0.0
     y = 0.0
@@ -38,6 +24,7 @@ class Agent:
     id = 0.0
     color = []
     laser_history = []
+    type_history = []
     laser_lines = []
 
     def __init__(self, pos, radius, orientation, goals, initial_speed, fov, id, color):
@@ -49,4 +36,3 @@ class Agent:
         self.fov = fov
         self.id = id
         self.color = color
-

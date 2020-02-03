@@ -2,7 +2,7 @@ import xml.etree.ElementTree as ET
 import numpy as np
 import random
 import math
-from utils.objects import Obstacle, Agent, Vec2
+from utils.objects import Obstacle, Agent
 
 
 rainbow = [
