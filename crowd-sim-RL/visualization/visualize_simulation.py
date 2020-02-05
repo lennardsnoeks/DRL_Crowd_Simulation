@@ -30,7 +30,7 @@ class VisualizationSim:
         self.border_width = 1
         self.border_color = SIM_COLORS['light gray']
         self.obstacle_color = SIM_COLORS['gray']
-        self.sim_state = sim_state
+        self.sim_state = copy.deepcopy(sim_state)
         self.trainer = trainer
 
     def run(self):

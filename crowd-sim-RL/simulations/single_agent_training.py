@@ -1,12 +1,9 @@
 import os
 import ray
-import copy
 import ray.rllib.agents.ddpg as ddpg
-import ray.rllib.agents.ppo as ppo
 from ray.tune.logger import pretty_print
 from crowd_sim_RL.envs import SingleAgentEnv
 from utils.steerbench_parser import XMLSimulationState
-from visualization.visualize_simulation import VisualizationSim
 from visualization.visualize_steerbench import VisualizationLive
 from threading import Thread
 from simulations import ddpg_config
@@ -25,12 +22,10 @@ def initial_visualization(visualization):
 
 
 def train(sim_state):
+    iterations = 20
     visualization = VisualizationLive(sim_state)
-    copy_sim_state = copy.deepcopy(sim_state)
 
-    #config = ddpg.DEFAULT_CONFIG.copy()
     config = ddpg_config.DDPG_CONFIG.copy()
-    #config = ppo.DEFAULT_CONFIG.copy()
     config["gamma"] = 0.95
     config["num_workers"] = 0
     config["num_gpus"] = 1
@@ -47,31 +42,21 @@ def train(sim_state):
 
     ray.init()
     trainer = ddpg.DDPGTrainer(env=SingleAgentEnv, config=config)
-    #trainer = ppo.PPOTrainer(env=SingleAgentEnv, config=config)
 
     thread = Thread(target=initial_visualization, args=(visualization,))
     thread.start()
 
-    for i in range(1):
+    for i in range(iterations):
         result = trainer.train()
         print(pretty_print(result))
-        if i == 19:
+
+        # Save checkpoint on last iteration
+        if i == iterations - 1:
             checkpoint = trainer.save()
-
-    """trainer = ddpg.DDPGTrainer(env=SingleAgentEnv, config=config)
-    trainer.restore("/home/lennard/ray_results/DDPG_SingleAgentEnv_2020-01-29_23-59-26rqx4q006/checkpoint_10/checkpoint-10")"""
-
-    print("test")
-
-    visualization_sim = VisualizationSim(copy_sim_state, trainer)
-    thread2 = Thread(target=initial_visualization, args=(visualization_sim,))
-    thread2.start()
+            print("checkpoint saved at", checkpoint)
 
     visualization.stop()
     thread.join()
-
-    visualization_sim.stop()
-    thread2.join()
 
 
 if __name__ == "__main__":
