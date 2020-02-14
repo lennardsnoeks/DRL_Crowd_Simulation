@@ -21,7 +21,7 @@ class Agent:
     goals = []
     initial_speed = None
     fov = 0.0
-    id = 0.0
+    id = 0
     color = []
     laser_history = []
     type_history = []

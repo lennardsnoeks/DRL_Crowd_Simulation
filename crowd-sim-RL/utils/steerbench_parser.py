@@ -40,10 +40,6 @@ class SimulationState:
             obstacle.x = obstacle.x + shift[0, 0]
             obstacle.y = obstacle.y + shift[1, 0]
 
-            """for line in obstacle.lines:
-                line.a = line.a + shift
-                line.b = line.b + shift"""
-
         self.bounds = [
             self.bounds[0] + shift[0, 0],
             self.bounds[1] + shift[0, 0],

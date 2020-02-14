@@ -30,7 +30,7 @@ def train(sim_state):
     config["num_workers"] = 0
     config["num_gpus"] = 1
     config["eager"] = False
-    config["observation_filter"] = "MeanStdFilter"
+    config["observation_filter"] = "NoFilter"
     #config["batch_mode"] = "complete_episodes"
     config["clip_actions"] = True
     config["env_config"] = {

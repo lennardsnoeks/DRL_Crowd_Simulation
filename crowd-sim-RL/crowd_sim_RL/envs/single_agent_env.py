@@ -9,7 +9,8 @@ from visualization.visualize_steerbench import VisualizationLive
 
 class SingleAgentEnv(gym.Env):
 
-    def __init__(self, env_config):
+    def __init__(self, env_config, agent_id):
+        self.id = agent_id
         self.step_count = 0
         self.time_step = 0.1
 
@@ -66,9 +67,6 @@ class SingleAgentEnv(gym.Env):
                        shape=(self.sim_state.laser_history_amount, self.sim_state.laser_amount + 1)),
             spaces.Box(low=0, high=3, shape=(self.sim_state.laser_history_amount, self.sim_state.laser_amount + 1))
         ))
-
-        """self.observation_space = spaces.Box(np.array([-self.WORLD_BOUND, -self.WORLD_BOUND]),
-                                            np.array([self.WORLD_BOUND, self.WORLD_BOUND]))"""
 
     def step(self, action):
         # action is [v,w] with v the linear velocity and w the angular velocity
@@ -222,7 +220,7 @@ class SingleAgentEnv(gym.Env):
         distant_y = y_agent
         distance_to_object = math.sqrt((x_agent - distant_x) ** 2 + (y_agent - distant_y) ** 2)
 
-        #while distance_to_object < 10:
+        # while distance_to_object < 10:
         while True:
             distant_x += x_ori * iteration_step
             distant_y += y_ori * iteration_step
@@ -353,3 +351,9 @@ class SingleAgentEnv(gym.Env):
 
     def render(self, mode='human'):
         self.visualizer.update_agents(self.steering_agents)
+
+    def get_observation_space(self):
+        return self.observation_space
+
+    def get_action_space(self):
+        return self.action_space
