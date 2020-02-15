@@ -41,18 +41,21 @@ class SingleAgentEnv(gym.Env):
             self.max_step_count = env_config["timesteps_per_iteration"]
             self._set_visualizer(env_config["visualization"])
 
-    def _load_params(self, sim_state: SimulationState):
-        self.sim_state = copy.deepcopy(sim_state)
-        self._load_world()
-
     def _set_visualizer(self, visualizer: VisualizationLive):
         self.visualizer = visualizer
 
+    def _load_params(self, sim_state: SimulationState):
+        self.sim_state_copy = copy.deepcopy(sim_state)
+        self.sim_state = sim_state
+        # self.sim_state = copy.deepcopy(sim_state)
+        self._load_world()
+
     def _load_world(self):
-        self.steering_agents = []
+        """self.steering_agents = []
         for agent in self.sim_state.agents:
             agent_copy = copy.copy(agent)
-            self.steering_agents.append(agent_copy)
+            self.steering_agents.append(agent_copy)"""
+        self.steering_agents = self.sim_state.agents
         self.obstacles = self.sim_state.obstacles
         self.bounds = self.sim_state.clipped_bounds
 
@@ -75,7 +78,7 @@ class SingleAgentEnv(gym.Env):
 
         linear_vel = action[0]
         angular_vel = action[1]
-        agent = self.steering_agents[0]
+        agent = self.steering_agents[self.id]
 
         if self.mode == "train":
             linear_vel *= self.time_step
@@ -326,9 +329,10 @@ class SingleAgentEnv(gym.Env):
         return x_p <= x_min or x_p >= x_max or y_p <= y_min or y_p >= y_max
 
     def reset(self):
+        self.sim_state = copy.deepcopy(self.sim_state_copy)
         self._load_world()
 
-        agent = self.steering_agents[0]
+        agent = self.steering_agents[self.id]
         max_distance_to_goal = 0
         first = True
         shortest_goal = None

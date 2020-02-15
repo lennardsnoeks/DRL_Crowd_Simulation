@@ -36,4 +36,4 @@ class MultiAgentEnvironment(MultiAgentEnv):
         return {i: a.reset() for i, a in enumerate(self.agents)}
 
     def render(self):
-        self.visualizer.update_agents(self.steering_agents)
+        self.visualizer.update_agents(self.sim_state.agents)
