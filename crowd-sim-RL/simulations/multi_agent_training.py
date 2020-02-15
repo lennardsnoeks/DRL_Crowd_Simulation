@@ -3,6 +3,7 @@ import ray
 import ray.rllib.agents.ddpg as ddpg
 from ray.tune.logger import pretty_print
 from crowd_sim_RL.envs import SingleAgentEnv
+from crowd_sim_RL.envs.multi_agent_env import MultiAgentEnvironment
 from utils.steerbench_parser import XMLSimulationState
 from visualization.visualize_steerbench import VisualizationLive
 from threading import Thread
@@ -30,12 +31,13 @@ def train(sim_state):
     config["num_workers"] = 0
     config["num_gpus"] = 1
     config["eager"] = False
-    config["observation_filter"] = "NoFilter"
-    # config["batch_mode"] = "complete_episodes"
+    config["exploration_should_anneal"] = True
+    config["exploration_noise_type"] = "ou"
+    config["observation_filter"] = "MeanStdFilter"
     config["clip_actions"] = True
     config["env_config"] = {
         "sim_state": sim_state,
-        "mode": "sim",
+        "mode": "multi_train",
         "timesteps_per_iteration": config["timesteps_per_iteration"]
     }
 
@@ -52,7 +54,7 @@ def train(sim_state):
     }
 
     ray.init()
-    trainer = ddpg.DDPGTrainer(env=SingleAgentEnv, config=config)
+    trainer = ddpg.DDPGTrainer(env=MultiAgentEnvironment, config=config)
 
     thread = Thread(target=initial_visualization, args=(visualization,))
     thread.start()

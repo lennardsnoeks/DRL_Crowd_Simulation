@@ -10,11 +10,11 @@ class MultiAgentEnvironment(MultiAgentEnv):
         self.sim_state: SimulationState = env_config["sim_state"]
 
         self.agents = []
-        for agent in self.sim_state.agents:
-            self.agents.append(SingleAgentEnv(env_config, agent.id))
+        for i, agent in self.sim_state.agents:
+            self.agents.append(SingleAgentEnv(env_config, i))
 
         self.mode = env_config["mode"]
-        if self.mode == "train":
+        if self.mode == "multi_train":
             self.visualizer: VisualizationLive
             self.max_step_count = env_config["timesteps_per_iteration"]
             self._set_visualizer(env_config["visualization"])
@@ -25,7 +25,9 @@ class MultiAgentEnvironment(MultiAgentEnv):
             obs[i], rew[i], done[i], info[i] = self.agents[i].step(action)
             if done[i]:
                 self.dones.add(i)
-        done["__all__"] = len(self.dones) == len(self.agents)
+        # set done is true if one of agents is done
+        done["__all__"] = len(self.dones) > 0
+        # done["__all__"] = len(self.dones) == len(self.agents)
         return obs, rew, done, info
 
     def reset(self):
@@ -35,22 +37,3 @@ class MultiAgentEnvironment(MultiAgentEnv):
 
     def render(self):
         self.visualizer.update_agents(self.steering_agents)
-
-    def get_observation_space(self):
-        assert len(self.agents) > 0
-
-        obs_space = self.agents[0].get_observation_space()
-
-        return obs_space
-
-    def get_action_space(self):
-        assert len(self.agents) > 0
-
-        action_space = self.agents[0].get_action_space()
-
-        return action_space
-
-
-
-
-

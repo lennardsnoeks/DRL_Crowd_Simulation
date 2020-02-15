@@ -54,7 +54,7 @@ DDPG_CONFIG = with_common_config({
     # annealed from 1.0 to exploration_final_eps over schedule_max_timesteps
     # scaled by exploration_fraction. Original DDPG and TD3 papers do not
     # anneal noise, so this is False by default.
-    "exploration_should_anneal": True,
+    "exploration_should_anneal": False,
     # Max num timesteps for annealing schedules.
     "schedule_max_timesteps": 100000,
     # Number of env steps to optimize for before returning
