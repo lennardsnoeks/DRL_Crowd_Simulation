@@ -31,13 +31,24 @@ def train(sim_state):
     config["num_gpus"] = 1
     config["eager"] = False
     config["observation_filter"] = "NoFilter"
-    #config["batch_mode"] = "complete_episodes"
+    # config["batch_mode"] = "complete_episodes"
     config["clip_actions"] = True
     config["env_config"] = {
         "sim_state": sim_state,
-        "visualization": visualization,
-        "mode": "train",
+        "mode": "sim",
         "timesteps_per_iteration": config["timesteps_per_iteration"]
+    }
+
+    env_config = config["env_config"]
+    single_env = SingleAgentEnv(env_config, 0)
+    obs_space = single_env.get_observation_space()
+    action_space = single_env.get_action_space()
+
+    config["multiagent"] = {
+        "policies": {
+            "policy_0": (None, obs_space, action_space, {"gamma": 0.95})
+        },
+        "policy_mapping_fn": lambda agent_id: "policy_0"
     }
 
     ray.init()

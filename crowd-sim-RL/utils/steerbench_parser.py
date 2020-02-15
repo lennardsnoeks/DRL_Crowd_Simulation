@@ -55,7 +55,7 @@ class SimulationState:
         ]
 
     def clip_bounds(self):
-        margin = 0.1
+        margin = 0
         clipped_bounds = [10000000, -10000000, 10000000, -10000000]
 
         for agent in self.agents:

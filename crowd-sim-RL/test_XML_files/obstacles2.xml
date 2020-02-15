@@ -103,4 +103,22 @@
 
   </agent>
 
+  <agent>
+    <name>B</name>
+    <initialConditions>
+      <radius>0.5</radius>
+      <position> <x>22</x> <y>0</y> <z>5</z> </position>
+      <direction> <x>-1</x> <y>0</y> <z>0</z> </direction>
+      <speed>0</speed>
+    </initialConditions>
+    <goalSequence>
+      <seekStaticTarget>
+        <targetLocation> <x>-22</x> <y>0</y> <z>5</z> </targetLocation>
+        <desiredSpeed>1.2</desiredSpeed>
+        <timeDuration>1000.0</timeDuration>
+      </seekStaticTarget>
+    </goalSequence>
+
+  </agent>
+
 </SteerBenchTestCase>
