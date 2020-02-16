@@ -38,6 +38,7 @@ def train(sim_state):
         "sim_state": sim_state,
         "visualization": visualization,
         "mode": "train",
+        "agent_id": 0,
         "timesteps_per_iteration": config["timesteps_per_iteration"]
     }
 

@@ -37,6 +37,7 @@ def train(sim_state):
     config["clip_actions"] = True
     config["env_config"] = {
         "sim_state": sim_state,
+        "visualization": visualization,
         "mode": "multi_train",
         "timesteps_per_iteration": config["timesteps_per_iteration"]
     }

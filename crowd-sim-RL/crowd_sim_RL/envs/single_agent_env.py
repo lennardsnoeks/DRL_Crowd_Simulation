@@ -9,8 +9,8 @@ from visualization.visualize_steerbench import VisualizationLive
 
 class SingleAgentEnv(gym.Env):
 
-    def __init__(self, env_config, agent_id):
-        self.id = agent_id
+    def __init__(self, env_config):
+        self.id = env_config["agent_id"]
         self.step_count = 0
         self.time_step = 0.1
 
@@ -34,8 +34,8 @@ class SingleAgentEnv(gym.Env):
         self.action_space = spaces.Box(np.array([self.MIN_LIN_VELO, -self.MAX_ANG_VELO]),
                                        np.array([self.MAX_LIN_VELO, self.MAX_ANG_VELO]))
 
-        self._load_params(env_config["sim_state"])
         self.mode = env_config["mode"]
+        self.load_params(env_config["sim_state"])
         if self.mode == "train":
             self.visualizer: VisualizationLive
             self.max_step_count = env_config["timesteps_per_iteration"]
@@ -44,10 +44,12 @@ class SingleAgentEnv(gym.Env):
     def _set_visualizer(self, visualizer: VisualizationLive):
         self.visualizer = visualizer
 
-    def _load_params(self, sim_state: SimulationState):
-        self.sim_state_copy = copy.deepcopy(sim_state)
-        self.sim_state = sim_state
-        # self.sim_state = copy.deepcopy(sim_state)
+    def load_params(self, sim_state: SimulationState):
+        if "multi" in self.mode:
+            self.sim_state = sim_state
+        else:
+            self.sim_state = copy.deepcopy(sim_state)
+
         self._load_world()
 
     def _load_world(self):
@@ -72,7 +74,6 @@ class SingleAgentEnv(gym.Env):
         ))
 
     def step(self, action):
-        # action is [v,w] with v the linear velocity and w the angular velocity
         reward = 0
         done = False
 
@@ -80,7 +81,7 @@ class SingleAgentEnv(gym.Env):
         angular_vel = action[1]
         agent = self.steering_agents[self.id]
 
-        if self.mode == "train":
+        if "train" in self.mode:
             linear_vel *= self.time_step
             angular_vel *= self.time_step
 
@@ -329,7 +330,9 @@ class SingleAgentEnv(gym.Env):
         return x_p <= x_min or x_p >= x_max or y_p <= y_min or y_p >= y_max
 
     def reset(self):
-        self.sim_state = copy.deepcopy(self.sim_state_copy)
+        if "multi" not in self.mode:
+            self.sim_state = copy.deepcopy(self.sim_state)
+
         self._load_world()
 
         agent = self.steering_agents[self.id]
