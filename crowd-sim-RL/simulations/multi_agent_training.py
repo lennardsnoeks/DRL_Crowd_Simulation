@@ -65,7 +65,6 @@ def train(sim_state):
         result = trainer.train()
         print(pretty_print(result))
 
-        # Save checkpoint on last iteration
         if i == iterations - 1:
             checkpoint = trainer.save()
             print("checkpoint saved at", checkpoint)

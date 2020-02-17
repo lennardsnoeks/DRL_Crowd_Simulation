@@ -7,7 +7,6 @@ from utils.objects import Obstacle, Agent
 
 rainbow = [
     [148, 0, 211],
-    # [255, 255, 0],
     [255, 0, 0],
     [75, 0, 130],
     [255, 127, 0],
@@ -124,13 +123,6 @@ class XMLSimulationState:
         self.simulation_state.clip_bounds()
         self.simulation_state.shift_center()
         self.simulation_state.move_agents_from_obstacles()
-
-        """self.simulation_state.move_agents_from_obstacles()
-           self.simulation_state.shift_center()
-           self.simulation_state.clip_bounds()
-
-           return self.simulation_state.bounds, self.simulation_state.clipped_bounds, \
-                  self.simulation_state.obstacles, self.simulation_state.agents"""
 
     def get_sim_state(self):
         return self.simulation_state

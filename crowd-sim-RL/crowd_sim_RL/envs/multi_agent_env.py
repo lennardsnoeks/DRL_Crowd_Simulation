@@ -30,7 +30,6 @@ class MultiAgentEnvironment(MultiAgentEnv):
             if done[i]:
                 self.dones.add(i)
 
-        # set done is true if one of agents is done
         done["__all__"] = len(self.dones) > 0
         # done["__all__"] = len(self.dones) == len(self.agents)
 
