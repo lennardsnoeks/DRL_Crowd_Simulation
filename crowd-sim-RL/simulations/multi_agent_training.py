@@ -39,11 +39,12 @@ def train(sim_state):
         "sim_state": sim_state,
         "visualization": visualization,
         "mode": "multi_train",
+        "agent_id": 0,
         "timesteps_per_iteration": config["timesteps_per_iteration"]
     }
 
     env_config = config["env_config"]
-    single_env = SingleAgentEnv(env_config, 0)
+    single_env = SingleAgentEnv(env_config)
     obs_space = single_env.get_observation_space()
     action_space = single_env.get_action_space()
 

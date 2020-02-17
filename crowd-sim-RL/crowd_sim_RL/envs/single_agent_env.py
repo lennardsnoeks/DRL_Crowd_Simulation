@@ -45,18 +45,14 @@ class SingleAgentEnv(gym.Env):
         self.visualizer = visualizer
 
     def load_params(self, sim_state: SimulationState):
-        if "multi" in self.mode:
-            self.sim_state = sim_state
-        else:
-            self.sim_state = copy.deepcopy(sim_state)
+        if "multi" not in self.mode:
+            self.orig_sim_state = copy.deepcopy(sim_state)
+
+        self.sim_state = sim_state
 
         self._load_world()
 
     def _load_world(self):
-        """self.steering_agents = []
-        for agent in self.sim_state.agents:
-            agent_copy = copy.copy(agent)
-            self.steering_agents.append(agent_copy)"""
         self.steering_agents = self.sim_state.agents
         self.obstacles = self.sim_state.obstacles
         self.bounds = self.sim_state.clipped_bounds
@@ -331,7 +327,7 @@ class SingleAgentEnv(gym.Env):
 
     def reset(self):
         if "multi" not in self.mode:
-            self.sim_state = copy.deepcopy(self.sim_state)
+            self.sim_state = copy.deepcopy(self.orig_sim_state)
 
         self._load_world()
 

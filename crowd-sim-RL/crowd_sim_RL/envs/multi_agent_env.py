@@ -41,11 +41,11 @@ class MultiAgentEnvironment(MultiAgentEnv):
     def reset(self):
         self.resetted = True
         self.dones = set()
-        sim_state = copy.deepcopy(self.original_sim_state)
+        self.sim_state = copy.deepcopy(self.original_sim_state)
 
         for agent in self.agents:
-            agent.load_params(sim_state)
-            
+            agent.load_params(self.sim_state)
+
         return {i: a.reset() for i, a in enumerate(self.agents)}
 
     def _set_visualizer(self, visualizer: VisualizationLive):
