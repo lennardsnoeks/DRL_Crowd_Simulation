@@ -121,7 +121,7 @@ DDPG_CONFIG = with_common_config({
     # Update the target network every `target_network_update_freq` steps.
     "target_network_update_freq": 0,
     # Update the target by \tau * policy + (1-\tau) * target_policy
-    "tau": 0.002,
+    "tau": 0.001,
     # If True, use huber loss instead of squared loss for critic network
     # Conventionally, no need to clip gradients if using a huber loss
     "use_huber": False,
