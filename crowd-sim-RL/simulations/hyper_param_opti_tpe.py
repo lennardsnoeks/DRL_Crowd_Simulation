@@ -1,6 +1,7 @@
 import os
 import ray
 from ray.tune import run, register_env
+from ray.tune.schedulers import AsyncHyperBandScheduler
 from ray.tune.suggest.hyperopt import HyperOptSearch
 from crowd_sim_RL.envs import SingleAgentEnv
 from utils.steerbench_parser import XMLSimulationState
@@ -18,8 +19,8 @@ def main():
 
 def train(sim_state):
     config = ddpg_config.DDPG_CONFIG.copy()
-    config["num_workers"] = 0
-    config["num_gpus"] = 1
+    config["num_workers"] = 4
+    config["num_gpus"] = 0
     config["clip_actions"] = True
 
     config["gamma"] = 0.95
@@ -42,8 +43,8 @@ def train(sim_state):
 
     space = {
         "gamma": hp.uniform("gamma", 0.95, 0.99),
-        "actor_hiddens": hp.choice("actor_hiddens", [[64, 64], [400,300]]),
-        "critic_hiddens": hp.choice("critic_hiddens", [[64, 64], [400,300]]),
+        "actor_hiddens": hp.choice("actor_hiddens", [[64, 64], [400, 300]]),
+        "critic_hiddens": hp.choice("critic_hiddens", [[64, 64], [400, 300]]),
         "exploration_noise_type": hp.choice("exploration_noise_type", ["ou", "gaussian"]),
         "exploration_should_anneal": hp.choice("exploration_should_anneal", [True, False]),
         "observation_filter": hp.choice("observation_filter", ["NoFilter", "MeanStdFilter"]),
@@ -63,12 +64,17 @@ def train(sim_state):
     ]
 
     search = HyperOptSearch(space, metric="episode_reward_mean", mode="max", points_to_evaluate=current_best_params)
+    #search = HyperOptSearch(space, metric="episode_reward_mean", mode="max")
+
+    scheduler = AsyncHyperBandScheduler(metric="episode_reward_mean", mode="max")
 
     stop = {
-        "training_iteration": 25
+        "training_iteration": 10
     }
 
-    run("DDPG", search_alg=search, stop=stop, config=config)
+    analysis = run("DDPG", name="tpe", num_samples=20, search_alg=search, scheduler=scheduler, stop=stop, config=config)
+
+    print("Best config: ", analysis.get_best_config(metric="episode_reward_mean"))
 
 
 if __name__ == "__main__":

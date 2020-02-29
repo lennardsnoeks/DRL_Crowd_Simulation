@@ -12,22 +12,24 @@ def main():
     filename = os.path.join(dirname, "../test_XML_files/obstacles2.xml")
     sim_state = XMLSimulationState(filename).simulation_state
 
-    checkpoint_path = "/home/lennard/ray_results/DDPG_SingleAgentEnv_2020-02-05_21-41-50gmsa3arh/checkpoint_1/checkpoint-1"
+    checkpoint_path = "/home/lennard/ray_results/DDPG/DDPG_single_agent_env_8ac374b8_0_2020-02-28_22-23-19dmcd8qa1/checkpoint_10/checkpoint-10"
     simulate(sim_state, checkpoint_path)
 
 
 def simulate(sim_state, checkpoint_path):
     config = ddpg_config.DDPG_CONFIG.copy()
     config["gamma"] = 0.95
-    config["num_workers"] = 0
-    config["num_gpus"] = 1
+    config["num_workers"] = 1
+    config["num_gpus"] = 0
     config["eager"] = False
-    config["observation_filter"] = "NoFilter"
-    #config["batch_mode"] = "complete_episodes"
+    config["exploration_should_anneal"] = True
+    config["exploration_noise_type"] = "ou"
+    config["observation_filter"] = "MeanStdFilter"
     config["clip_actions"] = True
     config["env_config"] = {
         "sim_state": sim_state,
         "mode": "sim",
+        "agent_id": 0,
         "timesteps_per_iteration": config["timesteps_per_iteration"]
     }
 
@@ -35,8 +37,8 @@ def simulate(sim_state, checkpoint_path):
     trainer = ddpg.DDPGTrainer(env=SingleAgentEnv, config=config)
     trainer.restore(checkpoint_path)
 
-    visualization_sim = VisualizationSim(sim_state, trainer)
-    visualization_sim.run()
+    #visualization_sim = VisualizationSim(sim_state, trainer)
+    #visualization_sim.run()
 
 
 if __name__ == "__main__":

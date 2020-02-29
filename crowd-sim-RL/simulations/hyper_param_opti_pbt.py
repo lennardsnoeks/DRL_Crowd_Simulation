@@ -1,5 +1,6 @@
 import os
 import ray
+import random
 from ray.tune import run, register_env
 from ray.tune.schedulers import PopulationBasedTraining
 from crowd_sim_RL.envs import SingleAgentEnv
@@ -15,23 +16,13 @@ def main():
     train(sim_state)
 
 
-def explore(config):
-    # ensure we collect enough timesteps to do sgd
-    if config["train_batch_size"] < config["sgd_minibatch_size"] * 2:
-        config["train_batch_size"] = config["sgd_minibatch_size"] * 2
-    # ensure we run at least one sgd iter
-    if config["num_sgd_iter"] < 1:
-        config["num_sgd_iter"] = 1
-    return config
-
-
 def train(sim_state):
     config = ddpg_config.DDPG_CONFIG.copy()
-    config["num_workers"] = 0
-    config["num_gpus"] = 1
+    config["num_workers"] = 5
+    config["num_gpus"] = 0
     config["clip_actions"] = True
 
-    config["gamma"] = 0.95
+    config["gamma"] = 0.99
     config["exploration_should_anneal"] = True
     config["exploration_noise_type"] = "ou"
     config["observation_filter"] = "NoFilter"
@@ -56,21 +47,22 @@ def train(sim_state):
         perturbation_interval=120,
         resample_probability=0.25,
         hyperparam_mutations={
-            "gamma": [0.95, 0.99],
+            "gamma": lambda: random.uniform(0.90, 0.99),
             "actor_hiddens": [[64, 64], [400, 300]],
             "critic_hiddens": [[64, 64], [400, 300]],
             "exploration_noise_type": ["ou", "gaussian"],
             "exploration_should_anneal": [True, False],
             "observation_filter": ["NoFilter", "MeanStdFilter"],
             "train_batch_size": [32, 64]
-        },
-        custom_explore_fn=explore)
+        })
 
     stop = {
         "training_iteration": 10
     }
 
-    run("DDPG", scheduler=pbt, stop=stop, config=config)
+    analysis = run("DDPG", name="pbt", num_samples=4, scheduler=pbt, stop=stop, config=config)
+
+    print("Best config: ", analysis.get_best_config(metric="episode_reward_mean"))
 
 
 if __name__ == "__main__":
