@@ -1,7 +1,7 @@
 import copy
 from crowd_sim_RL.envs import SingleAgentEnv
 from utils.steerbench_parser import SimulationState
-from visualization.visualize_steerbench import VisualizationLive
+from visualization.visualize_training import VisualizationLive
 from ray.rllib.env.multi_agent_env import MultiAgentEnv
 
 

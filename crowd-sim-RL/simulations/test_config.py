@@ -1,7 +1,7 @@
 import os
 
 from utils.steerbench_parser import XMLSimulationState
-from visualization.visualize_steerbench import VisualizationLive
+from visualization.visualize_training import VisualizationLive
 
 
 def main():

@@ -6,18 +6,16 @@ import numpy as np
 from pygame.locals import *
 from ray.rllib import MultiAgentEnv
 from ray.rllib.agents import Trainer
-
-from crowd_sim_RL.envs import SingleAgentEnv
 from utils.steerbench_parser import SimulationState
 from visualization.visualize_config import SIM_COLORS
 
 
-class VisualizationSim:
+class VisualizationSimMulti:
 
     def __init__(self, sim_state: SimulationState, trainer: Trainer):
         pygame.init()
 
-        self.FPS_FONT = pygame.font.SysFont("Verdana", 20)
+        self.FPS_FONT = pygame.font.SysFont("Verdana", 12)
         self.GOLDENROD = pygame.Color("goldenrod")
 
         self.goals_visible = True
@@ -56,9 +54,6 @@ class VisualizationSim:
         state = self.trainer.get_policy().get_initial_state()
 
         while not done:
-            self.show_fps(self.screen, clock)
-            self.show_size(self.screen)
-
             dt = clock.tick(self.framerate)
 
             self.process_events()
@@ -83,17 +78,20 @@ class VisualizationSim:
 
             self.simulation_update()
 
+            self.show_fps(self.screen, clock)
+            self.show_size(self.screen)
+
             pygame.display.flip()
 
     def show_fps(self, window, clock):
-        fps_overlay = self.FPS_FONT.render(str(clock.get_fps()), True, self.GOLDENROD)
+        fps_overlay = self.FPS_FONT.render(str(round(clock.get_fps(), 2)) + " fps", True, self.GOLDENROD)
         window.blit(fps_overlay, (0, 0))
 
     def show_size(self, window):
         x_size = self.sim_state.clipped_bounds[1] - self.sim_state.clipped_bounds[0]
         y_size = self.sim_state.clipped_bounds[3] - self.sim_state.clipped_bounds[2]
         size_overlay = self.FPS_FONT.render(str(x_size) + " x " + str(y_size), True, self.GOLDENROD)
-        window.blit(size_overlay, (10, 0))
+        window.blit(size_overlay, (0, 14))
 
     def stop(self):
         self.active = False

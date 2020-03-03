@@ -4,7 +4,7 @@ import ray.rllib.agents.ddpg as ddpg
 from ray.tune.logger import pretty_print
 from crowd_sim_RL.envs import SingleAgentEnv
 from utils.steerbench_parser import XMLSimulationState
-from visualization.visualize_steerbench import VisualizationLive
+from visualization.visualize_training import VisualizationLive
 from threading import Thread
 from simulations import ddpg_config
 from ray.tune import run, register_env

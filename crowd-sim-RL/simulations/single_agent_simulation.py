@@ -9,7 +9,7 @@ from simulations import ddpg_config
 
 def main():
     dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, "../test_XML_files/hallway_squeeze_2.xml")
+    filename = os.path.join(dirname, "../test_XML_files/hallway_squeeze_1.xml")
     seed = 22222
     sim_state = XMLSimulationState(filename, seed).simulation_state
 

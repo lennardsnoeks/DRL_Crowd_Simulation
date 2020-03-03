@@ -4,7 +4,7 @@ import math
 import copy
 from gym import spaces
 from utils.steerbench_parser import SimulationState
-from visualization.visualize_steerbench import VisualizationLive
+from visualization.visualize_training import VisualizationLive
 
 
 class SingleAgentEnv(gym.Env):

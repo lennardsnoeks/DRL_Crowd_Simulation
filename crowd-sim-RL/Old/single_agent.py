@@ -4,7 +4,7 @@ import numpy as np
 
 from crowd_sim_RL.envs import SingleAgentEnv
 from utils.steerbench_parser import XMLSimulationState
-from visualization.visualize_steerbench import Visualization
+from visualization.visualize_training import Visualization
 from keras.models import Sequential, Model
 from keras.layers import Dense, Activation, Flatten, Input, Concatenate
 from keras.optimizers import Adam
