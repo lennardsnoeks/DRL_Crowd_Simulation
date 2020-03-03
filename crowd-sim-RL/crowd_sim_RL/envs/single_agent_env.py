@@ -14,10 +14,10 @@ class SingleAgentEnv(gym.Env):
         self.step_count = 0
         self.time_step = 0.1
 
-        self.reward_goal = 4
-        self.reward_collision = 5
-        self.reward_smooth1 = 4
-        self.reward_smooth2 = 1
+        #self.reward_goal = 4
+        self.reward_goal = 5
+        #self.reward_collision = 5
+        self.reward_collision = 10
         self.reward_promote_forward1 = 2
         self.reward_promote_forward2 = 2
         self.reward_promote_forward3 = 0.1
@@ -66,7 +66,7 @@ class SingleAgentEnv(gym.Env):
                        np.array([self.WORLD_BOUND, self.WORLD_BOUND])),
             spaces.Box(low=-self.WORLD_BOUND, high=self.WORLD_BOUND,
                        shape=(self.sim_state.laser_history_amount, self.sim_state.laser_amount + 1)),
-            spaces.Box(low=0, high=3, shape=(self.sim_state.laser_history_amount, self.sim_state.laser_amount + 1))
+            spaces.Box(low=0, high=20, shape=(self.sim_state.laser_history_amount, self.sim_state.laser_amount + 1))
         ))
 
     def step(self, action):
@@ -186,9 +186,7 @@ class SingleAgentEnv(gym.Env):
             laser_ori = start_point + i * increment
             x_ori = math.cos(laser_ori)
             y_ori = math.sin(laser_ori)
-            distance, x_end, y_end, type = self._get_first_crossed_object(agent.pos[0, 0],
-                                                                          agent.pos[1, 0],
-                                                                          x_ori, y_ori)
+            distance, x_end, y_end, type = self._get_first_crossed_object(agent, x_ori, y_ori)
             laser_distances.append(distance)
             types.append(type)
             agent.laser_lines.append(np.array([x_end, y_end]))
@@ -208,7 +206,7 @@ class SingleAgentEnv(gym.Env):
 
         return observation_laser, observation_type
 
-    def _get_first_crossed_object(self, x_agent, y_agent, x_ori, y_ori):
+    def _get_first_crossed_object(self, current_agent, x_ori, y_ori):
         distance = 1000000
         x_end = 0
         y_end = 0
@@ -216,25 +214,37 @@ class SingleAgentEnv(gym.Env):
         iteration_step = 0.05
         collision = False
 
+        x_agent = current_agent.pos[0, 0]
+        y_agent = current_agent.pos[1, 0]
+
         distant_x = x_agent
         distant_y = y_agent
         distance_to_object = math.sqrt((x_agent - distant_x) ** 2 + (y_agent - distant_y) ** 2)
 
-        # while distance_to_object < 10:
+        #while distance_to_object < 10:
         while True:
             distant_x += x_ori * iteration_step
             distant_y += y_ori * iteration_step
             distance_to_object = math.sqrt((x_agent - distant_x) ** 2 + (y_agent - distant_y) ** 2)
 
             for agent in self.steering_agents:
-                if x_agent != agent.pos[0, 0] and y_agent != agent.pos[1, 0]:
+                if current_agent.id == agent.id:
+                    for goal in agent.goals:
+                        if self._point_in_circle(distant_x, distant_y, goal[0, 0], goal[1, 0],
+                                                 self.sim_state.goal_tolerance):
+                            if distance_to_object < distance:
+                                distance = distance_to_object
+                                x_end = distant_x
+                                y_end = distant_y
+                                collision = True
+                                type = 5
+                else:
                     if self._point_in_circle(distant_x, distant_y, agent.pos[0, 0], agent.pos[1, 0], agent.radius):
                         distance = distance_to_object
                         x_end = distant_x
                         y_end = distant_y
                         collision = True
-                        type = 1
-                        break
+                        type = 10
 
             for obstacle in self.obstacles:
                 if obstacle.contains(distant_x, distant_y):
@@ -243,7 +253,7 @@ class SingleAgentEnv(gym.Env):
                         x_end = distant_x
                         y_end = distant_y
                         collision = True
-                        type = 2
+                        type = 15
                         break
 
             if collision:
@@ -255,7 +265,7 @@ class SingleAgentEnv(gym.Env):
                         distance = distance_to_object
                         x_end = distant_x
                         y_end = distant_y
-                        type = 3
+                        type = 20
                         collision = True
                     break
 
@@ -274,16 +284,17 @@ class SingleAgentEnv(gym.Env):
                                                 current_agent.pos[0, 0], current_agent.pos[1, 0], current_agent.radius):
                 reward -= self.reward_collision
 
-        # detect collision with other agents or if agent crosses world bounds
+        # detect collision with other agents
         for agent in self.steering_agents:
             if current_agent.id != agent.id:
                 if self._collision_circle_circle(current_agent.pos[0, 0], current_agent.pos[1, 0], current_agent.radius,
-                                                 agent.pos[0, 0], agent.pos[1, 0], current_agent.radius):
+                                                 agent.pos[0, 0], agent.pos[1, 0], agent.radius):
                     reward -= self.reward_collision
 
-            if self._collision_bound(agent.pos[0, 0], agent.pos[1, 0],
-                                     self.bounds[0], self.bounds[1], self.bounds[2], self.bounds[3]):
-                reward -= self.reward_collision
+        # detect collision with world bounds
+        if self._collision_bound(current_agent.pos[0, 0], current_agent.pos[1, 0],
+                                 self.bounds[0], self.bounds[1], self.bounds[2], self.bounds[3]):
+            reward -= self.reward_collision
 
         return reward
 

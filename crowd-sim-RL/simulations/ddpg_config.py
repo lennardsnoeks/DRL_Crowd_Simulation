@@ -66,7 +66,7 @@ DDPG_CONFIG = with_common_config({
     "exploration_final_scale": 0.02,
     # valid values: "ou" (time-correlated, like original DDPG paper),
     # "gaussian" (IID, like TD3 paper)
-    "exploration_noise_type": "gaussian",
+    "exploration_noise_type": "ou",
     # OU-noise scale; this can be used to scale down magnitude of OU noise
     # before adding to actions (requires "exploration_noise_type" to be "ou")
     "exploration_ou_noise_scale": 0.1,

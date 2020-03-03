@@ -12,8 +12,9 @@ from ray.tune import run, register_env
 
 def main():
     dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, "../test_XML_files/obstacles2.xml")
-    sim_state = XMLSimulationState(filename).simulation_state
+    filename = os.path.join(dirname, "../test_XML_files/hallway_squeeze_2.xml")
+    seed = 22222
+    sim_state = XMLSimulationState(filename, seed).simulation_state
 
     train(sim_state)
 
@@ -23,12 +24,12 @@ def initial_visualization(visualization):
 
 
 def train(sim_state):
-    iterations = 10
+    iterations = 25
     visualization = VisualizationLive(sim_state)
 
     config = ddpg_config.DDPG_CONFIG.copy()
     config["gamma"] = 0.95
-    config["num_workers"] = 1
+    config["num_workers"] = 0
     config["num_gpus"] = 0
     config["eager"] = False
     config["exploration_should_anneal"] = True
@@ -47,12 +48,12 @@ def train(sim_state):
     config["env"] = "single_agent_env"
 
     ray.init()
-    #trainer = ddpg.DDPGTrainer(env=SingleAgentEnv, config=config)
+    """trainer = ddpg.DDPGTrainer(env=SingleAgentEnv, config=config)
 
-    """thread = Thread(target=initial_visualization, args=(visualization,))
-    thread.start()"""
+    thread = Thread(target=initial_visualization, args=(visualization,))
+    thread.start()
 
-    """for i in range(iterations):
+    for i in range(iterations):
         result = trainer.train()
         print(pretty_print(result))
 

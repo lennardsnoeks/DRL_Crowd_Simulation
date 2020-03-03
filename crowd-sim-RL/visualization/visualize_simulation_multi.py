@@ -45,11 +45,14 @@ class VisualizationSim:
             "mode": "sim"
         }
 
-        env = SingleAgentEnv(config)
-        observation = env.reset()
+        env = MultiAgentEnv(config)
+        observations = env.reset()
         done = False
-        prev_action = np.zeros_like(env.action_space.sample())
-        prev_reward = 0
+        prev_actions = {}
+        prev_rewards = {}
+        for i in range(0, self.sim_state.agents):
+            prev_rewards[i] = 0
+            prev_actions[i] = [0.0, 0.0]
         state = self.trainer.get_policy().get_initial_state()
 
         while not done:
@@ -60,23 +63,23 @@ class VisualizationSim:
 
             self.process_events()
 
-            linear_vel, angular_vel = self.trainer.compute_action(observation,
-                                                                  state=state,
-                                                                  prev_action=prev_action,
-                                                                  prev_reward=prev_reward)
+            actions = {}
+            action_rescales = {}
 
-            scale = dt / 1000
+            for i in range(0, self.sim_state.agents):
+                linear_vel, angular_vel = self.trainer.compute_action(observations[i],
+                                                                      state=state,
+                                                                      prev_action=prev_actions[i],
+                                                                      prev_reward=prev_rewards[i],
+                                                                      explore=False)
+                scale = dt / 1000
+                action_rescales[i] = [linear_vel * scale, angular_vel * scale]
+                actions[i] = [linear_vel, angular_vel]
 
-            action = [linear_vel, angular_vel]
-            action_rescale = [linear_vel * scale, angular_vel * scale]
+            observations, rewards, dones, info = env.step(action_rescales)
 
-            observation, reward, done, info = env.step(action_rescale)
-
-            prev_action = action
-            prev_reward = reward
-
-            agents = env.get_agents()
-            self.sim_state.agents = agents
+            prev_actions = actions
+            prev_rewards = rewards
 
             self.simulation_update()
 

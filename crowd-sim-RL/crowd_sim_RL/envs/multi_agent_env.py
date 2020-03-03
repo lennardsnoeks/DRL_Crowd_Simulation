@@ -9,18 +9,29 @@ class MultiAgentEnvironment(MultiAgentEnv):
 
     def __init__(self, env_config):
         self.sim_state: SimulationState = env_config["sim_state"]
+        self.env_config = env_config
+
+        self.load_agents()
+
+        self.mode = env_config["mode"]
+        if self.mode == "multi_train_vis":
+            self.visualizer: VisualizationLive
+            self.max_step_count = env_config["timesteps_per_iteration"]
+            self._set_visualizer(env_config["visualization"])
+
+    def load_agents(self):
         self.original_sim_state = copy.deepcopy(self.sim_state)
 
         self.agents = []
         for agent in self.sim_state.agents:
-            env_config["agent_id"] = agent.id
-            self.agents.append(SingleAgentEnv(env_config))
+            self.env_config["agent_id"] = agent.id
+            self.agents.append(SingleAgentEnv(self.env_config))
 
-        self.mode = env_config["mode"]
-        if self.mode == "multi_train":
-            self.visualizer: VisualizationLive
-            self.max_step_count = env_config["timesteps_per_iteration"]
-            self._set_visualizer(env_config["visualization"])
+    def set_phase(self, phase, new_sim_state):
+        if phase == 1:
+            self.sim_state = new_sim_state
+            self.env_config["sim_state"] = self.sim_state
+            self.load_agents()
 
     def step(self, action_dict):
         obs, rew, done, info = {}, {}, {}, {}

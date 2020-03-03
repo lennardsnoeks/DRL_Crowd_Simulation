@@ -103,7 +103,8 @@ class SimulationState:
 
 class XMLSimulationState:
 
-    def __init__(self, filename):
+    def __init__(self, filename, seed):
+        random.seed(seed)
         self.simulation_state = SimulationState()
         self.namespace = {
             'steerbench': 'http://www.magix.ucla.edu/steerbench'
