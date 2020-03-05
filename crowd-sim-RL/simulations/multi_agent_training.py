@@ -1,8 +1,6 @@
 import os
 import ray
-import ray.rllib.agents.ddpg as ddpg
 from ray.tune import register_env, run
-from ray.tune.logger import pretty_print
 from crowd_sim_RL.envs import SingleAgentEnv
 from crowd_sim_RL.envs.multi_agent_env import MultiAgentEnvironment
 from utils.steerbench_parser import XMLSimulationState
@@ -15,7 +13,7 @@ phase_set = False
 
 
 def main():
-    filename = "obstacles"
+    filename = "hallway_squeeze_1"
     sim_state = parse_sim_state(filename)
 
     train(sim_state)
@@ -41,7 +39,7 @@ def on_train_result(info):
         print("#### PHASE 2 ####")
         phase = 1
 
-        sim_state = parse_sim_state("obstacles2")
+        sim_state = parse_sim_state("hallway_squeeze_2")
 
         trainer = info["trainer"]
         trainer.workers.foreach_worker(
@@ -51,12 +49,12 @@ def on_train_result(info):
 
 
 def train(sim_state):
-    total_iterations = 50
-    checkpoint_freq = 10
+    total_iterations = 150
+    checkpoint_freq = 50
 
     config = ddpg_config.DDPG_CONFIG.copy()
     config["gamma"] = 0.95
-    config["num_workers"] = 5
+    config["num_workers"] = 0
     config["num_gpus"] = 0
     config["eager"] = False
     config["exploration_should_anneal"] = True
@@ -74,10 +72,10 @@ def train(sim_state):
     }
 
     env_config = config["env_config"]
+
     single_env = SingleAgentEnv(env_config)
     obs_space = single_env.get_observation_space()
     action_space = single_env.get_action_space()
-
     config["multiagent"] = {
         "policies": {
             "policy_0": (None, obs_space, action_space, {"gamma": 0.95})

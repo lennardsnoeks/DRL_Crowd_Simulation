@@ -23,8 +23,8 @@ class MultiAgentEnvironment(MultiAgentEnv):
         self.original_sim_state = copy.deepcopy(self.sim_state)
 
         self.agents = []
-        for agent in self.sim_state.agents:
-            self.env_config["agent_id"] = agent.id
+        for i in range(0, len(self.sim_state.agents)):
+            self.env_config["agent_id"] = i
             self.agents.append(SingleAgentEnv(self.env_config))
 
     def set_phase(self, phase, new_sim_state):
@@ -44,7 +44,8 @@ class MultiAgentEnvironment(MultiAgentEnv):
         done["__all__"] = len(self.dones) > 0
         # done["__all__"] = len(self.dones) == len(self.agents)
 
-        self.render()
+        if self.mode == "multi_train_vis":
+            self.render()
 
         return obs, rew, done, info
 
@@ -63,3 +64,6 @@ class MultiAgentEnvironment(MultiAgentEnv):
 
     def render(self):
         self.visualizer.update_agents(self.sim_state.agents)
+
+    def get_agents(self):
+        return self.sim_state.agents

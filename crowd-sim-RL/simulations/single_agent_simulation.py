@@ -13,7 +13,7 @@ def main():
     seed = 22222
     sim_state = XMLSimulationState(filename, seed).simulation_state
 
-    checkpoint_path = "/home/lennard/ray_results/DDPG/DDPG_single_agent_env_86e4be30_0_2020-03-02_20-32-1708fm7f6u/checkpoint_50/checkpoint-50"
+    checkpoint_path = "/home/lennard/ray_results/DDPG/DDPG_single_agent_env_dd7279da_0_2020-03-03_15-11-24hvw60iiv/checkpoint_25/checkpoint-25"
 
     simulate(sim_state, checkpoint_path)
 
