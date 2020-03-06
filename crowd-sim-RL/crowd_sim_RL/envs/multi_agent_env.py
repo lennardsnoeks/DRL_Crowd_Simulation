@@ -19,6 +19,10 @@ class MultiAgentEnvironment(MultiAgentEnv):
             self.max_step_count = env_config["timesteps_per_iteration"]
             self._set_visualizer(env_config["visualization"])
 
+        """self.rewards = []
+        self.rewardeps = []
+        self.stepcount = 0"""
+
     def load_agents(self):
         self.original_sim_state = copy.deepcopy(self.sim_state)
 
@@ -34,6 +38,8 @@ class MultiAgentEnvironment(MultiAgentEnv):
             self.load_agents()
 
     def step(self, action_dict):
+        #self.stepcount += 1
+
         obs, rew, done, info = {}, {}, {}, {}
 
         for i, action in action_dict.items():
@@ -44,8 +50,27 @@ class MultiAgentEnvironment(MultiAgentEnv):
         done["__all__"] = len(self.dones) > 0
         # done["__all__"] = len(self.dones) == len(self.agents)
 
+        #self.rewards.append(rew[0])
+
+        """if done["__all__"]:
+            rewardep = 0
+            for r in self.rewards:
+                rewardep += r
+            self.rewardeps.append(rewardep)
+            self.rewards = []
+
+        if self.stepcount % 1000 == 0:
+            avg = 0.0
+            for rewardep in self.rewardeps:
+                avg += rewardep
+            if len(self.rewardeps) != 0:
+                avg /= len(self.rewardeps)
+                print("Multi avg: " + str(avg))
+            else:
+                print("NaN")
+
         if self.mode == "multi_train_vis":
-            self.render()
+            self.render()"""
 
         return obs, rew, done, info
 

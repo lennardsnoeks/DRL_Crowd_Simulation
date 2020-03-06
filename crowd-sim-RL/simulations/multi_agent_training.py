@@ -16,7 +16,9 @@ def main():
     filename = "hallway_squeeze_1"
     sim_state = parse_sim_state(filename)
 
-    train(sim_state)
+    checkpoint = ""
+
+    train(sim_state, checkpoint)
 
 
 def parse_sim_state(filename):
@@ -48,8 +50,8 @@ def on_train_result(info):
         phase_set = True
 
 
-def train(sim_state):
-    total_iterations = 150
+def train(sim_state, checkpoint):
+    iterations = 100
     checkpoint_freq = 50
 
     config = ddpg_config.DDPG_CONFIG.copy()
@@ -58,6 +60,7 @@ def train(sim_state):
     config["num_gpus"] = 0
     config["eager"] = False
     config["exploration_should_anneal"] = True
+    config["schedule_max_timesteps"] = 200000
     config["exploration_noise_type"] = "ou"
     config["observation_filter"] = "MeanStdFilter"
     config["clip_actions"] = True
@@ -89,10 +92,13 @@ def train(sim_state):
     ray.init()
 
     stop = {
-        "training_iteration": total_iterations
+        "training_iteration": iterations
     }
 
-    run("DDPG", checkpoint_freq=checkpoint_freq, stop=stop, config=config)
+    if checkpoint == "":
+        run("DDPG", checkpoint_freq=checkpoint_freq, stop=stop, config=config)
+    else:
+        run("DDPG", checkpoint_freq=checkpoint_freq, stop=stop, config=config, restore=checkpoint)
 
 
 if __name__ == "__main__":

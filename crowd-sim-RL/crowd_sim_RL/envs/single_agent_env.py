@@ -41,6 +41,10 @@ class SingleAgentEnv(gym.Env):
             self.max_step_count = env_config["timesteps_per_iteration"]
             self._set_visualizer(env_config["visualization"])
 
+        """self.rewards = []
+        self.rewardeps = []
+        self.stepcount = 0"""
+
     def _set_visualizer(self, visualizer: VisualizationLive):
         self.visualizer = visualizer
 
@@ -70,6 +74,8 @@ class SingleAgentEnv(gym.Env):
         ))
 
     def step(self, action):
+        #self.stepcount += 1
+
         reward = 0
         done = False
 
@@ -145,6 +151,27 @@ class SingleAgentEnv(gym.Env):
                 reward = 0
                 done = False"""
             self.render()
+
+        """self.rewards.append(reward)
+
+        if done:
+            rewardep = 0
+            for r in self.rewards:
+                rewardep += r
+            self.rewardeps.append(rewardep)
+            print(rewardep)
+            self.rewards = []
+
+        if self.stepcount % 1000 == 0:
+            avg = 0.0
+            for rewardep in self.rewardeps:
+                avg += rewardep
+            if len(self.rewardeps) != 0:
+                avg /= len(self.rewardeps)
+                print("Single avg: " + str(avg))
+            else:
+                print("Single avg: NaN")
+            self.rewardeps = []"""
 
         return observation, reward, done, {}
 
