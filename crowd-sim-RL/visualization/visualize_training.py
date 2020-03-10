@@ -11,14 +11,14 @@ from visualization.visualize_config import SIM_COLORS
 
 class VisualizationLive:
 
-    def __init__(self, sim_state: SimulationState):
+    def __init__(self, sim_state: SimulationState, zoom_factor):
         pygame.init()
 
         self.goals_visible = True
         self.lasers_visible = True
 
         self.offset = 0.0
-        self.zoom_factor = 10
+        self.zoom_factor = zoom_factor
         self.background_color = SIM_COLORS['white']
         self.border_width = 1
         self.border_color = SIM_COLORS['light gray']

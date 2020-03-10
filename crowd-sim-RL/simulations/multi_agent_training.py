@@ -13,10 +13,10 @@ phase_set = False
 
 
 def main():
-    filename = "hallway_squeeze_1"
+    filename = "hallway_squeeze_2"
     sim_state = parse_sim_state(filename)
 
-    checkpoint = ""
+    checkpoint = "/home/lennard/ray_results/DDPG/multi_0work_50_copy/checkpoint_50/checkpoint-50"
 
     train(sim_state, checkpoint)
 
@@ -60,7 +60,7 @@ def train(sim_state, checkpoint):
     config["num_gpus"] = 0
     config["eager"] = False
     config["exploration_should_anneal"] = True
-    config["schedule_max_timesteps"] = 200000
+    config["schedule_max_timesteps"] = 100000
     config["exploration_noise_type"] = "ou"
     config["observation_filter"] = "MeanStdFilter"
     config["clip_actions"] = True
@@ -71,7 +71,7 @@ def train(sim_state, checkpoint):
         "timesteps_per_iteration": config["timesteps_per_iteration"]
     }
     config["callbacks"] = {
-        "on_train_result": on_train_result
+        #"on_train_result": on_train_result
     }
 
     env_config = config["env_config"]

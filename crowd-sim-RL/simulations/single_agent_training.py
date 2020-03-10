@@ -12,7 +12,7 @@ from ray.tune import run, register_env
 
 def main():
     dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, "../test_XML_files/hallway_squeeze_1.xml")
+    filename = os.path.join(dirname, "../test_XML_files/hallway_test/hallway_single.xml")
     seed = 22222
     sim_state = XMLSimulationState(filename, seed).simulation_state
 
@@ -25,11 +25,12 @@ def initial_visualization(visualization):
 
 def train(sim_state):
     iterations = 50
-    visualization = VisualizationLive(sim_state)
+    zoom_factor = 5
+    visualization = VisualizationLive(sim_state, zoom_factor)
 
     config = ddpg_config.DDPG_CONFIG.copy()
     config["gamma"] = 0.95
-    config["num_workers"] = 0
+    config["num_workers"] = 3
     config["num_gpus"] = 0
     config["eager"] = False
     config["exploration_should_anneal"] = True

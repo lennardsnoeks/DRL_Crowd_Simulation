@@ -14,7 +14,7 @@ from visualization.visualize_config import SIM_COLORS
 
 class VisualizationSim:
 
-    def __init__(self, sim_state: SimulationState, trainer: Trainer):
+    def __init__(self, sim_state: SimulationState, trainer: Trainer, zoom_factor):
         pygame.init()
 
         self.FPS_FONT = pygame.font.SysFont("Verdana", 12)
@@ -26,7 +26,7 @@ class VisualizationSim:
         self.framerate = 30
 
         self.offset = 0.0
-        self.zoom_factor = 10
+        self.zoom_factor = zoom_factor
         self.background_color = SIM_COLORS['white']
         self.border_width = 1
         self.border_color = SIM_COLORS['light gray']
