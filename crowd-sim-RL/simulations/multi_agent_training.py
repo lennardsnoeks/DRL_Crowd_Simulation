@@ -1,5 +1,6 @@
 import os
 import ray
+from ray.rllib.agents.ddpg.ddpg_policy import DDPGTFPolicy
 from ray.tune import register_env, run
 from crowd_sim_RL.envs import SingleAgentEnv
 from crowd_sim_RL.envs.multi_agent_env import MultiAgentEnvironment
@@ -8,22 +9,22 @@ from visualization.visualize_training import VisualizationLive
 from threading import Thread
 from simulations import ddpg_config
 
-
-phase_set = False
-
+phase2_set = False
+phase3_set = False
+test_set = False
 
 def main():
-    filename = "hallway_squeeze_2"
+    filename = "crossway"
     sim_state = parse_sim_state(filename)
 
-    checkpoint = "/home/lennard/ray_results/DDPG/multi_0work_50_copy/checkpoint_50/checkpoint-50"
+    checkpoint = ""
 
     train(sim_state, checkpoint)
 
 
 def parse_sim_state(filename):
     dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, "../test_XML_files/" + filename + ".xml")
+    filename = os.path.join(dirname, "../test_XML_files/crossway/" + filename + ".xml")
     seed = 22222
     sim_state = XMLSimulationState(filename, seed).simulation_state
 
@@ -35,31 +36,57 @@ def initial_visualization(visualization):
 
 
 def on_train_result(info):
-    global phase_set
+    global phase2_set, phase3_set, test_set
     result = info["result"]
-    if not phase_set and result["episode_reward_mean"] > 177:
+    trainer = info["trainer"]
+    mean = result["episode_reward_mean"]
+
+    if not phase2_set and mean > 157:
         print("#### PHASE 2 ####")
         phase = 1
 
-        sim_state = parse_sim_state("hallway_squeeze_2")
+        sim_state = parse_sim_state("crossway_2")
 
-        trainer = info["trainer"]
         trainer.workers.foreach_worker(
             lambda ev: ev.foreach_env(
                 lambda env: env.set_phase(phase, sim_state)))
-        phase_set = True
+
+        phase2_set = True
+
+        trainer.save()
+
+    if not phase3_set and mean > 305:
+        print("#### PHASE 3 ####")
+        phase = 2
+
+        sim_state = parse_sim_state("crossway_more")
+
+        trainer.workers.foreach_worker(
+            lambda ev: ev.foreach_env(
+                lambda env: env.set_phase(phase, sim_state)))
+
+        phase3_set = True
+
+        trainer.save()
+
+    """if result["episode_reward_max"] >= 750:
+        trainer.save()"""
+
+    if not test_set and mean >= 286:
+        test_set = True
+        trainer.save()
 
 
 def train(sim_state, checkpoint):
     iterations = 100
-    checkpoint_freq = 50
+    checkpoint_freq = 10
 
     config = ddpg_config.DDPG_CONFIG.copy()
     config["gamma"] = 0.95
-    config["num_workers"] = 0
+    config["num_workers"] = 3
     config["num_gpus"] = 0
     config["eager"] = False
-    config["exploration_should_anneal"] = True
+    config["exploration_should_anneal"] = False
     config["schedule_max_timesteps"] = 100000
     config["exploration_noise_type"] = "ou"
     config["observation_filter"] = "MeanStdFilter"
@@ -71,7 +98,7 @@ def train(sim_state, checkpoint):
         "timesteps_per_iteration": config["timesteps_per_iteration"]
     }
     config["callbacks"] = {
-        #"on_train_result": on_train_result
+        "on_train_result": on_train_result
     }
 
     env_config = config["env_config"]
@@ -79,9 +106,10 @@ def train(sim_state, checkpoint):
     single_env = SingleAgentEnv(env_config)
     obs_space = single_env.get_observation_space()
     action_space = single_env.get_action_space()
+
     config["multiagent"] = {
         "policies": {
-            "policy_0": (None, obs_space, action_space, {"gamma": 0.95})
+            "policy_0": (DDPGTFPolicy, obs_space, action_space, {"gamma": 0.95})
         },
         "policy_mapping_fn": lambda agent_id: "policy_0"
     }
@@ -92,7 +120,8 @@ def train(sim_state, checkpoint):
     ray.init()
 
     stop = {
-        "training_iteration": iterations
+        "episode_reward_mean": 1400,
+        #"training_iteration": iterations
     }
 
     if checkpoint == "":

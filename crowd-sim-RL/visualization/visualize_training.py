@@ -14,6 +14,9 @@ class VisualizationLive:
     def __init__(self, sim_state: SimulationState, zoom_factor):
         pygame.init()
 
+        self.GOLDENROD = pygame.Color("goldenrod")
+        self.FPS_FONT = pygame.font.SysFont("Verdana", 12)
+
         self.goals_visible = True
         self.lasers_visible = True
 
@@ -49,11 +52,19 @@ class VisualizationLive:
                     self.time -= self.timer_interval
                     self.simulation_update()
 
+            self.show_size(self.screen)
+
             pygame.display.flip()
 
     def stop(self):
         self.active = False
         self.quit()
+
+    def show_size(self, window):
+        x_size = self.sim_state.clipped_bounds[1] - self.sim_state.clipped_bounds[0]
+        y_size = self.sim_state.clipped_bounds[3] - self.sim_state.clipped_bounds[2]
+        size_overlay = self.FPS_FONT.render(str(x_size) + " x " + str(y_size), True, self.GOLDENROD)
+        window.blit(size_overlay, (0, 14))
 
     def initialize_screen(self):
         self.width = self.sim_state.clipped_bounds[1] - self.sim_state.clipped_bounds[0]

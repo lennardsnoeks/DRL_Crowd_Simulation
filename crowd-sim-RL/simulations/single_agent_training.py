@@ -24,23 +24,23 @@ def initial_visualization(visualization):
 
 
 def train(sim_state):
-    iterations = 50
+    iterations = 100
     zoom_factor = 5
     visualization = VisualizationLive(sim_state, zoom_factor)
 
     config = ddpg_config.DDPG_CONFIG.copy()
     config["gamma"] = 0.95
-    config["num_workers"] = 3
+    config["num_workers"] = 0
     config["num_gpus"] = 0
     config["eager"] = False
-    config["exploration_should_anneal"] = True
+    config["exploration_should_anneal"] = False
     config["exploration_noise_type"] = "ou"
     config["observation_filter"] = "MeanStdFilter"
     config["clip_actions"] = True
     config["env_config"] = {
         "sim_state": sim_state,
         "visualization": visualization,
-        "mode": "x",
+        "mode": "train",
         "agent_id": 0,
         "timesteps_per_iteration": config["timesteps_per_iteration"]
     }

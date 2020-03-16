@@ -10,11 +10,11 @@ from visualization.visualize_simulation_multi import VisualizationSimMulti
 
 def main():
     dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, "../test_XML_files/hallway_squeeze_1.xml")
+    filename = os.path.join(dirname, "../test_XML_files/hallway_test/hallway_4.xml")
     seed = 22222
     sim_state = XMLSimulationState(filename, seed).simulation_state
 
-    checkpoint_path = "/home/lennard/ray_results/DDPG/single_0work_copy/checkpoint_50/checkpoint-50"
+    checkpoint_path = "/home/lennard/ray_results/DDPG/DDPG_multi_agent_env_6960a2d6_0_2020-03-15_14-53-55_w30woiy/checkpoint_308_2/checkpoint-308"
 
     simulate(sim_state, checkpoint_path)
 

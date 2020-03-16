@@ -36,6 +36,7 @@ class SingleAgentEnv(gym.Env):
 
         self.mode = env_config["mode"]
         self.load_params(env_config["sim_state"])
+
         if self.mode == "train":
             self.visualizer: VisualizationLive
             self.max_step_count = env_config["timesteps_per_iteration"]
@@ -144,7 +145,7 @@ class SingleAgentEnv(gym.Env):
                 observation = self.reset()
                 reward = 0
                 done = False"""
-            self.render()
+            #self.render()
 
         return observation, reward, done, {}
 

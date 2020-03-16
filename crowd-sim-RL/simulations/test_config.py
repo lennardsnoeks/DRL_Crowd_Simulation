@@ -6,7 +6,8 @@ from visualization.visualize_training import VisualizationLive
 
 def main():
     dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, "../test_XML_files/hallway_test/hallway_single.xml")
+    filename = os.path.join(dirname, "../test_XML_files/crossway/crossway.xml")
+    #filename = os.path.join(dirname, "../test_XML_files/obstacles.xml")
     seed = 22222
     sim_state = XMLSimulationState(filename, seed).simulation_state
 

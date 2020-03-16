@@ -26,7 +26,7 @@ class SimulationState:
 
         self.goal_tolerance = 2
         self.laser_history_amount = 3
-        self.laser_amount = 10
+        self.laser_amount = 20
 
     def shift_center(self):
         shift = np.array([[-self.clipped_bounds[0]], [-self.clipped_bounds[2]]])

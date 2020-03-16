@@ -9,11 +9,11 @@ from simulations import ddpg_config
 
 def main():
     dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, "../test_XML_files/hallway_squeeze_1.xml")
+    filename = os.path.join(dirname, "../test_XML_files/hallway/test/hallway_single.xml")
     seed = 22222
     sim_state = XMLSimulationState(filename, seed).simulation_state
 
-    checkpoint_path = "/home/lennard/ray_results/DDPG/DDPG_single_agent_env_dd7279da_0_2020-03-03_15-11-24hvw60iiv/checkpoint_25/checkpoint-25"
+    checkpoint_path = "/home/lennard/ray_results/DDPG/DDPG_single_agent_env_e7c06556_0_2020-03-11_15-09-21zixujkoi/checkpoint_100/checkpoint-100"
 
     simulate(sim_state, checkpoint_path)
 

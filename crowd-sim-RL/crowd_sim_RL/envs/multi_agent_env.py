@@ -28,10 +28,9 @@ class MultiAgentEnvironment(MultiAgentEnv):
             self.agents.append(SingleAgentEnv(self.env_config))
 
     def set_phase(self, phase, new_sim_state):
-        if phase == 1:
-            self.sim_state = new_sim_state
-            self.env_config["sim_state"] = self.sim_state
-            self.load_agents()
+        self.sim_state = new_sim_state
+        self.env_config["sim_state"] = self.sim_state
+        self.load_agents()
 
     def step(self, action_dict):
         obs, rew, done, info = {}, {}, {}, {}
