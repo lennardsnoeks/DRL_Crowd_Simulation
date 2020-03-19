@@ -11,8 +11,9 @@ from hyperopt import hp
 
 def main():
     dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, "../test_XML_files/obstacles.xml")
-    sim_state = XMLSimulationState(filename).simulation_state
+    filename = os.path.join(dirname, "../test_XML_files/hallway_test/hallway_single.xml")
+    seed = 22222
+    sim_state = XMLSimulationState(filename, seed).simulation_state
 
     train(sim_state)
 
@@ -24,10 +25,10 @@ def train(sim_state):
     config["clip_actions"] = True
 
     config["gamma"] = 0.95
-    config["exploration_should_anneal"] = True
+    config["exploration_should_anneal"] = False
     config["exploration_noise_type"] = "ou"
     config["observation_filter"] = "NoFilter"
-    config["train_batch_size"] = 32
+    config["train_batch_size"] = 16
 
     config["env_config"] = {
         "sim_state": sim_state,
@@ -45,10 +46,10 @@ def train(sim_state):
         "gamma": hp.uniform("gamma", 0.95, 0.99),
         "actor_hiddens": hp.choice("actor_hiddens", [[64, 64], [400, 300]]),
         "critic_hiddens": hp.choice("critic_hiddens", [[64, 64], [400, 300]]),
-        "exploration_noise_type": hp.choice("exploration_noise_type", ["ou", "gaussian"]),
-        "exploration_should_anneal": hp.choice("exploration_should_anneal", [True, False]),
+        #"exploration_noise_type": hp.choice("exploration_noise_type", ["ou", "gaussian"]),
+        #"exploration_should_anneal": hp.choice("exploration_should_anneal", [True, False]),
         "observation_filter": hp.choice("observation_filter", ["NoFilter", "MeanStdFilter"]),
-        "train_batch_size": hp.choice("train_batch_size", [32, 64])
+        "train_batch_size": hp.choice("train_batch_size", [16, 32, 64])
     }
 
     current_best_params = [
@@ -56,8 +57,8 @@ def train(sim_state):
             "gamma": 0.95,
             "actor_hiddens": 0,
             "critic_hiddens": 0,
-            "exploration_noise_type": 0,
-            "exploration_should_anneal": 0,
+            #"exploration_noise_type": 0,
+            #"exploration_should_anneal": 0,
             "observation_filter": 0,
             "train_batch_size": 0
         }
@@ -69,10 +70,10 @@ def train(sim_state):
     scheduler = AsyncHyperBandScheduler(metric="episode_reward_mean", mode="max")
 
     stop = {
-        "training_iteration": 10
+        "episode_reward_mean": 175
     }
 
-    analysis = run("DDPG", name="tpe", num_samples=20, search_alg=search, scheduler=scheduler, stop=stop, config=config)
+    analysis = run("DDPG", name="tpe", num_samples=4, search_alg=search, scheduler=scheduler, stop=stop, config=config)
 
     print("Best config: ", analysis.get_best_config(metric="episode_reward_mean"))
 

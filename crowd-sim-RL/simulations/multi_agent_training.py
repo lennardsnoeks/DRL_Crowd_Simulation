@@ -13,6 +13,7 @@ phase2_set = False
 phase3_set = False
 test_set = False
 
+
 def main():
     filename = "crossway"
     sim_state = parse_sim_state(filename)
@@ -83,7 +84,7 @@ def train(sim_state, checkpoint):
 
     config = ddpg_config.DDPG_CONFIG.copy()
     config["gamma"] = 0.95
-    config["num_workers"] = 3
+    config["num_workers"] = 0
     config["num_gpus"] = 0
     config["eager"] = False
     config["exploration_should_anneal"] = False

@@ -9,11 +9,11 @@ from simulations import ddpg_config
 
 def main():
     dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, "../test_XML_files/hallway/test/hallway_single.xml")
+    filename = os.path.join(dirname, "../test_XML_files/obstacles.xml")
     seed = 22222
     sim_state = XMLSimulationState(filename, seed).simulation_state
 
-    checkpoint_path = "/home/lennard/ray_results/DDPG/DDPG_single_agent_env_e7c06556_0_2020-03-11_15-09-21zixujkoi/checkpoint_100/checkpoint-100"
+    checkpoint_path = "/home/lennard/ray_results/DDPG_SingleAgentEnv_2020-03-18_21-28-39y6_r_aru/checkpoint_100/checkpoint-100"
 
     simulate(sim_state, checkpoint_path)
 
@@ -38,7 +38,8 @@ def simulate(sim_state, checkpoint_path):
     trainer = ddpg.DDPGTrainer(env=SingleAgentEnv, config=config)
     trainer.restore(checkpoint_path)
 
-    visualization_sim = VisualizationSim(sim_state, trainer)
+    zoom_factor = 10
+    visualization_sim = VisualizationSim(sim_state, trainer, zoom_factor)
     visualization_sim.run()
 
 

@@ -36,39 +36,39 @@
   </suggestedCameraView>
 
   <obstacle>
-    <xmin>-31.5</xmin>
-    <xmax>-30.5</xmax>
+    <xmin>-26.5</xmin>
+    <xmax>-25.5</xmax>
     <ymin>0</ymin>
     <ymax>1</ymax>
-    <zmin>-24</zmin>
-    <zmax>24</zmax>
+    <zmin>-15</zmin>
+    <zmax>15</zmax>
   </obstacle>
 
   <obstacle>
-    <xmin>-31.5</xmin>
-    <xmax>31.5</xmax>
+    <xmin>-26.5</xmin>
+    <xmax>26.5</xmax>
     <ymin>0</ymin>
     <ymax>1</ymax>
-    <zmin>-24</zmin>
-    <zmax>-23</zmax>
+    <zmin>-15</zmin>
+    <zmax>-14</zmax>
   </obstacle>
 
   <obstacle>
-    <xmin>-31.5</xmin>
-    <xmax>31.5</xmax>
+    <xmin>-26.5</xmin>
+    <xmax>26.5</xmax>
     <ymin>0</ymin>
     <ymax>1</ymax>
-    <zmin>23</zmin>
-    <zmax>24</zmax>
+    <zmin>14</zmin>
+    <zmax>15</zmax>
   </obstacle>
 
   <obstacle>
-    <xmin>30.5</xmin>
-    <xmax>31.5</xmax>
+    <xmin>25.5</xmin>
+    <xmax>26.5</xmax>
     <ymin>0</ymin>
     <ymax>1</ymax>
-    <zmin>-24</zmin>
-    <zmax>24</zmax>
+    <zmin>-15</zmin>
+    <zmax>15</zmax>
   </obstacle>
 
   <obstacleRegion>
@@ -80,8 +80,8 @@
       <xmax>12</xmax>
       <ymin>0</ymin>
       <ymax>1</ymax>
-      <zmin>-5</zmin>
-      <zmax>15</zmax>
+      <zmin>-10</zmin>
+      <zmax>10</zmax>
     </regionBounds>
   </obstacleRegion>
 
@@ -95,7 +95,7 @@
     </initialConditions>
     <goalSequence>
       <seekStaticTarget>
-        <targetLocation> <x>15</x> <y>0</y> <z>10</z> </targetLocation>
+        <targetLocation> <x>18</x> <y>0</y> <z>0</z> </targetLocation>
         <desiredSpeed>1.2</desiredSpeed>
         <timeDuration>1000.0</timeDuration>
       </seekStaticTarget>

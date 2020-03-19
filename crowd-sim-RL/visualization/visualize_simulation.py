@@ -4,7 +4,6 @@ import math
 import copy
 import numpy as np
 from pygame.locals import *
-from ray.rllib import MultiAgentEnv
 from ray.rllib.agents import Trainer
 
 from crowd_sim_RL.envs import SingleAgentEnv
@@ -22,6 +21,7 @@ class VisualizationSim:
 
         self.goals_visible = True
         self.lasers_visible = False
+        self.show_path = True
 
         self.framerate = 30
 
@@ -33,6 +33,11 @@ class VisualizationSim:
         self.obstacle_color = SIM_COLORS['gray']
         self.sim_state = copy.deepcopy(sim_state)
         self.trainer = trainer
+
+        self.history_all_agents = [len(sim_state.agents)]
+        for agent in self.sim_state.agents:
+            previous_positions = [agent.pos]
+            self.history_all_agents[agent.id] = previous_positions
 
     def run(self):
         pygame.init()
@@ -52,30 +57,31 @@ class VisualizationSim:
         prev_reward = 0
         state = self.trainer.get_policy().get_initial_state()
 
-        while not done:
+        while True:
             dt = clock.tick(self.framerate)
 
             self.process_events()
 
-            linear_vel, angular_vel = self.trainer.compute_action(observation,
-                                                                  state=state,
-                                                                  prev_action=prev_action,
-                                                                  prev_reward=prev_reward)
+            if not done:
+                linear_vel, angular_vel = self.trainer.compute_action(observation,
+                                                                      state=state,
+                                                                      prev_action=prev_action,
+                                                                      prev_reward=prev_reward)
 
-            scale = dt / 1000
+                scale = dt / 1000
 
-            action = [linear_vel, angular_vel]
-            action_rescale = [linear_vel * scale, angular_vel * scale]
+                action = [linear_vel, angular_vel]
+                action_rescale = [linear_vel * scale, angular_vel * scale]
 
-            observation, reward, done, info = env.step(action_rescale)
+                observation, reward, done, info = env.step(action_rescale)
 
-            prev_action = action
-            prev_reward = reward
+                prev_action = action
+                prev_reward = reward
 
-            agents = env.get_agents()
-            self.sim_state.agents = agents
+                agents = env.get_agents()
+                self.sim_state.agents = agents
 
-            self.simulation_update()
+                self.simulation_update()
 
             self.show_fps(self.screen, clock)
             self.show_size(self.screen)
@@ -152,6 +158,7 @@ class VisualizationSim:
             pygame.draw.line(self.screen, SIM_COLORS['black'], (x_min, y_max), (x_max, y_max), 1)
 
     def draw_agents(self):
+        i = 0
         for agent in self.sim_state.agents:
             color = Color(agent.color[0], agent.color[1], agent.color[2])
             agent_pos_x = agent.pos[0, 0] * self.zoom_factor
@@ -164,6 +171,19 @@ class VisualizationSim:
             point2_y = (agent_pos_y + (orientation_2d[1] * agent.radius * self.zoom_factor))
 
             pygame.draw.line(self.screen, SIM_COLORS['white'], (agent_pos_x, agent_pos_y), (point2_x, point2_y), 1)
+
+            if self.show_path:
+                self.history_all_agents[agent.id].append(agent.pos)
+                history = self.history_all_agents[agent.id]
+
+                for i in range(0, len(history)):
+                    if i == len(history) - 1:
+                        break
+                    pos = history[i]
+                    pos2 = history[i + 1]
+                    pygame.draw.line(self.screen, color,
+                                     (pos[0, 0] * self.zoom_factor, pos[1, 0] * self.zoom_factor),
+                                     (pos2[0, 0] * self.zoom_factor, pos2[1, 0] * self.zoom_factor))
 
     def draw_goals(self):
         unique_goals = []

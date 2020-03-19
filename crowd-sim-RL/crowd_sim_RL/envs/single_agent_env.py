@@ -14,13 +14,13 @@ class SingleAgentEnv(gym.Env):
         self.step_count = 0
         self.time_step = 0.1
 
-        #self.reward_goal = 4
-        self.reward_goal = 5
-        #self.reward_collision = 5
-        self.reward_collision = 10
-        self.reward_promote_forward1 = 2
+        self.reward_goal = 4
+        #self.reward_goal = 5
+        self.reward_collision = 5
+        #self.reward_collision = 10
+        """self.reward_promote_forward1 = 2
         self.reward_promote_forward2 = 2
-        self.reward_promote_forward3 = 0.1
+        self.reward_promote_forward3 = 0.1"""
         self.reward_goal_reached = 10
 
         self.sim_state: SimulationState
@@ -125,6 +125,7 @@ class SingleAgentEnv(gym.Env):
                   self.reward_promote_forward3"""
 
         # clip and assign new position and orientation to the agent
+        previous_pos = agent.pos
         new_pos = self._clip_pos(new_pos)
         agent.pos = new_pos
         agent.orientation = new_ori
@@ -138,16 +139,36 @@ class SingleAgentEnv(gym.Env):
         observation = [internal_state, external_state_laser, external_state_type]
 
         if self.mode == "train":
-            """# When training, do manual reset once max steps/iter is reached because RLLIB only resets when goal is reached
-            self.step_count += 1
-            if self.step_count == self.max_step_count:
-                self.step_count = 0
+            # When training, do manual reset once if the agent is stuck in local optima
+            if self.step_count == 0:
+                agent_x = previous_pos[0, 0]
+                agent_y = previous_pos[1, 0]
+                self.box = [agent_x - 1, agent_x + 1, agent_y - 1, agent_y + 1]
+            elif self.step_count == self.max_step_count:
                 observation = self.reset()
                 reward = 0
-                done = False"""
-            #self.render()
+                done = False
+                self.step_count = 0
+
+            if self.in_local_optima(agent.pos):
+                self.step_count += 1
+            else:
+                self.step_count = 0
+
+            self.render()
 
         return observation, reward, done, {}
+
+    def in_local_optima(self, pos):
+        agent_x = pos[0, 0]
+        agent_y = pos[1, 0]
+
+        x_min = self.box[0]
+        x_max = self.box[1]
+        y_min = self.box[2]
+        y_max = self.box[3]
+
+        return x_min <= agent_x <= x_max and y_min <= agent_y <= y_max
 
     def _clip_pos(self, pos):
         if pos[0, 0] < self.bounds[0]:
@@ -212,7 +233,7 @@ class SingleAgentEnv(gym.Env):
         x_end = 0
         y_end = 0
         type = 0
-        iteration_step = 0.05
+        iteration_step = 0.2
         collision = False
 
         x_agent = current_agent.pos[0, 0]
@@ -230,7 +251,7 @@ class SingleAgentEnv(gym.Env):
 
             for agent in self.steering_agents:
                 if current_agent.id == agent.id:
-                    for goal in agent.goals:
+                    """for goal in agent.goals:
                         if self._point_in_circle(distant_x, distant_y, goal[0, 0], goal[1, 0],
                                                  self.sim_state.goal_tolerance):
                             if distance_to_object < distance:
@@ -238,7 +259,7 @@ class SingleAgentEnv(gym.Env):
                                 x_end = distant_x
                                 y_end = distant_y
                                 collision = True
-                                type = 5
+                                type = 0"""
                 else:
                     if self._point_in_circle(distant_x, distant_y, agent.pos[0, 0], agent.pos[1, 0], agent.radius):
                         distance = distance_to_object
@@ -254,7 +275,7 @@ class SingleAgentEnv(gym.Env):
                         x_end = distant_x
                         y_end = distant_y
                         collision = True
-                        type = 15
+                        type = 20
                         break
 
             if collision:
@@ -279,23 +300,29 @@ class SingleAgentEnv(gym.Env):
 
     def _detect_collisions(self, current_agent):
         reward = 0
+        collision = False
+
         # detect collision with obstacles
         for obstacle in self.obstacles:
             if self._collision_circle_rectangle(obstacle.x, obstacle.y, obstacle.width, obstacle.height,
                                                 current_agent.pos[0, 0], current_agent.pos[1, 0], current_agent.radius):
                 reward -= self.reward_collision
+                collision = True
 
         # detect collision with other agents
-        for agent in self.steering_agents:
-            if current_agent.id != agent.id:
-                if self._collision_circle_circle(current_agent.pos[0, 0], current_agent.pos[1, 0], current_agent.radius,
-                                                 agent.pos[0, 0], agent.pos[1, 0], agent.radius):
-                    reward -= self.reward_collision
+        if not collision:
+            for agent in self.steering_agents:
+                if current_agent.id != agent.id:
+                    if self._collision_circle_circle(current_agent.pos[0, 0], current_agent.pos[1, 0], current_agent.radius,
+                                                     agent.pos[0, 0], agent.pos[1, 0], agent.radius):
+                        reward -= self.reward_collision
+                        collision = True
 
         # detect collision with world bounds
-        if self._collision_bound(current_agent.pos[0, 0], current_agent.pos[1, 0],
-                                 self.bounds[0], self.bounds[1], self.bounds[2], self.bounds[3]):
-            reward -= self.reward_collision
+        if not collision:
+            if self._collision_bound(current_agent.pos[0, 0], current_agent.pos[1, 0],
+                                     self.bounds[0], self.bounds[1], self.bounds[2], self.bounds[3]):
+                reward -= self.reward_collision
 
         return reward
 

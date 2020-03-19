@@ -24,7 +24,7 @@ class SimulationState:
         self.bounds = []
         self.clipped_bounds = []
 
-        self.goal_tolerance = 2
+        self.goal_tolerance = 4
         self.laser_history_amount = 3
         self.laser_amount = 20
 
