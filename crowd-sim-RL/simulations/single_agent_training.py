@@ -49,7 +49,7 @@ def train(sim_state):
         "visualization": visualization,
         "mode": "train",
         "agent_id": 0,
-        "timesteps_per_iteration": 1000
+        "timesteps_reset": 1000
     }
 
     """register_env("single_agent_env", lambda _: SingleAgentEnv(config["env_config"]))

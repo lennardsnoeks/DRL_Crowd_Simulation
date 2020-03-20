@@ -1,3 +1,4 @@
+# created by Bram Vanherle, adjusted by me
 import xml.etree.ElementTree as ET
 import numpy as np
 import random
