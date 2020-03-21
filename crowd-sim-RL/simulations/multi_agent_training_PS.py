@@ -95,7 +95,6 @@ def train(sim_state, checkpoint):
     config["env_config"] = {
         "sim_state": sim_state,
         "mode": "multi_train",
-        "agent_id": 0,
         "timesteps_reset": config["timesteps_per_iteration"]
     }
     config["callbacks"] = {

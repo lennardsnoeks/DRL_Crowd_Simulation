@@ -9,7 +9,7 @@ from simulations import ddpg_config
 
 
 def main():
-    filename = "crossway"
+    filename = "hallway_2"
     sim_state = parse_sim_state(filename)
 
     checkpoint = ""
@@ -19,7 +19,7 @@ def main():
 
 def parse_sim_state(filename):
     dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, "../test_XML_files/crossway/" + filename + ".xml")
+    filename = os.path.join(dirname, "../test_XML_files/hallway_test/" + filename + ".xml")
     seed = 22222
     sim_state = XMLSimulationState(filename, seed).simulation_state
 
@@ -34,10 +34,6 @@ def train(sim_state, checkpoint):
     iterations = 100
     checkpoint_freq = 10
 
-    ids = []
-    for agent in sim_state.agents:
-        ids.append(agent.id)
-
     config = ddpg_config.DDPG_CONFIG.copy()
     config["gamma"] = 0.95
     config["num_workers"] = 0
@@ -51,7 +47,7 @@ def train(sim_state, checkpoint):
     config["env_config"] = {
         "sim_state": sim_state,
         "mode": "multi_train",
-        "timesteps_per_iteration": config["timesteps_per_iteration"]
+        "timesteps_reset": config["timesteps_per_iteration"]
     }
 
     register_env("multi_agent_centralized", lambda _: MultiAgentCentralized(config["env_config"]))

@@ -26,14 +26,15 @@ class MultiAgentCentralized(gym.Env):
 
         self.WORLD_BOUND = 0
 
-        self.action_space = self.make_action_space()
-
         self.mode = env_config["mode"]
         self.load_params(env_config["sim_state"])
 
+        self.action_space = self.make_action_space()
+
+        self.max_step_count = env_config["timesteps_reset"]
+
         if self.mode == "train_vis":
             self.visualizer: VisualizationLive
-            self.max_step_count = env_config["timesteps_reset"]
             self._set_visualizer(env_config["visualization"])
 
     def _set_visualizer(self, visualizer: VisualizationLive):
@@ -56,7 +57,8 @@ class MultiAgentCentralized(gym.Env):
         self.observation_space = self.make_observation_space()
 
     def make_action_space(self):
-        min = [], max = []
+        min = []
+        max = []
         for _ in self.sim_state.agents:
             min.append(self.MIN_LIN_VELO)
             min.append(-self.MAX_ANG_VELO)
@@ -155,7 +157,7 @@ class MultiAgentCentralized(gym.Env):
             external_states_laser, external_states_type = self._get_external_state(agent, external_states_laser,
                                                                                    external_states_type)
 
-            if self.mode == "train":
+            if "train" in self.mode:
                 # When training, do manual reset once if the agent is stuck in local optima
                 if self.step_count == 0:
                     agent_x = previous_pos[0, 0]
@@ -172,10 +174,11 @@ class MultiAgentCentralized(gym.Env):
                 else:
                     self.step_count = 0
 
+        if "vis" in self.mode:
+            self.render()
+
         internal_state = np.array(internal_states)
         observation = [internal_state, external_states_laser, external_states_type]
-
-        self.render()
 
         return observation, reward, done, {}
 

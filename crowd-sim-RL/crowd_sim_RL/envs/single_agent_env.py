@@ -37,9 +37,10 @@ class SingleAgentEnv(gym.Env):
         self.mode = env_config["mode"]
         self.load_params(env_config["sim_state"])
 
+        self.max_step_count = env_config["timesteps_reset"]
+
         if self.mode == "train_vis":
             self.visualizer: VisualizationLive
-            self.max_step_count = env_config["timesteps_per_iteration"]
             self._set_visualizer(env_config["visualization"])
 
     def _set_visualizer(self, visualizer: VisualizationLive):
@@ -138,7 +139,7 @@ class SingleAgentEnv(gym.Env):
         external_state_laser, external_state_type = self._get_external_state(agent)
         observation = [internal_state, external_state_laser, external_state_type]
 
-        if self.mode == "train":
+        if "train" in self.mode:
             # When training, do manual reset once if the agent is stuck in local optima
             if self.step_count == 0:
                 agent_x = previous_pos[0, 0]
@@ -155,6 +156,7 @@ class SingleAgentEnv(gym.Env):
             else:
                 self.step_count = 0
 
+        if "vis" in self.mode:
             self.render()
 
         return observation, reward, done, {}

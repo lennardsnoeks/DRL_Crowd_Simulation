@@ -9,13 +9,9 @@ from visualization.visualize_training import VisualizationLive
 from threading import Thread
 from simulations import ddpg_config
 
-phase2_set = False
-phase3_set = False
-test_set = False
-
 
 def main():
-    filename = "crossway"
+    filename = "hallway_2"
     sim_state = parse_sim_state(filename)
 
     checkpoint = ""
@@ -25,7 +21,7 @@ def main():
 
 def parse_sim_state(filename):
     dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, "../test_XML_files/crossway/" + filename + ".xml")
+    filename = os.path.join(dirname, "../test_XML_files/hallway_test/" + filename + ".xml")
     seed = 22222
     sim_state = XMLSimulationState(filename, seed).simulation_state
 
@@ -36,53 +32,12 @@ def initial_visualization(visualization):
     visualization.run()
 
 
-def on_train_result(info):
-    global phase2_set, phase3_set, test_set
-    result = info["result"]
-    trainer = info["trainer"]
-    mean = result["episode_reward_mean"]
-
-    if not phase2_set and mean > 157:
-        print("#### PHASE 2 ####")
-        phase = 1
-
-        sim_state = parse_sim_state("crossway_2")
-
-        trainer.workers.foreach_worker(
-            lambda ev: ev.foreach_env(
-                lambda env: env.set_phase(phase, sim_state)))
-
-        phase2_set = True
-
-        trainer.save()
-
-    if not phase3_set and mean > 305:
-        print("#### PHASE 3 ####")
-        phase = 2
-
-        sim_state = parse_sim_state("crossway_more")
-
-        trainer.workers.foreach_worker(
-            lambda ev: ev.foreach_env(
-                lambda env: env.set_phase(phase, sim_state)))
-
-        phase3_set = True
-
-        trainer.save()
-
-    """if result["episode_reward_max"] >= 750:
-        trainer.save()"""
-
-    if not test_set and mean >= 286:
-        test_set = True
-        trainer.save()
-
-
 def make_multi_agent_config(sim_state, config):
     multi_agent_config = {}
     policy_dict = {}
 
     env_config = config["env_config"]
+    env_config["agent_id"] = 0
 
     single_env = SingleAgentEnv(env_config)
     obs_space = single_env.get_observation_space()
@@ -93,7 +48,7 @@ def make_multi_agent_config(sim_state, config):
         policy_dict[policy_id] = (DDPGTFPolicy, obs_space, action_space, {"gamma": 0.95})
 
     multi_agent_config["policies"] = policy_dict
-    multi_agent_config["policy_mapping_fn"] = lambda agent_id: ("policy_" + str(agent_id))
+    multi_agent_config["policy_mapping_fn"] = lambda agent_id: "policy_" + str(agent_id)
 
     return multi_agent_config
 
@@ -115,11 +70,7 @@ def train(sim_state, checkpoint):
     config["env_config"] = {
         "sim_state": sim_state,
         "mode": "multi_train",
-        "agent_id": 0,
         "timesteps_reset": config["timesteps_per_iteration"]
-    }
-    config["callbacks"] = {
-        "on_train_result": on_train_result
     }
 
     multi_agent_config = make_multi_agent_config(sim_state, config)
@@ -131,8 +82,7 @@ def train(sim_state, checkpoint):
     ray.init()
 
     stop = {
-        "episode_reward_mean": 1400,
-        #"training_iteration": iterations
+        "training_iteration": iterations
     }
 
     if checkpoint == "":
