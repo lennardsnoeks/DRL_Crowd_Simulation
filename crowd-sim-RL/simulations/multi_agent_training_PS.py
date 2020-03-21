@@ -44,13 +44,12 @@ def on_train_result(info):
 
     if not phase2_set and mean > 157:
         print("#### PHASE 2 ####")
-        phase = 1
 
         sim_state = parse_sim_state("crossway_2")
 
         trainer.workers.foreach_worker(
             lambda ev: ev.foreach_env(
-                lambda env: env.set_phase(phase, sim_state)))
+                lambda env: env.set_phase(sim_state)))
 
         phase2_set = True
 
@@ -58,13 +57,12 @@ def on_train_result(info):
 
     if not phase3_set and mean > 305:
         print("#### PHASE 3 ####")
-        phase = 2
 
         sim_state = parse_sim_state("crossway_more")
 
         trainer.workers.foreach_worker(
             lambda ev: ev.foreach_env(
-                lambda env: env.set_phase(phase, sim_state)))
+                lambda env: env.set_phase(sim_state)))
 
         phase3_set = True
 
@@ -120,14 +118,15 @@ def train(sim_state, checkpoint):
     ray.init()
 
     stop = {
-        "episode_reward_mean": 1400,
+        "episode_reward_mean": 305,
         #"training_iteration": iterations
     }
 
+    name = "hallway_2"
     if checkpoint == "":
-        run("DDPG", checkpoint_freq=checkpoint_freq, stop=stop, config=config)
+        run("DDPG", name=name, checkpoint_freq=checkpoint_freq, stop=stop, config=config)
     else:
-        run("DDPG", checkpoint_freq=checkpoint_freq, stop=stop, config=config, restore=checkpoint)
+        run("DDPG", name=name, checkpoint_freq=checkpoint_freq, stop=stop, config=config, restore=checkpoint)
 
 
 if __name__ == "__main__":

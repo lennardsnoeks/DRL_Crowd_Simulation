@@ -1,14 +1,17 @@
 import gym
 import numpy as np
 import math
+import copy
 from gym import spaces
 from utils.steerbench_parser import SimulationState
 from visualization.visualize_training import VisualizationLive
+from threading import Thread
 
 
 class MultiAgentCentralized(gym.Env):
 
     def __init__(self, env_config):
+        self.first_time = True
         self.step_count = 0
         self.time_step = 0.1
 
@@ -19,6 +22,7 @@ class MultiAgentCentralized(gym.Env):
         self.reward_goal_reached = 10
 
         self.sim_state: SimulationState
+        self.visualizer: VisualizationLive
 
         self.MIN_LIN_VELO = -0.5
         self.MAX_LIN_VELO = 1.5
@@ -28,19 +32,16 @@ class MultiAgentCentralized(gym.Env):
 
         self.mode = env_config["mode"]
         self.load_params(env_config["sim_state"])
-
-        self.action_space = self.make_action_space()
-
         self.max_step_count = env_config["timesteps_reset"]
 
-        if self.mode == "train_vis":
-            self.visualizer: VisualizationLive
-            self._set_visualizer(env_config["visualization"])
+        self.action_space = self.make_action_space()
 
     def _set_visualizer(self, visualizer: VisualizationLive):
         self.visualizer = visualizer
 
     def load_params(self, sim_state: SimulationState):
+        self.orig_sim_state = copy.deepcopy(sim_state)
+
         self.sim_state = sim_state
 
         self._load_world()
@@ -93,7 +94,21 @@ class MultiAgentCentralized(gym.Env):
 
         return observation_space
 
+    def initial_visualization(self, visualization):
+        visualization.run()
+
+    def setup_visualization(self):
+        zoom_factor = 10
+        visualization = VisualizationLive(self.sim_state, zoom_factor)
+        thread = Thread(target=self.initial_visualization, args=(visualization,))
+        thread.start()
+        self._set_visualizer(visualization)
+        self.first_time = False
+
     def step(self, action):
+        if self.first_time and "vis" in self.mode:
+            self.setup_visualization()
+
         reward = 0
         done = False
 
@@ -157,7 +172,7 @@ class MultiAgentCentralized(gym.Env):
             external_states_laser, external_states_type = self._get_external_state(agent, external_states_laser,
                                                                                    external_states_type)
 
-            if "train" in self.mode:
+            """if "train" in self.mode:
                 # When training, do manual reset once if the agent is stuck in local optima
                 if self.step_count == 0:
                     agent_x = previous_pos[0, 0]
@@ -172,7 +187,7 @@ class MultiAgentCentralized(gym.Env):
                 if self.in_local_optima(agent.pos):
                     self.step_count += 1
                 else:
-                    self.step_count = 0
+                    self.step_count = 0"""
 
         if "vis" in self.mode:
             self.render()
@@ -386,6 +401,8 @@ class MultiAgentCentralized(gym.Env):
         return x_p <= x_min or x_p >= x_max or y_p <= y_min or y_p >= y_max
 
     def reset(self):
+        self.sim_state = copy.deepcopy(self.orig_sim_state)
+
         self._load_world()
 
         internal_states = []

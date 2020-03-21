@@ -4,7 +4,6 @@ import math
 import copy
 from gym import spaces
 from utils.steerbench_parser import SimulationState
-from visualization.visualize_training import VisualizationLive
 
 
 class SingleAgentEnv(gym.Env):
@@ -38,13 +37,6 @@ class SingleAgentEnv(gym.Env):
         self.load_params(env_config["sim_state"])
 
         self.max_step_count = env_config["timesteps_reset"]
-
-        if self.mode == "train_vis":
-            self.visualizer: VisualizationLive
-            self._set_visualizer(env_config["visualization"])
-
-    def _set_visualizer(self, visualizer: VisualizationLive):
-        self.visualizer = visualizer
 
     def load_params(self, sim_state: SimulationState):
         if "multi" not in self.mode:
@@ -155,9 +147,6 @@ class SingleAgentEnv(gym.Env):
                 self.step_count += 1
             else:
                 self.step_count = 0
-
-        if "vis" in self.mode:
-            self.render()
 
         return observation, reward, done, {}
 
@@ -394,7 +383,7 @@ class SingleAgentEnv(gym.Env):
         return self.steering_agents
 
     def render(self, mode='human'):
-        self.visualizer.update_agents(self.steering_agents)
+        pass
 
     def get_observation_space(self):
         return self.observation_space

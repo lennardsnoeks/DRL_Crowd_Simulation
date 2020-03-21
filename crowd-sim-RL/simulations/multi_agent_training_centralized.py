@@ -3,13 +3,11 @@ import ray
 from ray.tune import register_env, run
 from crowd_sim_RL.envs.multi_agent_env_centralized import MultiAgentCentralized
 from utils.steerbench_parser import XMLSimulationState
-from visualization.visualize_training import VisualizationLive
-from threading import Thread
 from simulations import ddpg_config
 
 
 def main():
-    filename = "hallway_2"
+    filename = "hallway_single"
     sim_state = parse_sim_state(filename)
 
     checkpoint = ""
@@ -46,7 +44,7 @@ def train(sim_state, checkpoint):
     config["clip_actions"] = True
     config["env_config"] = {
         "sim_state": sim_state,
-        "mode": "multi_train",
+        "mode": "train_vis",
         "timesteps_reset": config["timesteps_per_iteration"]
     }
 
@@ -56,13 +54,15 @@ def train(sim_state, checkpoint):
     ray.init()
 
     stop = {
-        "training_iteration": iterations
+        "episode_reward_mean": 305,
+        # "training_iteration": iterations
     }
 
+    name = "hallway_2"
     if checkpoint == "":
-        run("DDPG", checkpoint_freq=checkpoint_freq, stop=stop, config=config)
+        run("DDPG", name=name, checkpoint_freq=checkpoint_freq, stop=stop, config=config)
     else:
-        run("DDPG", checkpoint_freq=checkpoint_freq, stop=stop, config=config, restore=checkpoint)
+        run("DDPG", name=name, checkpoint_freq=checkpoint_freq, stop=stop, config=config, restore=checkpoint)
 
 
 if __name__ == "__main__":
