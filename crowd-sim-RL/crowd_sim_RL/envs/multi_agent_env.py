@@ -18,13 +18,20 @@ class MultiAgentEnvironment(MultiAgentEnv):
         self.load_agents()
 
         self.mode = env_config["mode"]
-        self.max_step_count = env_config["timesteps_per_iteration"]
+
+        if "train" in self.mode:
+            self.max_step_count = env_config["timesteps_reset"]
 
     def step(self, action_dict):
         if self.first_time and "vis" in self.mode:
             self.setup_visualization()
 
         obs, rew, done, info = {}, {}, {}, {}
+
+        # do this step to ensure that all agents have the same reference point from the previous timestep
+        for i in range(0, len(self.agents)):
+            compare_agents = copy.deepcopy(self.sim_state.agents)
+            self.agents[i].set_compare_state(compare_agents)
 
         for i, action in action_dict.items():
             obs[i], rew[i], done[i], info[i] = self.agents[i].step(action)
@@ -44,6 +51,11 @@ class MultiAgentEnvironment(MultiAgentEnv):
         self.dones = set()
         self.sim_state = copy.deepcopy(self.original_sim_state)
 
+        # do this step to ensure that all agents have the same reference point from the previous timestep
+        for i in range(0, len(self.agents)):
+            compare_agents = copy.deepcopy(self.sim_state.agents)
+            self.agents[i].set_compare_state(compare_agents)
+
         for agent in self.agents:
             agent.load_params(self.sim_state)
 
@@ -54,10 +66,10 @@ class MultiAgentEnvironment(MultiAgentEnv):
 
     def setup_visualization(self):
         zoom_factor = 10
-        visualization = VisualizationLive(self.sim_state, zoom_factor)
-        thread = Thread(target=self.initial_visualization, args=(visualization,))
+        visualizer = VisualizationLive(self.sim_state, zoom_factor)
+        thread = Thread(target=self.initial_visualization, args=(visualizer,))
         thread.start()
-        self._set_visualizer(visualization)
+        self.visualizer = visualizer
         self.first_time = False
 
     def load_agents(self):
@@ -72,9 +84,6 @@ class MultiAgentEnvironment(MultiAgentEnv):
         self.sim_state = new_sim_state
         self.env_config["sim_state"] = self.sim_state
         self.load_agents()
-
-    def _set_visualizer(self, visualizer: VisualizationLive):
-        self.visualizer = visualizer
 
     def render(self):
         self.visualizer.update_agents(self.sim_state.agents)

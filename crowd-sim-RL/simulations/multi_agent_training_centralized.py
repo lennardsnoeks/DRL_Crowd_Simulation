@@ -3,11 +3,11 @@ import ray
 from ray.tune import register_env, run
 from crowd_sim_RL.envs.multi_agent_env_centralized import MultiAgentCentralized
 from utils.steerbench_parser import XMLSimulationState
-from simulations import ddpg_config
+from simulations.configs import ddpg_config
 
 
 def main():
-    filename = "hallway_single"
+    filename = "hallway_2"
     sim_state = parse_sim_state(filename)
 
     checkpoint = ""
@@ -54,7 +54,7 @@ def train(sim_state, checkpoint):
     ray.init()
 
     stop = {
-        "episode_reward_mean": 305,
+        "episode_reward_mean": 260,
         # "training_iteration": iterations
     }
 

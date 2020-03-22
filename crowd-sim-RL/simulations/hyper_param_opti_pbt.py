@@ -1,11 +1,10 @@
 import os
 import ray
-import random
 from ray.tune import run, register_env
 from ray.tune.schedulers import PopulationBasedTraining
 from crowd_sim_RL.envs import SingleAgentEnv
 from utils.steerbench_parser import XMLSimulationState
-from simulations import ddpg_config
+from simulations.configs import ddpg_config
 
 
 def main():

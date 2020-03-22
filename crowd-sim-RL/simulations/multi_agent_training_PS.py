@@ -5,9 +5,7 @@ from ray.tune import register_env, run
 from crowd_sim_RL.envs import SingleAgentEnv
 from crowd_sim_RL.envs.multi_agent_env import MultiAgentEnvironment
 from utils.steerbench_parser import XMLSimulationState
-from visualization.visualize_training import VisualizationLive
-from threading import Thread
-from simulations import ddpg_config
+from simulations.configs import ddpg_config
 
 phase2_set = False
 phase3_set = False
@@ -92,7 +90,7 @@ def train(sim_state, checkpoint):
     config["clip_actions"] = True
     config["env_config"] = {
         "sim_state": sim_state,
-        "mode": "multi_train",
+        "mode": "multi_train_vis",
         "timesteps_reset": config["timesteps_per_iteration"]
     }
     config["callbacks"] = {
@@ -118,7 +116,7 @@ def train(sim_state, checkpoint):
     ray.init()
 
     stop = {
-        "episode_reward_mean": 305,
+        "episode_reward_mean": 260,
         #"training_iteration": iterations
     }
 

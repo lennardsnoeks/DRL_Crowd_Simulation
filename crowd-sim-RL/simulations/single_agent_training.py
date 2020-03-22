@@ -2,14 +2,12 @@ import os
 import ray
 import math
 import ray.rllib.agents.ddpg as ddpg
-import ray.rllib.agents.ppo as ppo
 from ray.tune.logger import pretty_print
 from crowd_sim_RL.envs import SingleAgentEnv
 from utils.steerbench_parser import XMLSimulationState
 from visualization.visualize_training import VisualizationLive
 from threading import Thread
-from simulations import ddpg_config, ppo_config
-from ray.tune import run, register_env
+from simulations.configs import ppo_config, ddpg_config
 
 
 def main():

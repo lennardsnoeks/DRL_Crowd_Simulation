@@ -36,7 +36,8 @@ class SingleAgentEnv(gym.Env):
         self.mode = env_config["mode"]
         self.load_params(env_config["sim_state"])
 
-        self.max_step_count = env_config["timesteps_reset"]
+        if "train" in self.mode:
+            self.max_step_count = env_config["timesteps_reset"]
 
     def load_params(self, sim_state: SimulationState):
         if "multi" not in self.mode:
@@ -240,7 +241,7 @@ class SingleAgentEnv(gym.Env):
             distant_y += y_ori * iteration_step
             distance_to_object = math.sqrt((x_agent - distant_x) ** 2 + (y_agent - distant_y) ** 2)
 
-            for agent in self.steering_agents:
+            for agent in self.compare_agents:
                 if current_agent.id == agent.id:
                     """for goal in agent.goals:
                         if self._point_in_circle(distant_x, distant_y, goal[0, 0], goal[1, 0],
@@ -302,7 +303,7 @@ class SingleAgentEnv(gym.Env):
 
         # detect collision with other agents
         if not collision:
-            for agent in self.steering_agents:
+            for agent in self.compare_agents:
                 if current_agent.id != agent.id:
                     if self._collision_circle_circle(current_agent.pos[0, 0], current_agent.pos[1, 0], current_agent.radius,
                                                      agent.pos[0, 0], agent.pos[1, 0], agent.radius):
@@ -378,6 +379,9 @@ class SingleAgentEnv(gym.Env):
         observation = [internal_state, external_state_laser, external_state_type]
 
         return observation
+
+    def set_compare_state(self, agents):
+        self.compare_agents = agents
 
     def get_agents(self):
         return self.steering_agents

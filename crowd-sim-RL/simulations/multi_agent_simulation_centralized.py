@@ -1,7 +1,7 @@
 import os
 import ray
 import ray.rllib.agents.ddpg as ddpg
-from crowd_sim_RL.envs import SingleAgentEnv
+from crowd_sim_RL.envs.multi_agent_env_centralized import MultiAgentCentralized
 from utils.steerbench_parser import XMLSimulationState
 from visualization.visualize_simulation import VisualizationSim
 from simulations.configs import ddpg_config
@@ -35,7 +35,7 @@ def simulate(sim_state, checkpoint_path):
     }
 
     ray.init()
-    trainer = ddpg.DDPGTrainer(env=SingleAgentEnv, config=config)
+    trainer = ddpg.DDPGTrainer(env=MultiAgentCentralized, config=config)
     trainer.restore(checkpoint_path)
 
     zoom_factor = 10
