@@ -10,6 +10,9 @@ from simulations.configs import ddpg_config
 phase2_set = False
 phase3_set = False
 test_set = False
+iterations_count = 0
+iterations_max = 100
+mean_max = 300
 
 
 def main():
@@ -30,16 +33,18 @@ def parse_sim_state(filename):
     return sim_state
 
 
-def initial_visualization(visualization):
-    visualization.run()
-
-
 def on_train_result(info):
-    global phase2_set, phase3_set, test_set
+    global iterations_count, iterations_max, mean_max, phase2_set, phase3_set, test_set
     result = info["result"]
     trainer = info["trainer"]
     mean = result["episode_reward_mean"]
 
+    # always checkpoint on last iteration or if mean reward > asked mean reward
+    if iterations_count == iterations_max - 1 or mean > mean_max:
+        trainer.save()
+    iterations_count += 1
+
+    # curriculum learning
     if not phase2_set and mean > 157:
         print("#### PHASE 2 ####")
 
@@ -74,8 +79,12 @@ def on_train_result(info):
         trainer.save()
 
 
+def on_episode_end(info):
+    pass
+
+
 def train(sim_state, checkpoint):
-    iterations = 100
+    global iterations_max, mean_max
     checkpoint_freq = 10
 
     config = ddpg_config.DDPG_CONFIG.copy()
@@ -94,7 +103,8 @@ def train(sim_state, checkpoint):
         "timesteps_reset": config["timesteps_per_iteration"]
     }
     config["callbacks"] = {
-        "on_train_result": on_train_result
+        "on_train_result": on_train_result,
+        "on_episode_end": on_episode_end
     }
 
     env_config = config["env_config"]
@@ -116,8 +126,8 @@ def train(sim_state, checkpoint):
     ray.init()
 
     stop = {
-        "episode_reward_mean": 260,
-        #"training_iteration": iterations
+        "episode_reward_mean": mean_max,
+        #"training_iteration": iterations_max
     }
 
     name = "hallway_2"

@@ -5,6 +5,10 @@ from crowd_sim_RL.envs.multi_agent_env_centralized import MultiAgentCentralized
 from utils.steerbench_parser import XMLSimulationState
 from simulations.configs import ddpg_config
 
+iterations_count = 0
+iterations_max = 100
+mean_max = 300
+
 
 def main():
     filename = "hallway_2"
@@ -24,12 +28,20 @@ def parse_sim_state(filename):
     return sim_state
 
 
-def initial_visualization(visualization):
-    visualization.run()
+def on_train_result(info):
+    global iterations_count, iterations_max, mean_max
+    result = info["result"]
+    trainer = info["trainer"]
+    mean = result["episode_reward_mean"]
+
+    # always checkpoint on last iteration or if mean reward > asked mean reward
+    if iterations_count == iterations_max - 1 or mean > mean_max:
+        trainer.save()
+    iterations_count += 1
 
 
 def train(sim_state, checkpoint):
-    iterations = 100
+    global iterations_max, mean_max
     checkpoint_freq = 10
 
     config = ddpg_config.DDPG_CONFIG.copy()
@@ -47,6 +59,9 @@ def train(sim_state, checkpoint):
         "mode": "train_vis",
         "timesteps_reset": config["timesteps_per_iteration"]
     }
+    config["callbacks"] = {
+        "on_train_result": on_train_result,
+    }
 
     register_env("multi_agent_centralized", lambda _: MultiAgentCentralized(config["env_config"]))
     config["env"] = "multi_agent_centralized"
@@ -54,8 +69,8 @@ def train(sim_state, checkpoint):
     ray.init()
 
     stop = {
-        "episode_reward_mean": 260,
-        # "training_iteration": iterations
+        "episode_reward_mean": mean_max,
+        # "training_iteration": iterations_max
     }
 
     name = "hallway_2"
