@@ -21,6 +21,7 @@ class SingleAgentEnv(gym.Env):
         self.reward_promote_forward2 = 2
         self.reward_promote_forward3 = 0.1"""
         self.reward_goal_reached = 10
+        self.reset_pos_necessary = False
 
         self.sim_state: SimulationState
 
@@ -40,8 +41,7 @@ class SingleAgentEnv(gym.Env):
             self.max_step_count = env_config["timesteps_reset"]
 
     def load_params(self, sim_state: SimulationState):
-        if "multi" not in self.mode:
-            self.orig_sim_state = copy.deepcopy(sim_state)
+        self.orig_sim_state = copy.deepcopy(sim_state)
 
         self.sim_state = sim_state
 
@@ -71,6 +71,12 @@ class SingleAgentEnv(gym.Env):
         linear_vel = action[0]
         angular_vel = action[1]
         agent = self.steering_agents[self.id]
+
+        if self.reset_pos_necessary:
+            agent.pos[0, 0] = self.orig_sim_state.agents[agent.id].pos[0, 0]
+            agent.pos[1, 0] = self.orig_sim_state.agents[agent.id].pos[1, 0]
+            agent.orientation = self.orig_sim_state.agents[agent.id].orientation
+            self.reset_pos_necessary = False
 
         if "train" in self.mode:
             linear_vel *= self.time_step
@@ -139,9 +145,7 @@ class SingleAgentEnv(gym.Env):
                 agent_y = previous_pos[1, 0]
                 self.box = [agent_x - 1, agent_x + 1, agent_y - 1, agent_y + 1]
             elif self.step_count == self.max_step_count:
-                observation = self.reset()
-                reward = 0
-                done = False
+                self.reset_pos_necessary = True
                 self.step_count = 0
 
             if self.in_local_optima(agent.pos):

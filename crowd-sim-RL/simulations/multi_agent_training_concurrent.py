@@ -9,11 +9,11 @@ from simulations.configs import ddpg_config
 
 iterations_count = 0
 iterations_max = 100
-mean_max = 300
+mean_max = 600
 
 
 def main():
-    filename = "hallway_2"
+    filename = "hallway_4"
     sim_state = parse_sim_state(filename)
 
     checkpoint = ""
@@ -23,7 +23,7 @@ def main():
 
 def parse_sim_state(filename):
     dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, "../test_XML_files/hallway_test/" + filename + ".xml")
+    filename = os.path.join(dirname, "../test_XML_files/hallway_slimmer/" + filename + ".xml")
     seed = 22222
     sim_state = XMLSimulationState(filename, seed).simulation_state
 
@@ -99,7 +99,7 @@ def train(sim_state, checkpoint):
         # "training_iteration": iterations_max
     }
 
-    name = "hallway_2"
+    name = "hallway_4"
     if checkpoint == "":
         run("DDPG", name=name, checkpoint_freq=checkpoint_freq, stop=stop, config=config)
     else:

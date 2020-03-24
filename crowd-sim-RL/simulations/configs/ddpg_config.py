@@ -66,7 +66,7 @@ DDPG_CONFIG = with_common_config({
     "exploration_final_scale": 0.02,
     # valid values: "ou" (time-correlated, like original DDPG paper),
     # "gaussian" (IID, like TD3 paper)
-    "exploration_noise_type": "ou",
+    "exploration_noise_type": "gaussian",
     # OU-noise scale; this can be used to scale down magnitude of OU noise
     # before adding to actions (requires "exploration_noise_type" to be "ou")
     "exploration_ou_noise_scale": 0.1,
@@ -76,7 +76,7 @@ DDPG_CONFIG = with_common_config({
     "exploration_ou_sigma": 0.2,
     # gaussian stddev of act noise for exploration (requires
     # "exploration_noise_type" to be "gaussian")
-    "exploration_gaussian_sigma": 0.1,
+    "exploration_gaussian_sigma": 0.2,
     # If True parameter space noise will be used for exploration
     # See https://blog.openai.com/better-exploration-with-parameter-noise/
     "parameter_noise": False,

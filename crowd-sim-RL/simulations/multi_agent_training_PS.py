@@ -16,7 +16,7 @@ mean_max = 300
 
 
 def main():
-    filename = "crossway"
+    filename = "hallway_2"
     sim_state = parse_sim_state(filename)
 
     checkpoint = ""
@@ -26,7 +26,7 @@ def main():
 
 def parse_sim_state(filename):
     dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, "../test_XML_files/crossway/" + filename + ".xml")
+    filename = os.path.join(dirname, "../test_XML_files/hallway_test/" + filename + ".xml")
     seed = 22222
     sim_state = XMLSimulationState(filename, seed).simulation_state
 
@@ -45,7 +45,7 @@ def on_train_result(info):
     iterations_count += 1
 
     # curriculum learning
-    if not phase2_set and mean > 157:
+    """if not phase2_set and mean > 157:
         print("#### PHASE 2 ####")
 
         sim_state = parse_sim_state("crossway_2")
@@ -71,12 +71,12 @@ def on_train_result(info):
 
         trainer.save()
 
-    """if result["episode_reward_max"] >= 750:
-        trainer.save()"""
+    if result["episode_reward_max"] >= 750:
+        trainer.save()
 
     if not test_set and mean >= 286:
         test_set = True
-        trainer.save()
+        trainer.save()"""
 
 
 def on_episode_end(info):
@@ -100,6 +100,7 @@ def train(sim_state, checkpoint):
     config["env_config"] = {
         "sim_state": sim_state,
         "mode": "multi_train_vis",
+        "agent_id": 0,
         "timesteps_reset": config["timesteps_per_iteration"]
     }
     config["callbacks"] = {

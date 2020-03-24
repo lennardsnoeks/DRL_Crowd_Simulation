@@ -15,7 +15,7 @@ class VisualizationLive:
         pygame.init()
 
         self.goals_visible = True
-        self.lasers_visible = True
+        self.lasers_visible = False
 
         self.offset = 0.0
         self.zoom_factor = zoom_factor
@@ -64,7 +64,7 @@ class VisualizationLive:
         x_size = self.sim_state.clipped_bounds[1] - self.sim_state.clipped_bounds[0]
         y_size = self.sim_state.clipped_bounds[3] - self.sim_state.clipped_bounds[2]
         size_overlay = self.FPS_FONT.render(str(x_size) + " x " + str(y_size), True, self.GOLDENROD)
-        window.blit(size_overlay, (10, 14))
+        window.blit(size_overlay, (10, 4))
 
     def initialize_screen(self):
         self.width = self.sim_state.clipped_bounds[1] - self.sim_state.clipped_bounds[0]

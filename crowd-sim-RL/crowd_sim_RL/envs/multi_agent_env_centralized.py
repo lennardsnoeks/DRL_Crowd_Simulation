@@ -164,8 +164,7 @@ class MultiAgentCentralized(gym.Env):
                 if new_distance_to_goal <= max_distance_to_goal:
                     shortest_goal = goal
                 if new_distance_to_goal < self.sim_state.goal_tolerance:
-                    dones[agent.id] = True
-                    #done = True
+                    done = True
                     reward += self.reward_goal_reached
             reward += self.reward_goal * diff
 
