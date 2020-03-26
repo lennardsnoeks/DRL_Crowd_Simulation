@@ -3,7 +3,7 @@ import xml.etree.ElementTree as ET
 import numpy as np
 import random
 import math
-from utils.objects import Obstacle, Agent
+from utils.objects import Obstacle, Agent, Goal
 
 
 rainbow = [
@@ -28,15 +28,13 @@ class SimulationState:
         self.goal_tolerance = 2
         self.laser_history_amount = 3
         self.laser_amount = 20
-        self.goal_width = 13
-        self.goal_height = 1
 
     def shift_center(self):
         shift = np.array([[-self.clipped_bounds[0]], [-self.clipped_bounds[2]]])
         for agent in self.agents:
             agent.pos = np.add(agent.pos, shift)
             for i in range(len(agent.goals)):
-                agent.goals[i] = np.add(agent.goals[i], shift)
+                agent.goals[i].pos = np.add(agent.goals[i].pos, shift)
 
         for obstacle in self.obstacles:
             obstacle.x = obstacle.x + shift[0, 0]
@@ -69,10 +67,10 @@ class SimulationState:
             ]
             for goal in agent.goals:
                 clipped_bounds = [
-                    min(clipped_bounds[0], goal[0, 0]),
-                    max(clipped_bounds[1], goal[0, 0]),
-                    min(clipped_bounds[2], goal[1, 0]),
-                    max(clipped_bounds[3], goal[1, 0])
+                    min(clipped_bounds[0], goal.pos[0, 0]),
+                    max(clipped_bounds[1], goal.pos[0, 0]),
+                    min(clipped_bounds[2], goal.pos[1, 0]),
+                    max(clipped_bounds[3], goal.pos[1, 0])
                 ]
 
         for obstacle in self.obstacles:
@@ -99,9 +97,9 @@ class SimulationState:
 
             for goal_num, goal in enumerate(agent.goals):
                 for obstacle in self.obstacles:
-                    if obstacle.contains(goal[0, 0], goal[1, 0]):
-                        agent.goals[goal_num] = np.array([[obstacle.x + obstacle.width + 1],
-                                                          [obstacle.y + obstacle.height + 1]])
+                    if obstacle.contains(goal.pos[0, 0], goal.pos[1, 0]):
+                        agent.goals[goal_num].pos = np.array([[obstacle.x + obstacle.width + 1],
+                                                              [obstacle.y + obstacle.height + 1]])
 
 
 class XMLSimulationState:
@@ -182,20 +180,22 @@ class XMLSimulationState:
 
             goal_config = element.find('steerbench:goalSequence', self.namespace)
             goals = []
-            goals_ori = []
             for target in goal_config.findall('steerbench:seekStaticTarget', self.namespace):
-                goals.append(self.parse_vector(target.find('steerbench:targetLocation', self.namespace),
-                                               [bounds[0], bounds[1], bounds[4], bounds[5]]))
-                y_value = float(target.find('steerbench:targetLocation', self.namespace).find('steerbench:y', self.namespace).text)
-                goals_ori.append(y_value)
+                goal_pos = self.parse_vector(target.find('steerbench:targetLocation', self.namespace),
+                                             [bounds[0], bounds[1], bounds[4], bounds[5]])
+                type = float(target.find('steerbench:targetLocation', self.namespace).
+                             find('steerbench:y', self.namespace).text)
+                width = float(target.find('steerbench:desiredSpeed', self.namespace).text)
+                height = float(target.find('steerbench:timeDuration', self.namespace).text)
+                box = [width, height]
 
-            speed = float(initial_config.find('steerbench:speed', self.namespace).text)
+                goals.append(Goal(pos=goal_pos, type=type, box=box))
 
             orientation = math.atan2(direction[1, 0], direction[0, 0])
 
             self.simulation_state.agents.append(
-                Agent(pos=pos, radius=0.5, orientation=orientation, goals=goals, goals_ori=goals_ori,
-                      initial_speed=speed, fov=self.fov, id=len(self.simulation_state.agents), color=color)
+                Agent(pos=pos, radius=0.5, orientation=orientation, goals=goals, id=len(self.simulation_state.agents),
+                      color=color)
             )
 
     def parse_vector(self, element, bounds):

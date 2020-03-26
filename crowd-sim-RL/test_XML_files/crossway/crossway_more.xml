@@ -125,9 +125,9 @@
     </initialConditions>
     <goalSequence>
       <seekStaticTarget>
-        <targetLocation> <x>17</x> <y>-1</y> <z>0</z> </targetLocation>
-        <desiredSpeed>0.1</desiredSpeed>
-        <timeDuration>1000.0</timeDuration>
+        <targetLocation> <x>18</x> <y>1</y> <z>0</z> </targetLocation>
+        <desiredSpeed>2</desiredSpeed>
+        <timeDuration>14</timeDuration>
       </seekStaticTarget>
     </goalSequence>
 
@@ -150,9 +150,9 @@
     </initialConditions>
     <goalSequence>
       <seekStaticTarget>
-        <targetLocation> <x>0</x> <y>1</y> <z>-17</z> </targetLocation>
-        <desiredSpeed>0.1</desiredSpeed>
-        <timeDuration>1000.0</timeDuration>
+        <targetLocation> <x>0</x> <y>1</y> <z>-17.5</z> </targetLocation>
+        <desiredSpeed>15</desiredSpeed>
+        <timeDuration>2</timeDuration>
       </seekStaticTarget>
     </goalSequence>
 

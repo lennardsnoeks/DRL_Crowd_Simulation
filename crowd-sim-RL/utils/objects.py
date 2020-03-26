@@ -14,27 +14,32 @@ class Obstacle:
         return (self.x <= x <= (self.x + self.width)) and (self.y <= y <= (self.y + self.height))
 
 
+class Goal:
+    pos = None
+    type = 0
+    box = []
+
+    def __init__(self, pos, type, box):
+        self.pos = pos
+        self.type = type
+        self.box = box
+
+
 class Agent:
+    id = 0
     pos = None
     orientation = 0.0
     radius = 0.0
     goals = []
-    goals_ori = []
-    initial_speed = None
-    fov = 0.0
-    id = 0
     color = []
     laser_history = []
     type_history = []
     laser_lines = []
 
-    def __init__(self, pos, radius, orientation, goals, goals_ori, initial_speed, fov, id, color):
+    def __init__(self, pos, radius, orientation, goals, id, color):
         self.pos = pos
         self.radius = radius
         self.orientation = orientation
         self.goals = goals
-        self.goals_ori = goals_ori
-        self.initial_speed = initial_speed
-        self.fov = fov
         self.id = id
         self.color = color

@@ -45,7 +45,7 @@ def on_train_result(info):
     if iterations_count == iterations_max - 1 or mean > mean_max or count_over > count_over_max:
         trainer.save()
     iterations_count += 1
-    
+
     # curriculum learning
     """if not phase2_set and mean > 157:
         print("#### PHASE 2 ####")

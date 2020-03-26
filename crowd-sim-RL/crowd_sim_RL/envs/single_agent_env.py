@@ -17,9 +17,6 @@ class SingleAgentEnv(gym.Env):
         #self.reward_goal = 5
         self.reward_collision = 5
         #self.reward_collision = 10
-        """self.reward_promote_forward1 = 2
-        self.reward_promote_forward2 = 2
-        self.reward_promote_forward3 = 0.1"""
         self.reward_goal_reached = 10
         self.reset_pos_necessary = False
 
@@ -100,9 +97,8 @@ class SingleAgentEnv(gym.Env):
         shortest_goal = None
         first = True
         for goal in agent.goals:
-            previous_distance_to_goal = math.sqrt(
-                (agent.pos[0, 0] - goal[0, 0]) ** 2 + (agent.pos[1, 0] - goal[1, 0]) ** 2)
-            new_distance_to_goal = math.sqrt((new_pos[0, 0] - goal[0, 0]) ** 2 + (new_pos[1, 0] - goal[1, 0]) ** 2)
+            previous_distance_to_goal = self._calculate_distance_goal(agent.pos, goal)
+            new_distance_to_goal = self._calculate_distance_goal(new_pos, goal)
             diff = previous_distance_to_goal - new_distance_to_goal
             if first:
                 max_distance_to_goal = new_distance_to_goal
@@ -113,16 +109,6 @@ class SingleAgentEnv(gym.Env):
                 done = True
                 reward += self.reward_goal_reached
         reward += self.reward_goal * diff
-
-        """test = self.reward_promote_forward1 * (linear_vel ** 2) * \
-        math.cos(self.reward_promote_forward2 * linear_vel * angular_vel) - self.reward_promote_forward3
-
-        # promote forward motion
-        linear_vel_pre_timestep = linear_vel / self.time_step
-        angular_vel_pre_timestep = angular_vel / self.time_step
-        reward += self.reward_promote_forward1 * (linear_vel_pre_timestep ** 2) * \
-                  math.cos(self.reward_promote_forward2 * linear_vel_pre_timestep * angular_vel_pre_timestep) - \
-                  self.reward_promote_forward3"""
 
         # clip and assign new position and orientation to the agent
         previous_pos = agent.pos
@@ -138,8 +124,8 @@ class SingleAgentEnv(gym.Env):
         external_state_laser, external_state_type = self._get_external_state(agent)
         observation = [internal_state, external_state_laser, external_state_type]
 
+        # When training, do manual reset once if the agent is stuck in local optima
         if "train" in self.mode:
-            # When training, do manual reset once if the agent is stuck in local optima
             if self.step_count == 0:
                 agent_x = previous_pos[0, 0]
                 agent_y = previous_pos[1, 0]
@@ -237,25 +223,39 @@ class SingleAgentEnv(gym.Env):
 
         distant_x = x_agent
         distant_y = y_agent
-        distance_to_object = math.sqrt((x_agent - distant_x) ** 2 + (y_agent - distant_y) ** 2)
+        distance_to_object = math.hypot(x_agent - distant_x, y_agent - distant_y)
 
         #while distance_to_object < 10:
         while True:
             distant_x += x_ori * iteration_step
             distant_y += y_ori * iteration_step
-            distance_to_object = math.sqrt((x_agent - distant_x) ** 2 + (y_agent - distant_y) ** 2)
+            distance_to_object = math.hypot(x_agent - distant_x, y_agent - distant_y)
 
             for agent in self.compare_agents:
                 if current_agent.id == agent.id:
                     for goal in agent.goals:
-                        if self._point_in_circle(distant_x, distant_y, goal[0, 0], goal[1, 0],
-                                                 self.sim_state.goal_tolerance):
-                            if distance_to_object < distance:
-                                distance = distance_to_object
-                                x_end = distant_x
-                                y_end = distant_y
-                                collision = True
-                                type = 0
+                        goal_found = False
+                        goal_type = goal.type
+                        if goal_type == 1:
+                            width = goal.box[0]
+                            height = goal.box[1]
+                            x_min = goal.pos[0, 0] - width / 2
+                            y_min = goal.pos[1, 0] - height / 2
+                            if self._point_in_rectangle(distant_x, distant_x,
+                                                        x_min, y_min, width, height):
+                                if distance_to_object < distance:
+                                    goal_found = True
+                        else:
+                            if self._point_in_circle(distant_x, distant_y, goal.pos[0, 0], goal.pos[1, 0],
+                                                     self.sim_state.goal_tolerance):
+                                if distance_to_object < distance:
+                                    goal_found = True
+                        if goal_found:
+                            distance = distance_to_object
+                            x_end = distant_x
+                            y_end = distant_y
+                            collision = True
+                            type = 0
                 else:
                     if self._point_in_circle(distant_x, distant_y, agent.pos[0, 0], agent.pos[1, 0], agent.radius):
                         distance = distance_to_object
@@ -322,6 +322,81 @@ class SingleAgentEnv(gym.Env):
 
         return reward
 
+    def reset(self):
+        if "multi" not in self.mode:
+            self.sim_state = copy.deepcopy(self.orig_sim_state)
+
+        self._load_world()
+
+        agent = self.steering_agents[self.id]
+        max_distance_to_goal = 0
+        first = True
+        shortest_goal = None
+        for goal in agent.goals:
+            distance_to_goal = self._calculate_distance_goal(agent, goal)
+            if first:
+                max_distance_to_goal = distance_to_goal
+                first = False
+            if distance_to_goal <= max_distance_to_goal:
+                shortest_goal = goal
+
+        internal_state = self._get_internal_state(agent, shortest_goal)
+        external_state_laser, external_state_type = self._get_external_state(agent)
+        observation = [internal_state, external_state_laser, external_state_type]
+
+        return observation
+
+    def set_compare_state(self, agents):
+        self.compare_agents = agents
+
+    def get_agents(self):
+        return self.steering_agents
+
+    def render(self, mode='human'):
+        pass
+
+    def get_observation_space(self):
+        return self.observation_space
+
+    def get_action_space(self):
+        return self.action_space
+
+    def _calculate_distance_goal(self, agent_pos, goal):
+        goal_type = goal.type
+        # distance to point
+        if goal_type == 0:
+            return math.hypot(agent_pos[0, 0] - goal.pos[0, 0], agent_pos[1, 0] - goal.pos[1, 0])
+        # distance to rectangle
+        else:
+            box = goal.box
+            width = box[0]
+            height = box[1]
+            x_min = goal.pos[0, 0] - width / 2
+            y_min = goal.pos[1, 0] - height / 2
+            x_max = x_min + width
+            y_max = y_min + height
+            x = agent_pos[0, 0]
+            y = agent_pos[1, 0]
+
+            if x < x_min:
+                if y < y_min:
+                    return math.hypot(x_min - x, y_min - y)
+                if y <= y_max:
+                    return x_min - x
+                return math.hypot(x_min - x, y_max - y)
+            elif x <= x_max:
+                if y < y_min:
+                    return y_min - y
+                if y <= y_max:
+                    return 0
+                return y - y_max
+            else:
+                if y < y_min:
+                    return math.hypot(x_max - x, y_min - y)
+                if y <= y_max:
+                    return x - x_max
+                return math.hypot(x_max - x, y_max - y)
+
     @staticmethod
     def _collision_circle_rectangle(x_rect, y_rect, width, height, x_circle, y_circle, r):
         x_test = x_circle
@@ -357,44 +432,9 @@ class SingleAgentEnv(gym.Env):
         return (x_p - x_c) ** 2 + (y_p - y_c) ** 2 < radius ** 2
 
     @staticmethod
+    def _point_in_rectangle(x_p, y_p, x_r, y_r, width, height):
+        return (x_r <= x_p <= (x_r + width)) and (y_r <= y_p <= (y_r + height))
+
+    @staticmethod
     def _collision_bound(x_p, y_p, x_min, x_max, y_min, y_max):
         return x_p <= x_min or x_p >= x_max or y_p <= y_min or y_p >= y_max
-
-    def reset(self):
-        if "multi" not in self.mode:
-            self.sim_state = copy.deepcopy(self.orig_sim_state)
-
-        self._load_world()
-
-        agent = self.steering_agents[self.id]
-        max_distance_to_goal = 0
-        first = True
-        shortest_goal = None
-        for goal in agent.goals:
-            distance_to_goal = math.sqrt((agent.pos[0, 0] - goal[0, 0]) ** 2 + (agent.pos[1, 0] - goal[1, 0]) ** 2)
-            if first:
-                max_distance_to_goal = distance_to_goal
-                first = False
-            if distance_to_goal <= max_distance_to_goal:
-                shortest_goal = goal
-
-        internal_state = self._get_internal_state(agent, shortest_goal)
-        external_state_laser, external_state_type = self._get_external_state(agent)
-        observation = [internal_state, external_state_laser, external_state_type]
-
-        return observation
-
-    def set_compare_state(self, agents):
-        self.compare_agents = agents
-
-    def get_agents(self):
-        return self.steering_agents
-
-    def render(self, mode='human'):
-        pass
-
-    def get_observation_space(self):
-        return self.observation_space
-
-    def get_action_space(self):
-        return self.action_space
