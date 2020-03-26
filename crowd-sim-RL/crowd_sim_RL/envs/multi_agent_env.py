@@ -38,8 +38,8 @@ class MultiAgentEnvironment(MultiAgentEnv):
             if done[i]:
                 self.dones.add(i)
 
-        #done["__all__"] = len(self.dones) > 0
-        done["__all__"] = len(self.dones) == len(self.agents)
+        done["__all__"] = len(self.dones) > 0
+        #done["__all__"] = len(self.dones) == len(self.agents)
 
         if "vis" in self.mode:
             self.render()

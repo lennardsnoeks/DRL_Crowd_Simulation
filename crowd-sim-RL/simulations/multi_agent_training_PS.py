@@ -12,11 +12,13 @@ phase3_set = False
 test_set = False
 iterations_count = 0
 iterations_max = 100
-mean_max = 300
+mean_max = 600
+count_over_max = 10
+count_over = 0
 
 
 def main():
-    filename = "hallway_2"
+    filename = "hallway_4"
     sim_state = parse_sim_state(filename)
 
     checkpoint = ""
@@ -26,7 +28,7 @@ def main():
 
 def parse_sim_state(filename):
     dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, "../test_XML_files/hallway_test/" + filename + ".xml")
+    filename = os.path.join(dirname, "../test_XML_files/hallway_slimmer/" + filename + ".xml")
     seed = 22222
     sim_state = XMLSimulationState(filename, seed).simulation_state
 
@@ -34,16 +36,16 @@ def parse_sim_state(filename):
 
 
 def on_train_result(info):
-    global iterations_count, iterations_max, mean_max, phase2_set, phase3_set, test_set
+    global iterations_count, count_over, count_over_max, iterations_max, mean_max, phase2_set, phase3_set, test_set
     result = info["result"]
     trainer = info["trainer"]
     mean = result["episode_reward_mean"]
 
     # always checkpoint on last iteration or if mean reward > asked mean reward
-    if iterations_count == iterations_max - 1 or mean > mean_max:
+    if iterations_count == iterations_max - 1 or mean > mean_max or count_over > count_over_max:
         trainer.save()
     iterations_count += 1
-
+    
     # curriculum learning
     """if not phase2_set and mean > 157:
         print("#### PHASE 2 ####")
@@ -80,7 +82,11 @@ def on_train_result(info):
 
 
 def on_episode_end(info):
-    pass
+    global count_over
+    episode = info["episode"]
+
+    if episode["reward"] > mean_max:
+        count_over += 1
 
 
 def train(sim_state, checkpoint):
@@ -131,7 +137,7 @@ def train(sim_state, checkpoint):
         #"training_iteration": iterations_max
     }
 
-    name = "hallway_2"
+    name = "hallway_4"
     if checkpoint == "":
         run("DDPG", name=name, checkpoint_freq=checkpoint_freq, stop=stop, config=config)
     else:

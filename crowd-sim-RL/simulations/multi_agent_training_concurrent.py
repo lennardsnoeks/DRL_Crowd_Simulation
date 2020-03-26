@@ -5,7 +5,7 @@ from ray.tune import register_env, run
 from crowd_sim_RL.envs import SingleAgentEnv
 from crowd_sim_RL.envs.multi_agent_env import MultiAgentEnvironment
 from utils.steerbench_parser import XMLSimulationState
-from simulations.configs import ddpg_config
+from simulations.configs import ddpg_config, ddpg_config2
 
 iterations_count = 0
 iterations_max = 100
@@ -74,7 +74,7 @@ def train(sim_state, checkpoint):
     config["eager"] = False
     config["exploration_should_anneal"] = False
     config["schedule_max_timesteps"] = 100000
-    config["exploration_noise_type"] = "ou"
+    config["exploration_noise_type"] = "gaussian"
     config["observation_filter"] = "MeanStdFilter"
     config["clip_actions"] = True
     config["env_config"] = {

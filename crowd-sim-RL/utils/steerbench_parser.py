@@ -25,9 +25,11 @@ class SimulationState:
         self.bounds = []
         self.clipped_bounds = []
 
-        self.goal_tolerance = 3
+        self.goal_tolerance = 2
         self.laser_history_amount = 3
         self.laser_amount = 20
+        self.goal_width = 13
+        self.goal_height = 1
 
     def shift_center(self):
         shift = np.array([[-self.clipped_bounds[0]], [-self.clipped_bounds[2]]])
@@ -180,17 +182,20 @@ class XMLSimulationState:
 
             goal_config = element.find('steerbench:goalSequence', self.namespace)
             goals = []
+            goals_ori = []
             for target in goal_config.findall('steerbench:seekStaticTarget', self.namespace):
                 goals.append(self.parse_vector(target.find('steerbench:targetLocation', self.namespace),
                                                [bounds[0], bounds[1], bounds[4], bounds[5]]))
+                y_value = float(target.find('steerbench:targetLocation', self.namespace).find('steerbench:y', self.namespace).text)
+                goals_ori.append(y_value)
 
             speed = float(initial_config.find('steerbench:speed', self.namespace).text)
 
             orientation = math.atan2(direction[1, 0], direction[0, 0])
 
             self.simulation_state.agents.append(
-                Agent(pos=pos, radius=0.5, orientation=orientation, goals=goals, initial_speed=speed, fov=self.fov,
-                      id=len(self.simulation_state.agents), color=color)
+                Agent(pos=pos, radius=0.5, orientation=orientation, goals=goals, goals_ori=goals_ori,
+                      initial_speed=speed, fov=self.fov, id=len(self.simulation_state.agents), color=color)
             )
 
     def parse_vector(self, element, bounds):

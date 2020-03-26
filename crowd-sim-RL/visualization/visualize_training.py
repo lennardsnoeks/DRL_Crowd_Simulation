@@ -137,16 +137,41 @@ class VisualizationLive:
 
     def draw_goals(self):
         unique_goals = []
+        unique_goals_ori = []
         for agent in self.sim_state.agents:
+            i = 0
             for goal in agent.goals:
                 if not (goal.tolist() in unique_goals):
                     unique_goals.append(goal.tolist())
+                    unique_goals_ori.append(agent.goals_ori[i])
+                i += 1
 
+        i = 0
         for goal in unique_goals:
             goal = np.array(goal)
-            pygame.draw.circle(self.screen, SIM_COLORS['green'],
-                               (int(goal[0, 0] * self.zoom_factor), int(goal[1, 0] * self.zoom_factor)),
-                               self.zoom_factor, 0)
+
+            if unique_goals_ori[i] == 1:
+                min_goal_x = goal[0, 0] - self.sim_state.goal_width / 2
+                min_goal_y = goal[1, 0] - self.sim_state.goal_height / 2
+                pygame.draw.rect(self.screen, SIM_COLORS['green'],
+                                 (int(min_goal_x * self.zoom_factor),
+                                  int(min_goal_y * self.zoom_factor),
+                                  self.sim_state.goal_width * self.zoom_factor,
+                                  self.sim_state.goal_height * self.zoom_factor))
+            elif unique_goals_ori[i] == -1:
+                min_goal_x = goal[0, 0] - self.sim_state.goal_height / 2
+                min_goal_y = goal[1, 0] - self.sim_state.goal_width / 2
+                pygame.draw.rect(self.screen, SIM_COLORS['green'],
+                                 (int(min_goal_x * self.zoom_factor),
+                                  int(min_goal_y * self.zoom_factor),
+                                  self.sim_state.goal_height * self.zoom_factor,
+                                  self.sim_state.goal_width * self.zoom_factor))
+            else:
+                pygame.draw.circle(self.screen, SIM_COLORS['green'],
+                                   (int(goal[0, 0] * self.zoom_factor), int(goal[1, 0] * self.zoom_factor)),
+                                   self.zoom_factor, 0)
+
+            i += 1
 
     def draw_lasers(self):
         for agent in self.sim_state.agents:

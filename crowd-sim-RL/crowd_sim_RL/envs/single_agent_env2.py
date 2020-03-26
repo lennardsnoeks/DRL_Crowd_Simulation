@@ -61,7 +61,7 @@ class SingleAgentEnv(gym.Env):
                        np.array([self.WORLD_BOUND, self.WORLD_BOUND])),
             spaces.Box(low=-self.WORLD_BOUND, high=self.WORLD_BOUND,
                        shape=(self.sim_state.laser_history_amount, self.sim_state.laser_amount + 1)),
-            spaces.Box(low=0, high=2000, shape=(self.sim_state.laser_history_amount, self.sim_state.laser_amount + 1))
+            spaces.Box(low=0, high=20, shape=(self.sim_state.laser_history_amount, self.sim_state.laser_amount + 1))
         ))
 
     def step(self, action):
@@ -247,7 +247,7 @@ class SingleAgentEnv(gym.Env):
 
             for agent in self.compare_agents:
                 if current_agent.id == agent.id:
-                    for goal in agent.goals:
+                    """for goal in agent.goals:
                         if self._point_in_circle(distant_x, distant_y, goal[0, 0], goal[1, 0],
                                                  self.sim_state.goal_tolerance):
                             if distance_to_object < distance:
@@ -255,14 +255,14 @@ class SingleAgentEnv(gym.Env):
                                 x_end = distant_x
                                 y_end = distant_y
                                 collision = True
-                                type = 0
+                                type = 0"""
                 else:
                     if self._point_in_circle(distant_x, distant_y, agent.pos[0, 0], agent.pos[1, 0], agent.radius):
                         distance = distance_to_object
                         x_end = distant_x
                         y_end = distant_y
                         collision = True
-                        type = 1000
+                        type = 10
 
             for obstacle in self.obstacles:
                 if obstacle.contains(distant_x, distant_y):
@@ -271,7 +271,7 @@ class SingleAgentEnv(gym.Env):
                         x_end = distant_x
                         y_end = distant_y
                         collision = True
-                        type = 2000
+                        type = 20
                         break
 
             if collision:
@@ -283,7 +283,7 @@ class SingleAgentEnv(gym.Env):
                         distance = distance_to_object
                         x_end = distant_x
                         y_end = distant_y
-                        type = 2000
+                        type = 20
                         collision = True
                     break
 

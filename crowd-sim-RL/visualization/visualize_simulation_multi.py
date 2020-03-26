@@ -169,7 +169,6 @@ class VisualizationSimMulti:
             pygame.draw.line(self.screen, SIM_COLORS['black'], (x_min, y_max), (x_max, y_max), 1)
 
     def draw_agents(self):
-        i = 0
         for agent in self.sim_state.agents:
             color = Color(agent.color[0], agent.color[1], agent.color[2])
             agent_pos_x = agent.pos[0, 0] * self.zoom_factor
@@ -198,16 +197,32 @@ class VisualizationSimMulti:
 
     def draw_goals(self):
         unique_goals = []
+        unique_goals_ori = []
         for agent in self.sim_state.agents:
-            for goal in agent.goals:
+            for i, goal in agent.goals:
                 if not (goal.tolist() in unique_goals):
                     unique_goals.append(goal.tolist())
+                    unique_goals_ori.append(agent.goals_ori[i])
 
-        for goal in unique_goals:
+        for i, goal in unique_goals:
             goal = np.array(goal)
-            pygame.draw.circle(self.screen, SIM_COLORS['green'],
-                               (int(goal[0, 0] * self.zoom_factor), int(goal[1, 0] * self.zoom_factor)),
-                               self.zoom_factor, 0)
+
+            if unique_goals_ori[i] == 1:
+                min_goal_x = goal[0, 0] - self.sim_state.goal_width / 2
+                min_goal_y = goal[1, 0] - self.sim_state.goal_height / 2
+                pygame.draw.rect(self.screen, SIM_COLORS['green'],
+                                 int(min_goal_x * self.zoom_factor), int(min_goal_y * self.zoom_factor),
+                                 self.sim_state.goal_width, self.sim_state.goal_height)
+            elif unique_goals_ori == -1:
+                min_goal_x = goal[0, 0] - self.sim_state.goal_height / 2
+                min_goal_y = goal[1, 0] - self.sim_state.goal_width / 2
+                pygame.draw.rect(self.screen, SIM_COLORS['green'],
+                                 int(min_goal_x * self.zoom_factor), int(min_goal_y * self.zoom_factor),
+                                 self.sim_state.goal_height, self.sim_state.goal_width)
+            else:
+                pygame.draw.circle(self.screen, SIM_COLORS['green'],
+                                   (int(goal[0, 0] * self.zoom_factor), int(goal[1, 0] * self.zoom_factor)),
+                                   self.zoom_factor, 0)
 
     def draw_lasers(self):
         for agent in self.sim_state.agents:

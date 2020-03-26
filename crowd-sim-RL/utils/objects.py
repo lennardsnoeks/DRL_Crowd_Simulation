@@ -19,6 +19,7 @@ class Agent:
     orientation = 0.0
     radius = 0.0
     goals = []
+    goals_ori = []
     initial_speed = None
     fov = 0.0
     id = 0
@@ -27,11 +28,12 @@ class Agent:
     type_history = []
     laser_lines = []
 
-    def __init__(self, pos, radius, orientation, goals, initial_speed, fov, id, color):
+    def __init__(self, pos, radius, orientation, goals, goals_ori, initial_speed, fov, id, color):
         self.pos = pos
         self.radius = radius
         self.orientation = orientation
         self.goals = goals
+        self.goals_ori = goals_ori
         self.initial_speed = initial_speed
         self.fov = fov
         self.id = id
