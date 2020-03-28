@@ -67,14 +67,14 @@ def train(sim_state, checkpoint):
     global iterations_max, mean_max
     checkpoint_freq = 10
 
-    config = ddpg_config.DDPG_CONFIG.copy()
+    config = ddpg_config2.DDPG_CONFIG.copy()
     config["gamma"] = 0.95
     config["num_workers"] = 0
     config["num_gpus"] = 0
     config["eager"] = False
-    config["exploration_should_anneal"] = False
+    """config["exploration_should_anneal"] = False
     config["schedule_max_timesteps"] = 100000
-    config["exploration_noise_type"] = "gaussian"
+    config["exploration_noise_type"] = "gaussian"""""
     config["observation_filter"] = "MeanStdFilter"
     config["clip_actions"] = True
     config["env_config"] = {

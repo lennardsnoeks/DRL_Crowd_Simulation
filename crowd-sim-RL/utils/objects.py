@@ -35,6 +35,7 @@ class Agent:
     laser_history = []
     type_history = []
     laser_lines = []
+    type_colors = []
 
     def __init__(self, pos, radius, orientation, goals, id, color):
         self.pos = pos

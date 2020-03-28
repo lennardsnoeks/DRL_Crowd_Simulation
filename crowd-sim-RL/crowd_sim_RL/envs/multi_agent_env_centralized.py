@@ -250,7 +250,7 @@ class MultiAgentCentralized(gym.Env):
     def _get_internal_state(agent, goal, internal_states):
         rotation_matrix_new = np.array([[math.cos(agent.orientation), -math.sin(agent.orientation)],
                                         [math.sin(agent.orientation), math.cos(agent.orientation)]])
-        relative_pos_agent_to_goal = np.subtract(goal, agent.pos)
+        relative_pos_agent_to_goal = np.subtract(goal.pos, agent.pos)
         internal_state = np.matmul(np.linalg.inv(rotation_matrix_new), relative_pos_agent_to_goal)
 
         internal_states.append(internal_state[0, 0])
@@ -416,7 +416,7 @@ class MultiAgentCentralized(gym.Env):
             first = True
             shortest_goal = None
             for goal in agent.goals:
-                distance_to_goal = self._calculate_distance_goal(agent, goal)
+                distance_to_goal = self._calculate_distance_goal(agent.pos, goal)
                 if first:
                     max_distance_to_goal = distance_to_goal
                     first = False

@@ -168,8 +168,7 @@ class VisualizationLive:
             for laser in agent.laser_lines:
                 laser_end_x = laser[0] * self.zoom_factor
                 laser_end_y = laser[1] * self.zoom_factor
-
-                type = agent.type_history[self.sim_state.laser_history_amount][i]
+                type = agent.type_colors[i]
                 if self.color_lasers and type == 0:
                     color = SIM_COLORS['green']
                 elif self.color_lasers and type == 1000:

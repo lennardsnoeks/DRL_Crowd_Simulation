@@ -8,3 +8,5 @@ crowd-sim-RL/.idea/
 .idea/
 
 *.pyc
+
+crowd-sim-RL/simulations/repro.py

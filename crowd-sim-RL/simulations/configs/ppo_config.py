@@ -35,7 +35,7 @@ PPO_CONFIG = with_common_config({
     # you set vf_share_layers: True.
     "vf_loss_coeff": 1.0,
     # Coefficient of the entropy regularizer.
-    "entropy_coeff": 0.0,
+    "entropy_coeff": 0.01,
     # Decay schedule for the entropy regularizer.
     "entropy_coeff_schedule": None,
     # PPO clip parameter.

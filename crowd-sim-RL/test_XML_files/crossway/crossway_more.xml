@@ -109,10 +109,10 @@
   </obstacle>
 
     <agentRegion>
-    <numAgents>5</numAgents>
+    <numAgents>3</numAgents>
     <regionBounds>
-      <xmin>-15</xmin>
-      <xmax>-10</xmax>
+      <xmin>-14</xmin>
+      <xmax>-9</xmax>
       <ymin>0</ymin>
       <ymax>0</ymax>
       <zmin>-5</zmin>
@@ -134,14 +134,14 @@
   </agentRegion>
 
     <agentRegion>
-    <numAgents>5</numAgents>
+    <numAgents>3</numAgents>
     <regionBounds>
       <xmin>-5</xmin>
       <xmax>5</xmax>
       <ymin>0</ymin>
       <ymax>0</ymax>
-      <zmin>10</zmin>
-      <zmax>15</zmax>
+      <zmin>8</zmin>
+      <zmax>13</zmax>
     </regionBounds>
     <initialConditions>
       <direction> <x>0</x> <y>0</y> <z>-1</z> </direction>

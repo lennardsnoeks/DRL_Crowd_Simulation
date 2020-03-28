@@ -46,8 +46,7 @@ def train(sim_state):
         "gamma": hp.uniform("gamma", 0.95, 0.99),
         "actor_hiddens": hp.choice("actor_hiddens", [[64, 64], [400, 300]]),
         "critic_hiddens": hp.choice("critic_hiddens", [[64, 64], [400, 300]]),
-        #"exploration_noise_type": hp.choice("exploration_noise_type", ["ou", "gaussian"]),
-        #"exploration_should_anneal": hp.choice("exploration_should_anneal", [True, False]),
+        "exploration_should_anneal": hp.choice("exploration_should_anneal", [True, False]),
         "observation_filter": hp.choice("observation_filter", ["NoFilter", "MeanStdFilter"]),
         "train_batch_size": hp.choice("train_batch_size", [16, 32, 64])
     }
@@ -57,20 +56,17 @@ def train(sim_state):
             "gamma": 0.95,
             "actor_hiddens": 0,
             "critic_hiddens": 0,
-            #"exploration_noise_type": 0,
-            #"exploration_should_anneal": 0,
+            "exploration_should_anneal": 0,
             "observation_filter": 0,
             "train_batch_size": 0
         }
     ]
 
     search = HyperOptSearch(space, metric="episode_reward_mean", mode="max", points_to_evaluate=current_best_params)
-    #search = HyperOptSearch(space, metric="episode_reward_mean", mode="max")
-
     scheduler = AsyncHyperBandScheduler(metric="episode_reward_mean", mode="max")
 
     stop = {
-        "episode_reward_mean": 175
+        "episode_reward_mean": 137
     }
 
     analysis = run("DDPG", name="tpe", num_samples=4, search_alg=search, scheduler=scheduler, stop=stop, config=config)

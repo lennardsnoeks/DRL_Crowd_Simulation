@@ -13,7 +13,7 @@ DDPG_CONFIG = with_common_config({
     # target policy smoothing
     # (this also replaces OU exploration noise with IID Gaussian exploration
     # noise, for now)
-    "smooth_target_policy": True,
+    "smooth_target_policy": False,
     # gaussian stddev of target action noise for smoothing
     "target_noise": 0.2,
     # target noise limit (bound)

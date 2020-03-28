@@ -72,7 +72,7 @@
   </obstacle>
 
   <obstacleRegion>
-    <numObstacles>10</numObstacles>
+    <numObstacles>15</numObstacles>
     <obstacleSize>1.0</obstacleSize>
     <obstacleHeight>0.2</obstacleHeight>
     <regionBounds>

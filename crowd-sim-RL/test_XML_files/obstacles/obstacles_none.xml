@@ -71,20 +71,6 @@
     <zmax>15</zmax>
   </obstacle>
 
-  <obstacleRegion>
-    <numObstacles>10</numObstacles>
-    <obstacleSize>1.0</obstacleSize>
-    <obstacleHeight>0.2</obstacleHeight>
-    <regionBounds>
-      <xmin>-12</xmin>
-      <xmax>12</xmax>
-      <ymin>0</ymin>
-      <ymax>1</ymax>
-      <zmin>-10</zmin>
-      <zmax>10</zmax>
-    </regionBounds>
-  </obstacleRegion>
-
   <agent>
     <name>A</name>
     <initialConditions>

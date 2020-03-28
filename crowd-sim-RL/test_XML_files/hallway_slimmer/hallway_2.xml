@@ -29,7 +29,7 @@
     <ymin>0</ymin>
     <ymax>1</ymax>
     <zmin>3</zmin>
-    <zmax>25</zmax>
+    <zmax>4</zmax>
   </obstacle>
 
   <obstacle>
@@ -37,7 +37,7 @@
     <xmax>25</xmax>
     <ymin>0</ymin>
     <ymax>1</ymax>
-    <zmin>-25</zmin>
+    <zmin>-4</zmin>
     <zmax>-3</zmax>
   </obstacle>
 

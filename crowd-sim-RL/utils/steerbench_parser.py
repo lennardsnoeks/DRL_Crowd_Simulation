@@ -25,7 +25,7 @@ class SimulationState:
         self.bounds = []
         self.clipped_bounds = []
 
-        self.goal_tolerance = 2
+        self.goal_tolerance = 0
         self.laser_history_amount = 3
         self.laser_amount = 20
 
@@ -151,10 +151,15 @@ class XMLSimulationState:
         goal_config = element.find('steerbench:goalSequence', self.namespace)
         goals = []
         for target in goal_config.findall('steerbench:seekStaticTarget', self.namespace):
-            goals.append(self.parse_vector(target.find('steerbench:targetLocation', self.namespace),
-                                           self.simulation_state.bounds))
+            goal_pos = self.parse_vector(target.find('steerbench:targetLocation', self.namespace),
+                                         self.simulation_state.bounds)
+            type = float(target.find('steerbench:targetLocation', self.namespace).
+                         find('steerbench:y', self.namespace).text)
+            width = float(target.find('steerbench:desiredSpeed', self.namespace).text)
+            height = float(target.find('steerbench:timeDuration', self.namespace).text)
+            box = [width, height]
 
-        speed = float(initial_config.find('steerbench:speed', self.namespace).text)
+            goals.append(Goal(pos=goal_pos, type=type, box=box))
 
         orientation = math.atan2(direction[1, 0], direction[0, 0])
 
@@ -162,7 +167,7 @@ class XMLSimulationState:
         self.rainbow_index += 1
 
         self.simulation_state.agents.append(
-            Agent(pos=pos, radius=0.5, orientation=orientation, goals=goals, initial_speed=speed, fov=self.fov,
+            Agent(pos=pos, radius=0.5, orientation=orientation, goals=goals,
                   id=len(self.simulation_state.agents), color=color)
         )
 
@@ -194,8 +199,8 @@ class XMLSimulationState:
             orientation = math.atan2(direction[1, 0], direction[0, 0])
 
             self.simulation_state.agents.append(
-                Agent(pos=pos, radius=0.5, orientation=orientation, goals=goals, id=len(self.simulation_state.agents),
-                      color=color)
+                Agent(pos=pos, radius=0.5, orientation=orientation, goals=goals,
+                      id=len(self.simulation_state.agents), color=color)
             )
 
     def parse_vector(self, element, bounds):

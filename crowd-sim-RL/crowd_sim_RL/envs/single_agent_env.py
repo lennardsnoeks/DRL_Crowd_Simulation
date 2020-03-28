@@ -105,7 +105,7 @@ class SingleAgentEnv(gym.Env):
                 first = False
             if new_distance_to_goal <= max_distance_to_goal:
                 shortest_goal = goal
-            if new_distance_to_goal < self.sim_state.goal_tolerance:
+            if new_distance_to_goal <= self.sim_state.goal_tolerance:
                 done = True
                 reward += self.reward_goal_reached
         reward += self.reward_goal * diff
@@ -169,7 +169,7 @@ class SingleAgentEnv(gym.Env):
     def _get_internal_state(agent, goal):
         rotation_matrix_new = np.array([[math.cos(agent.orientation), -math.sin(agent.orientation)],
                                         [math.sin(agent.orientation), math.cos(agent.orientation)]])
-        relative_pos_agent_to_goal = np.subtract(goal, agent.pos)
+        relative_pos_agent_to_goal = np.subtract(goal.pos, agent.pos)
         internal_state = np.matmul(np.linalg.inv(rotation_matrix_new), relative_pos_agent_to_goal)
 
         observation = np.array([
@@ -181,8 +181,9 @@ class SingleAgentEnv(gym.Env):
 
     def _get_external_state(self, agent):
         laser_distances = []
-        agent.laser_lines = []
         types = []
+        agent.laser_lines = []
+        agent.type_colors = []
 
         start_point = agent.orientation - math.radians(90)
         increment = math.radians(180 / self.sim_state.laser_amount)
@@ -194,6 +195,7 @@ class SingleAgentEnv(gym.Env):
             laser_distances.append(distance)
             types.append(type)
             agent.laser_lines.append(np.array([x_end, y_end]))
+            agent.type_colors.append(type)
 
         if len(agent.laser_history) == self.sim_state.laser_history_amount:
             agent.laser_history.pop(0)
@@ -241,7 +243,7 @@ class SingleAgentEnv(gym.Env):
                             height = goal.box[1]
                             x_min = goal.pos[0, 0] - width / 2
                             y_min = goal.pos[1, 0] - height / 2
-                            if self._point_in_rectangle(distant_x, distant_x,
+                            if self._point_in_rectangle(distant_x, distant_y,
                                                         x_min, y_min, width, height):
                                 if distance_to_object < distance:
                                     goal_found = True
@@ -333,7 +335,7 @@ class SingleAgentEnv(gym.Env):
         first = True
         shortest_goal = None
         for goal in agent.goals:
-            distance_to_goal = self._calculate_distance_goal(agent, goal)
+            distance_to_goal = self._calculate_distance_goal(agent.pos, goal)
             if first:
                 max_distance_to_goal = distance_to_goal
                 first = False
