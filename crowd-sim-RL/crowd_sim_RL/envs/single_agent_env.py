@@ -46,6 +46,8 @@ class SingleAgentEnv(gym.Env):
 
     def _load_world(self):
         self.steering_agents = self.sim_state.agents
+        if "multi" not in self.mode:
+            self.compare_agents = self.steering_agents
         self.obstacles = self.sim_state.obstacles
         self.bounds = self.sim_state.clipped_bounds
 
@@ -225,9 +227,7 @@ class SingleAgentEnv(gym.Env):
 
         distant_x = x_agent
         distant_y = y_agent
-        distance_to_object = math.hypot(x_agent - distant_x, y_agent - distant_y)
 
-        #while distance_to_object < 10:
         while True:
             distant_x += x_ori * iteration_step
             distant_y += y_ori * iteration_step
@@ -286,13 +286,7 @@ class SingleAgentEnv(gym.Env):
                         x_end = distant_x
                         y_end = distant_y
                         type = 2000
-                        collision = True
                     break
-
-        """if distance_to_object >= 10 and not collision:
-            distance = 0
-            x_end = distant_x
-            y_end = distant_y"""
 
         return distance, x_end, y_end, type
 

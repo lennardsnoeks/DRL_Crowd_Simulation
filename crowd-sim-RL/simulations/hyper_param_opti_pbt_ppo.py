@@ -1,4 +1,5 @@
 import os
+import random
 import ray
 from ray.tune import run, register_env
 from ray.tune.schedulers import PopulationBasedTraining
@@ -46,22 +47,33 @@ def train(sim_state):
 
     ray.init()
 
+    """""gamma": [0.95, 0.99],
+    "num_sgd_iter": [10, 20, 30],
+    "sgd_minibatch_size": [128, 256, 1024],
+    "train_batch_size": [2000, 4000],
+    "lr": [0.003, 0.0001, 0.000005],
+    "clip_param": [0.1, 0.2, 0.3],
+    "kl_coeff": [0.3, 0.65, 1],
+    "kl_target": [0.003, 0.01, 0.03],
+    "lambda": [0.9, 0.95, 1.0],
+    "entropy_coeff": [0, 0.01]"""
+
     pbt = PopulationBasedTraining(
         time_attr="time_total_s",
         metric="episode_reward_mean",
         mode="max",
-        perturbation_interval=120,
+        perturbation_interval=60,
         resample_probability=0.25,
         hyperparam_mutations={
-            "gamma": [0.95, 0.99],
-            "num_sgd_iter": [10, 20, 30],
-            "sgd_minibatch_size": [128, 256, 1024],
-            "train_batch_size": [2000, 4000],
-            "lr": [0.003, 0.0001, 0.000005],
+            "gamma": lambda: random.uniform(0.95, 0.99),
+            "num_sgd_iter": lambda: random.randint(3, 30),
+            "sgd_minibatch_size": [32, 64, 256, 1024],
+            "train_batch_size": [2048, 4096],
+            "lr": lambda: random.uniform(0.00005, 0.03),
             "clip_param": [0.1, 0.2, 0.3],
-            "kl_coeff": [0.3, 0.65, 1],
-            "kl_target": [0.003, 0.01, 0.03],
-            "lambda": [0.9, 0.95, 1.0],
+            "kl_coeff": lambda: random.uniform(0.3, 1.0),
+            "kl_target": lambda: random.uniform(0.003, 0.03),
+            "lambda": lambda: random.uniform(0.90, 1.0),
             "entropy_coeff": [0, 0.01]
         })
 
@@ -69,7 +81,7 @@ def train(sim_state):
         "episode_reward_mean": 137
     }
 
-    analysis = run("PPO", name="hyper", num_samples=8, scheduler=pbt, stop=stop, config=config)
+    analysis = run("PPO", name="hyper", num_samples=16, scheduler=pbt, stop=stop, config=config)
 
     print("Best config: ", analysis.get_best_config(metric="episode_reward_mean"))
 

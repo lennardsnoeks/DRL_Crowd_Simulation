@@ -32,7 +32,7 @@ def train(sim_state):
 
     config["env_config"] = {
         "sim_state": sim_state,
-        "mode": "hyper_param_opt",
+        "mode": "train_hyper",
         "agent_id": 0,
         "timesteps_per_iteration": config["timesteps_per_iteration"]
     }

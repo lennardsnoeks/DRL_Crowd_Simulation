@@ -77,6 +77,7 @@ class VisualizationSimMulti:
                                                                           prev_reward=prev_rewards[i],
                                                                           explore=False,
                                                                           policy_id="policy_0")
+                                                                    # for concurrent + str(self.sim_state.agents[i].id))
 
                     scale = dt / 1000
                     action_rescales[i] = [linear_vel * scale, angular_vel * scale]

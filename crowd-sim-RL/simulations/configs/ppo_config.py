@@ -35,14 +35,14 @@ PPO_CONFIG = with_common_config({
     # you set vf_share_layers: True.
     "vf_loss_coeff": 1.0,
     # Coefficient of the entropy regularizer.
-    "entropy_coeff": 0.01,
+    "entropy_coeff": 0.0,
     # Decay schedule for the entropy regularizer.
     "entropy_coeff_schedule": None,
     # PPO clip parameter.
     "clip_param": 0.3,
     # Clip param for the value function. Note that this is sensitive to the
     # scale of the rewards. If your expected V is large, increase this.
-    "vf_clip_param": 10.0,
+    "vf_clip_param": 100.0,
     # If specified, clip the global norm of gradients by this amount.
     "grad_clip": None,
     # Target value for KL divergence.

@@ -34,6 +34,8 @@ class Agent:
     color = []
     laser_history = []
     type_history = []
+    laser_history_agents = []
+    laser_history_obstacles = []
     laser_lines = []
     type_colors = []
 
