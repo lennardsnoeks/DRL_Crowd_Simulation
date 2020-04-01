@@ -4,7 +4,7 @@ from ray.rllib.agents.ddpg.ddpg_policy import DDPGTFPolicy
 from ray.rllib.agents.ppo.ppo_tf_policy import PPOTFPolicy
 from ray.rllib.agents.ddpg import ddpg
 from ray.tune import register_env, run
-from crowd_sim_RL.envs import SingleAgentEnv
+from crowd_sim_RL.envs import SingleAgentEnv, SingleAgentEnv2, SingleAgentEnv3
 from crowd_sim_RL.envs.multi_agent_env import MultiAgentEnvironment
 from utils.steerbench_parser import XMLSimulationState
 from simulations.configs import ddpg_config, ddpg_config2, ppo_config
@@ -14,13 +14,13 @@ phase3_set = False
 test_set = False
 iterations_count = 0
 iterations_max = 100
-mean_max = 137
+mean_max = 500
 count_over_max = 10
 count_over = 0
 
 
 def main():
-    filename = "obstacles/obstacles"
+    filename = "hallway_slimmer/hallway_4"
     seed = 1
     sim_state = parse_sim_state(filename, seed)
 
@@ -104,12 +104,11 @@ def train(sim_state, checkpoint):
     # DDPG
     config = ddpg_config.DDPG_CONFIG.copy()
     config["exploration_should_anneal"] = False
-    config["schedule_max_timesteps"] = 100000
     config["exploration_noise_type"] = "ou"
 
     # PPO
-    """config = ppo_config.PPO_CONFIG.copy()
-    config["gamma"] = 0.99
+    #config = ppo_config.PPO_CONFIG.copy()
+    """config["gamma"] = 0.99
     config["num_sgd_iter"] = 5
     config["sgd_minibatch_size"] = 32
     config["train_batch_size"] = 2048
@@ -138,7 +137,7 @@ def train(sim_state, checkpoint):
 
     env_config = config["env_config"]
 
-    single_env = SingleAgentEnv(env_config)
+    single_env = SingleAgentEnv3(env_config)
     obs_space = single_env.get_observation_space()
     action_space = single_env.get_action_space()
 

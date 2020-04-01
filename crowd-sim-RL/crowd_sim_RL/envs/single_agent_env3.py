@@ -6,7 +6,7 @@ from gym import spaces
 from utils.steerbench_parser import SimulationState
 
 
-class SingleAgentEnv2(gym.Env):
+class SingleAgentEnv3(gym.Env):
 
     def __init__(self, env_config):
         self.id = env_config["agent_id"]
@@ -44,25 +44,24 @@ class SingleAgentEnv2(gym.Env):
 
         self._load_world()
 
-        x_diff = (self.bounds[1] - self.bounds[0]) * 1.2
-        y_diff = (self.bounds[3] - self.bounds[2]) * 1.2
-        self.WORLD_BOUND = math.ceil(max(x_diff, y_diff))
-
-        self.observation_space = spaces.Tuple((
-            spaces.Box(low=-self.WORLD_BOUND, high=self.WORLD_BOUND,
-                       shape=(2,)),
-            spaces.Box(low=0, high=self.WORLD_BOUND * 2,
-                       shape=(self.sim_state.laser_history_amount, self.sim_state.laser_amount + 1)),
-            spaces.Box(low=0, high=self.WORLD_BOUND * 2,
-                       shape=(self.sim_state.laser_history_amount, self.sim_state.laser_amount + 1))
-        ))
-
     def _load_world(self):
         self.steering_agents = self.sim_state.agents
         if "multi" not in self.mode:
             self.compare_agents = self.steering_agents
         self.obstacles = self.sim_state.obstacles
         self.bounds = self.sim_state.clipped_bounds
+
+        x_diff = (self.bounds[1] - self.bounds[0]) * 1.2
+        y_diff = (self.bounds[3] - self.bounds[2]) * 1.2
+        self.WORLD_BOUND = max(x_diff, y_diff)
+
+        self.observation_space = spaces.Tuple((
+            spaces.Box(np.array([-self.WORLD_BOUND, -self.WORLD_BOUND]),
+                       np.array([self.WORLD_BOUND, self.WORLD_BOUND])),
+            spaces.Box(low=0, high=self.WORLD_BOUND * 2,
+                       shape=(self.sim_state.laser_history_amount, self.sim_state.laser_amount + 1)),
+            spaces.Box(low=0, high=2000, shape=(self.sim_state.laser_history_amount, self.sim_state.laser_amount + 1))
+        ))
 
     def step(self, action):
         reward = 0
@@ -124,8 +123,8 @@ class SingleAgentEnv2(gym.Env):
 
         # represent the internal state of the agent (observation)
         internal_state = self._get_internal_state(agent, shortest_goal)
-        external_state_laser_agents, external_state_laser_obstacles = self._get_external_state(agent)
-        observation = [internal_state, external_state_laser_agents, external_state_laser_obstacles]
+        external_state_laser, external_state_type = self._get_external_state(agent)
+        observation = [internal_state, external_state_laser, external_state_type]
 
         # When training, do manual reset once if the agent is stuck in local optima
         if "train" in self.mode:
@@ -183,9 +182,8 @@ class SingleAgentEnv2(gym.Env):
         return observation
 
     def _get_external_state(self, agent):
-        distances_agents = [self.WORLD_BOUND * 2] * (self.sim_state.laser_amount + 1)
-        distances_obstacles = [self.WORLD_BOUND * 2] * (self.sim_state.laser_amount + 1)
-        # relevant for visualization
+        laser_distances = [self.WORLD_BOUND * 2] * (self.sim_state.laser_amount + 1)
+        types = []
         agent.laser_lines = []
         agent.type_colors = []
 
@@ -196,27 +194,26 @@ class SingleAgentEnv2(gym.Env):
             x_ori = math.cos(laser_ori)
             y_ori = math.sin(laser_ori)
             distance, x_end, y_end, type = self._get_first_crossed_object(agent, x_ori, y_ori)
-            if type == 1:
-                distances_agents[i] = distance
-            elif type == 2:
-                distances_obstacles[i] = distance
+            if type != 0:
+                laser_distances[i] = distance
+            types.append(type)
             agent.laser_lines.append(np.array([x_end, y_end]))
             agent.type_colors.append(type)
 
-        if len(agent.laser_history_agents) == self.sim_state.laser_history_amount:
-            agent.laser_history_agents.pop(0)
-            agent.laser_history_obstacles.pop(0)
+        if len(agent.laser_history) == self.sim_state.laser_history_amount:
+            agent.laser_history.pop(0)
+            agent.type_history.pop(0)
         else:
-            while len(agent.laser_history_agents) < self.sim_state.laser_history_amount - 1:
-                agent.laser_history_agents.append([0] * (self.sim_state.laser_amount + 1))
-                agent.laser_history_obstacles.append([0] * (self.sim_state.laser_amount + 1))
-        agent.laser_history_agents.append(distances_agents)
-        agent.laser_history_obstacles.append(distances_obstacles)
+            while len(agent.laser_history) < self.sim_state.laser_history_amount - 1:
+                agent.laser_history.append(np.zeros(self.sim_state.laser_amount + 1))
+                agent.type_history.append(np.zeros(self.sim_state.laser_amount + 1))
+        agent.laser_history.append(np.array(laser_distances))
+        agent.type_history.append(np.array(types))
 
-        observation_laser_agents = np.array(agent.laser_history_agents)
-        observation_laser_obstacles = np.array(agent.laser_history_obstacles)
+        observation_laser = np.array(agent.laser_history)
+        observation_type = np.array(agent.type_history)
 
-        return observation_laser_agents, observation_laser_obstacles
+        return observation_laser, observation_type
 
     def _get_first_crossed_object(self, current_agent, x_ori, y_ori):
         distance = 1000000
@@ -268,7 +265,7 @@ class SingleAgentEnv2(gym.Env):
                         x_end = distant_x
                         y_end = distant_y
                         collision = True
-                        type = 1
+                        type = 1000
 
             for obstacle in self.obstacles:
                 if obstacle.contains(distant_x, distant_y):
@@ -277,7 +274,7 @@ class SingleAgentEnv2(gym.Env):
                         x_end = distant_x
                         y_end = distant_y
                         collision = True
-                        type = 2
+                        type = 2000
                         break
 
             if collision:
@@ -289,7 +286,7 @@ class SingleAgentEnv2(gym.Env):
                         distance = distance_to_object
                         x_end = distant_x
                         y_end = distant_y
-                        type = 2
+                        type = 2000
                     break
 
         return distance, x_end, y_end, type
@@ -341,8 +338,8 @@ class SingleAgentEnv2(gym.Env):
                 shortest_goal = goal
 
         internal_state = self._get_internal_state(agent, shortest_goal)
-        external_state_laser_agents, external_state_laser_obstacles = self._get_external_state(agent)
-        observation = [internal_state, external_state_laser_agents, external_state_laser_obstacles]
+        external_state_laser, external_state_type = self._get_external_state(agent)
+        observation = [internal_state, external_state_laser, external_state_type]
 
         return observation
 

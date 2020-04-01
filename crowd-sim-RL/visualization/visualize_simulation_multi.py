@@ -35,7 +35,7 @@ class VisualizationSimMulti:
         self.sim_state = copy.deepcopy(sim_state)
         self.trainer = trainer
 
-        self.history_all_agents = [len(sim_state.agents)]
+        self.history_all_agents = [None] * len(sim_state.agents)
         for agent in self.sim_state.agents:
             previous_positions = [agent.pos]
             self.history_all_agents[agent.id] = previous_positions
