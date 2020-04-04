@@ -20,7 +20,7 @@ count_over = 0
 
 
 def main():
-    filename = "hallway_slimmer/hallway_4"
+    filename = "2/2_way_confusion"
     seed = 1
     sim_state = parse_sim_state(filename, seed)
 
@@ -31,7 +31,7 @@ def main():
 
 def parse_sim_state(filename, seed):
     dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, "../test_XML_files/" + filename + ".xml")
+    filename = os.path.join(dirname, "../test_XML_files/training/test_case_" + filename + ".xml")
     sim_state = XMLSimulationState(filename, seed).simulation_state
 
     return sim_state
@@ -159,7 +159,7 @@ def train(sim_state, checkpoint):
         #"training_iteration": iterations_max
     }
 
-    name = "hyper"
+    name = "training_case_1"
     if checkpoint == "":
         run("DDPG", name=name, checkpoint_freq=checkpoint_freq, stop=stop, config=config)
     else:

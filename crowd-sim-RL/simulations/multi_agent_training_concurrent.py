@@ -2,18 +2,18 @@ import os
 import ray
 from ray.rllib.agents.ddpg.ddpg_policy import DDPGTFPolicy
 from ray.tune import register_env, run
-from crowd_sim_RL.envs import SingleAgentEnv
+from crowd_sim_RL.envs import SingleAgentEnv, SingleAgentEnv3
 from crowd_sim_RL.envs.multi_agent_env import MultiAgentEnvironment
 from utils.steerbench_parser import XMLSimulationState
 from simulations.configs import ddpg_config, ddpg_config2
 
 iterations_count = 0
 iterations_max = 100
-mean_max = 600
+mean_max = 300
 
 
 def main():
-    filename = "hallway_4"
+    filename = "2/2_way_confusion"
     sim_state = parse_sim_state(filename)
 
     checkpoint = ""
@@ -23,7 +23,7 @@ def main():
 
 def parse_sim_state(filename):
     dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, "../test_XML_files/hallway_slimmer/" + filename + ".xml")
+    filename = os.path.join(dirname, "../test_XML_files/training/test_case_" + filename + ".xml")
     seed = 22222
     sim_state = XMLSimulationState(filename, seed).simulation_state
 
@@ -49,7 +49,7 @@ def make_multi_agent_config(sim_state, config):
     env_config = config["env_config"]
     env_config["agent_id"] = 0
 
-    single_env = SingleAgentEnv(env_config)
+    single_env = SingleAgentEnv3(env_config)
     obs_space = single_env.get_observation_space()
     action_space = single_env.get_action_space()
 
@@ -65,16 +65,15 @@ def make_multi_agent_config(sim_state, config):
 
 def train(sim_state, checkpoint):
     global iterations_max, mean_max
-    checkpoint_freq = 10
+    checkpoint_freq = 5
 
-    config = ddpg_config2.DDPG_CONFIG.copy()
+    config = ddpg_config.DDPG_CONFIG.copy()
     config["gamma"] = 0.95
     config["num_workers"] = 0
     config["num_gpus"] = 0
     config["eager"] = False
-    """config["exploration_should_anneal"] = False
+    config["exploration_should_anneal"] = False
     config["schedule_max_timesteps"] = 100000
-    config["exploration_noise_type"] = "gaussian"""""
     config["observation_filter"] = "MeanStdFilter"
     config["clip_actions"] = True
     config["env_config"] = {
@@ -99,7 +98,7 @@ def train(sim_state, checkpoint):
         # "training_iteration": iterations_max
     }
 
-    name = "hallway_4"
+    name = "training_case_1"
     if checkpoint == "":
         run("DDPG", name=name, checkpoint_freq=checkpoint_freq, stop=stop, config=config)
     else:

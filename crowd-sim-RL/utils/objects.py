@@ -39,6 +39,11 @@ class Agent:
     laser_lines = []
     type_colors = []
 
+    # used in centralized env
+    internal_states = None
+    external_states_laser = None
+    external_states_type = None
+
     def __init__(self, pos, radius, orientation, goals, id, color):
         self.pos = pos
         self.radius = radius

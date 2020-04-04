@@ -44,16 +44,9 @@ class SingleAgentEnv(gym.Env):
 
         self._load_world()
 
-    def _load_world(self):
-        self.steering_agents = self.sim_state.agents
-        if "multi" not in self.mode:
-            self.compare_agents = self.steering_agents
-        self.obstacles = self.sim_state.obstacles
-        self.bounds = self.sim_state.clipped_bounds
-
         x_diff = (self.bounds[1] - self.bounds[0]) * 1.2
         y_diff = (self.bounds[3] - self.bounds[2]) * 1.2
-        self.WORLD_BOUND = max(x_diff, y_diff)
+        self.WORLD_BOUND = math.ceil(max(x_diff, y_diff))
 
         self.observation_space = spaces.Tuple((
             spaces.Box(np.array([-self.WORLD_BOUND, -self.WORLD_BOUND]),
@@ -62,6 +55,13 @@ class SingleAgentEnv(gym.Env):
                        shape=(self.sim_state.laser_history_amount, self.sim_state.laser_amount + 1)),
             spaces.Box(low=0, high=2000, shape=(self.sim_state.laser_history_amount, self.sim_state.laser_amount + 1))
         ))
+
+    def _load_world(self):
+        self.steering_agents = self.sim_state.agents
+        if "multi" not in self.mode:
+            self.compare_agents = self.steering_agents
+        self.obstacles = self.sim_state.obstacles
+        self.bounds = self.sim_state.clipped_bounds
 
     def step(self, action):
         reward = 0
@@ -119,31 +119,47 @@ class SingleAgentEnv(gym.Env):
         agent.orientation = new_ori
 
         # check for collisions and assign rewards
-        reward += self._detect_collisions(agent)
+        reward_collision, collision_obstacle = self._detect_collisions(agent)
+        reward += reward_collision
 
-        # represent the internal state of the agent (observation)
+        # get internal and external state of agents (observation)
         internal_state = self._get_internal_state(agent, shortest_goal)
         external_state_laser, external_state_type = self._get_external_state(agent)
         observation = [internal_state, external_state_laser, external_state_type]
 
-        # When training, do manual reset once if the agent is stuck in local optima
+        # When training, do manual reset once if the agent is stuck in local optima or
+        # if they are wandering in obstacles
         if "train" in self.mode:
-            if self.step_count == 0:
-                agent_x = previous_pos[0, 0]
-                agent_y = previous_pos[1, 0]
-                self.box = [agent_x - 1, agent_x + 1, agent_y - 1, agent_y + 1]
-            elif self.step_count == self.max_step_count:
-                self.reset_pos_necessary = True
-                self.step_count = 0
-
-            if self.in_local_optima(agent.pos):
-                self.step_count += 1
-            else:
-                self.step_count = 0
+            self._check_resets(agent, previous_pos, collision_obstacle)
 
         return observation, reward, done, {}
 
-    def in_local_optima(self, pos):
+    def _check_resets(self, agent, previous_pos, collision_obstacle):
+        if self.step_count_same == 0:
+            agent_x = previous_pos[0, 0]
+            agent_y = previous_pos[1, 0]
+            self.box = [agent_x - 1, agent_x + 1, agent_y - 1, agent_y + 1]
+        elif self.step_count_same == self.max_step_count:
+            self.reset_pos_necessary = True
+
+        if self.step_count_obs == self.max_step_count:
+            self.reset_pos_necessary = True
+
+        if self._in_local_optima(agent):
+            self.step_count_same += 1
+        else:
+            self.step_count_same = 0
+
+        if collision_obstacle:
+            self.step_count_obs += 1
+        else:
+            self.step_count_obs = 0
+
+        if self.reset_pos_necessary:
+            self.step_count_same = 0
+            self.step_count_obs = 0
+
+    def _in_local_optima(self, pos):
         agent_x = pos[0, 0]
         agent_y = pos[1, 0]
 
@@ -293,6 +309,7 @@ class SingleAgentEnv(gym.Env):
     def _detect_collisions(self, current_agent):
         reward = 0
         collision = False
+        collision_obstacle = False
 
         # detect collision with obstacles
         for obstacle in self.obstacles:
@@ -300,6 +317,7 @@ class SingleAgentEnv(gym.Env):
                                                 current_agent.pos[0, 0], current_agent.pos[1, 0], current_agent.radius):
                 reward -= self.reward_collision
                 collision = True
+                collision_obstacle = True
 
         # detect collision with other agents
         if not collision:
@@ -316,7 +334,7 @@ class SingleAgentEnv(gym.Env):
                                      self.bounds[0], self.bounds[1], self.bounds[2], self.bounds[3]):
                 reward -= self.reward_collision
 
-        return reward
+        return reward, collision_obstacle
 
     def reset(self):
         if "multi" not in self.mode:

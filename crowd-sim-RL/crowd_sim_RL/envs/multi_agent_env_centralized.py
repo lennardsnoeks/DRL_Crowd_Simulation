@@ -18,7 +18,7 @@ class MultiAgentCentralized(gym.Env):
         #self.reward_goal = 5
         self.reward_collision = 5
         #self.reward_collision = 10
-        self.reward_goal_reached = 10
+        self.reward_goal_reached = 0
 
         self.sim_state: SimulationState
         self.visualizer: VisualizationLive
@@ -35,8 +35,11 @@ class MultiAgentCentralized(gym.Env):
         if "train" in self.mode:
             self.max_step_count = env_config["timesteps_reset"]
 
+        self.step_counts = [0] * len(self.sim_state.agents)
         self.step_counts_same = [0] * len(self.sim_state.agents)
         self.step_counts_obs = [0] * len(self.sim_state.agents)
+        self.dones = [False] * len(self.steering_agents)
+        self.resets_necessary = [False] * len(self.steering_agents)
         self.boxes = []
         for i in range(0, len(self.sim_state.agents)):
             box = [0] * 4
@@ -54,16 +57,16 @@ class MultiAgentCentralized(gym.Env):
 
         self._load_world()
 
+        x_diff = (self.bounds[1] - self.bounds[0]) * 1.2
+        y_diff = (self.bounds[3] - self.bounds[2]) * 1.2
+        self.WORLD_BOUND = math.ceil(max(x_diff, y_diff))
+
+        self.observation_space = self.make_observation_space()
+
     def _load_world(self):
         self.steering_agents = self.sim_state.agents
         self.obstacles = self.sim_state.obstacles
         self.bounds = self.sim_state.clipped_bounds
-
-        x_diff = (self.bounds[1] - self.bounds[0]) * 1.2
-        y_diff = (self.bounds[3] - self.bounds[2]) * 1.2
-        self.WORLD_BOUND = max(x_diff, y_diff)
-
-        self.observation_space = self.make_observation_space()
 
     def make_action_space(self):
         min = []
@@ -91,13 +94,13 @@ class MultiAgentCentralized(gym.Env):
         num_agents = len(self.sim_state.agents)
         observation_space = spaces.Tuple((
             spaces.Box(np.array(min_pos), np.array(max_pos)),
-            spaces.Box(low=-self.WORLD_BOUND, high=self.WORLD_BOUND,
+            spaces.Box(low=0, high=self.WORLD_BOUND * 2,
                        shape=(num_agents,
                               self.sim_state.laser_history_amount,
                               self.sim_state.laser_amount + 1)),
-            spaces.Box(low=0, high=20, shape=(num_agents,
-                                              self.sim_state.laser_history_amount,
-                                              self.sim_state.laser_amount + 1))
+            spaces.Box(low=0, high=2000, shape=(num_agents,
+                                                self.sim_state.laser_history_amount,
+                                                self.sim_state.laser_amount + 1))
         ))
 
         return observation_space
@@ -118,8 +121,6 @@ class MultiAgentCentralized(gym.Env):
             self.setup_visualization()
 
         reward = 0
-        done = False
-        reset_necessary = False
 
         internal_states = []
         external_states_laser = []
@@ -129,96 +130,121 @@ class MultiAgentCentralized(gym.Env):
 
         for agent in self.steering_agents:
             i = agent.id * 2
-            linear_vel = action[i]
-            angular_vel = action[i + 1]
 
-            if "train" in self.mode:
-                linear_vel *= self.time_step
-                angular_vel *= self.time_step
-
-            # convert single orientation value (degrees or radians) to 2d representation | setup rotation matrix
-            orientation_2d = np.array([[math.cos(agent.orientation)], [math.sin(agent.orientation)]])
-            rotation_matrix = np.array([[math.cos(angular_vel), -math.sin(angular_vel)],
-                                        [math.sin(angular_vel), math.cos(angular_vel)]])
-
-            # calculate new position and orientation
-            new_pos = np.add(agent.pos, (linear_vel * orientation_2d))
-            new_ori_2d = np.matmul(rotation_matrix, orientation_2d)
-
-            # convert calculated orientation back to polar value
-            new_ori = math.atan2(new_ori_2d[1, 0], new_ori_2d[0, 0])
-
-            # reward for getting closer to goal, if there are multiple goals, take closest one in consideration
-            diff = 0
-            max_distance_to_goal = 0
-            shortest_goal = None
-            first = True
-            for goal in agent.goals:
-                previous_distance_to_goal = self._calculate_distance_goal(agent.pos, goal)
-                new_distance_to_goal = self._calculate_distance_goal(new_pos, goal)
-                diff = previous_distance_to_goal - new_distance_to_goal
-                if first:
-                    max_distance_to_goal = new_distance_to_goal
-                    first = False
-                if new_distance_to_goal <= max_distance_to_goal:
-                    shortest_goal = goal
-                if new_distance_to_goal < self.sim_state.goal_tolerance:
-                    done = True
-                    reward += self.reward_goal_reached
-            reward += self.reward_goal * diff
+            """if self.resets_necessary[agent.id]:
+                agent.pos[0, 0] = self.orig_sim_state.agents[agent.id].pos[0, 0]
+                agent.pos[1, 0] = self.orig_sim_state.agents[agent.id].pos[1, 0]
+                agent.orientation = self.orig_sim_state.agents[agent.id].orientation
+                self.reset_pos_necessary = False"""
 
             # clip and assign new position and orientation to the agent
-            previous_pos = agent.pos
-            new_pos = self._clip_pos(new_pos)
-            agent.pos = new_pos
-            agent.orientation = new_ori
+            if not self.dones[agent.id]:
+                linear_vel = action[i]
+                angular_vel = action[i + 1]
 
-            # check for collisions and assign rewards
-            reward_collision, collision_obstacle = self._detect_collisions(agent, copy_agents)
-            reward += reward_collision
+                if "train" in self.mode:
+                    linear_vel *= self.time_step
+                    angular_vel *= self.time_step
 
-            # represent the internal state of the agent (observation)
-            internal_states = self._get_internal_state(agent, shortest_goal, internal_states)
+                # convert single orientation value (degrees or radians) to 2d representation | setup rotation matrix
+                orientation_2d = np.array([[math.cos(agent.orientation)], [math.sin(agent.orientation)]])
+                rotation_matrix = np.array([[math.cos(angular_vel), -math.sin(angular_vel)],
+                                            [math.sin(angular_vel), math.cos(angular_vel)]])
 
-            external_states_laser, external_states_type = self._get_external_state(agent, external_states_laser,
-                                                                                   external_states_type)
+                # calculate new position and orientation
+                new_pos = np.add(agent.pos, (linear_vel * orientation_2d))
+                new_ori_2d = np.matmul(rotation_matrix, orientation_2d)
 
-            # When training, do manual reset once if the agent is stuck in local optima or
-            # if they are wandering in obstacles
-            if "train" in self.mode:
-                if self.step_counts_same[agent.id] == 0:
-                    agent_x = previous_pos[0, 0]
-                    agent_y = previous_pos[1, 0]
-                    self.boxes[agent.id] = [agent_x - 1, agent_x + 1, agent_y - 1, agent_y + 1]
-                elif self.step_counts_same[agent.id] == self.max_step_count:
-                    reset_necessary = True
+                # convert calculated orientation back to polar value
+                new_ori = math.atan2(new_ori_2d[1, 0], new_ori_2d[0, 0])
 
-                if self.in_local_optima(agent):
-                    self.step_counts_same[agent.id] += 1
-                else:
-                    self.step_counts_same[agent.id] = 0
+                # reward for getting closer to goal, if there are multiple goals, take closest one in consideration
+                diff = 0
+                max_distance_to_goal = 0
+                shortest_goal = None
+                first = True
+                for goal in agent.goals:
+                    previous_distance_to_goal = self._calculate_distance_goal(agent.pos, goal)
+                    new_distance_to_goal = self._calculate_distance_goal(new_pos, goal)
+                    diff = previous_distance_to_goal - new_distance_to_goal
+                    if first:
+                        max_distance_to_goal = new_distance_to_goal
+                        first = False
+                    if new_distance_to_goal <= max_distance_to_goal:
+                        shortest_goal = goal
+                    if new_distance_to_goal <= self.sim_state.goal_tolerance:
+                        self.dones[agent.id] = True
+                        reward += self.reward_goal_reached
+                reward += self.reward_goal * diff
 
-                if collision_obstacle:
-                    self.step_counts_obs[agent.id] += 1
-                else:
-                    self.step_counts_obs[agent.id] = 0
+                previous_pos = agent.pos
+                new_pos = self._clip_pos(new_pos)
+                agent.pos = new_pos
+                agent.orientation = new_ori
 
-                if self.step_counts_obs[agent.id] == self.max_step_count:
-                    reset_necessary = True
+                # check for collisions and assign rewards
+                reward_collision, collision_obstacle = self._detect_collisions(agent, copy_agents)
+                reward += reward_collision
+
+                # When training, do manual reset once if the agent is stuck in local optima or
+                # if they are wandering in obstacles
+                if "train" in self.mode:
+                    if self.step_counts_same[agent.id] == 0:
+                        agent_x = previous_pos[0, 0]
+                        agent_y = previous_pos[1, 0]
+                        self.boxes[agent.id] = [agent_x - 1, agent_x + 1, agent_y - 1, agent_y + 1]
+                    elif self.step_counts_same[agent.id] == self.max_step_count:
+                        self.resets_necessary[agent.id] = True
+
+                    if self.step_counts_obs[agent.id] == self.max_step_count:
+                        self.resets_necessary[agent.id] = True
+
+                    if self.step_counts[agent.id] == 5000:
+                        self.resets_necessary[agent.id] = True
+                        self.step_counts[agent.id] = 0
+
+                    if self.in_local_optima(agent):
+                        self.step_counts_same[agent.id] += 1
+                    else:
+                        self.step_counts_same[agent.id] = 0
+
+                    if collision_obstacle:
+                        self.step_counts_obs[agent.id] += 1
+                    else:
+                        self.step_counts_obs[agent.id] = 0
+
+                    #self.step_counts[agent.id] += 1
+
+                # get internal and external state of agents (observation)
+                internal_state = self._get_internal_state(agent, shortest_goal)
+                internal_states.append(internal_state[0])
+                internal_states.append(internal_state[1])
+                external_state_laser, external_state_type = self._get_external_state(agent)
+                external_states_laser.append(external_state_laser)
+                external_states_type.append(external_state_type)
+                agent.internal_states = copy.copy(internal_states)
+                agent.external_states_laser = copy.copy(external_states_laser)
+                agent.external_states_type = copy.copy(external_states_type)
+
+            else:
+                internal_states = copy.copy(agent.internal_states)
+                external_states_laser = copy.copy(agent.external_states_laser)
+                external_states_type = copy.copy(agent.external_states_type)
+                self.step_counts[agent.id] = 0
 
         if "vis" in self.mode:
             self.render()
 
-        internal_state = np.array(internal_states)
-        observation = [internal_state, external_states_laser, external_states_type]
+        observation = [np.array(internal_states), np.array(external_states_laser), np.array(external_states_type)]
+        #done = sum(self.dones) == len(self.steering_agents)
+        done = sum(self.dones) > 0
 
-        if reset_necessary:
+        """if reset_necessary:
             observation = self.reset()
             reward = 0
             done = False
-            for i in range(0, len(self.steering_agents)):
-                self.step_counts_same[i] = 0
-                self.step_counts_obs[i] = 0
+            self.step_counts_same = [0] * len(self.steering_agents)
+            self.step_counts_obs = [0] * len(self.steering_agents)"""
 
         return observation, reward, done, {}
 
@@ -247,21 +273,19 @@ class MultiAgentCentralized(gym.Env):
         return pos
 
     @staticmethod
-    def _get_internal_state(agent, goal, internal_states):
+    def _get_internal_state(agent, goal):
         rotation_matrix_new = np.array([[math.cos(agent.orientation), -math.sin(agent.orientation)],
                                         [math.sin(agent.orientation), math.cos(agent.orientation)]])
         relative_pos_agent_to_goal = np.subtract(goal.pos, agent.pos)
         internal_state = np.matmul(np.linalg.inv(rotation_matrix_new), relative_pos_agent_to_goal)
 
-        internal_states.append(internal_state[0, 0])
-        internal_states.append(internal_state[1, 0])
+        return np.array([internal_state[0, 0], internal_state[1, 0]])
 
-        return internal_states
-
-    def _get_external_state(self, agent, external_states_laser, external_states_type):
-        laser_distances = []
-        agent.laser_lines = []
+    def _get_external_state(self, agent):
+        laser_distances = [self.WORLD_BOUND * 2] * (self.sim_state.laser_amount + 1)
         types = []
+        agent.laser_lines = []
+        agent.type_colors = []
 
         start_point = agent.orientation - math.radians(90)
         increment = math.radians(180 / self.sim_state.laser_amount)
@@ -270,9 +294,11 @@ class MultiAgentCentralized(gym.Env):
             x_ori = math.cos(laser_ori)
             y_ori = math.sin(laser_ori)
             distance, x_end, y_end, type = self._get_first_crossed_object(agent, x_ori, y_ori)
-            laser_distances.append(distance)
+            if type != 0:
+                laser_distances[i] = distance
             types.append(type)
             agent.laser_lines.append(np.array([x_end, y_end]))
+            agent.type_colors.append(type)
 
         if len(agent.laser_history) == self.sim_state.laser_history_amount:
             agent.laser_history.pop(0)
@@ -284,10 +310,7 @@ class MultiAgentCentralized(gym.Env):
         agent.laser_history.append(np.array(laser_distances))
         agent.type_history.append(np.array(types))
 
-        external_states_laser.append(agent.laser_history)
-        external_states_type.append(agent.type_history)
-
-        return external_states_laser, external_states_type
+        return np.array(agent.laser_history), np.array(agent.type_history)
 
     def _get_first_crossed_object(self, current_agent, x_ori, y_ori):
         distance = 1000000
@@ -302,45 +325,44 @@ class MultiAgentCentralized(gym.Env):
 
         distant_x = x_agent
         distant_y = y_agent
-        distance_to_object = math.sqrt((x_agent - distant_x) ** 2 + (y_agent - distant_y) ** 2)
 
-        #while distance_to_object < 10:
         while True:
             distant_x += x_ori * iteration_step
             distant_y += y_ori * iteration_step
             distance_to_object = math.sqrt((x_agent - distant_x) ** 2 + (y_agent - distant_y) ** 2)
 
             for agent in self.steering_agents:
-                for goal in agent.goals:
-                    goal_found = False
-                    goal_type = goal.type
-                    if goal_type == 1:
-                        width = goal.box[0]
-                        height = goal.box[1]
-                        x_min = goal.pos[0, 0] - width / 2
-                        y_min = goal.pos[1, 0] - height / 2
-                        if self._point_in_rectangle(distant_x, distant_x,
-                                                    x_min, y_min, width, height):
-                            if distance_to_object < distance:
-                                goal_found = True
-                    else:
-                        if self._point_in_circle(distant_x, distant_y, goal.pos[0, 0], goal.pos[1, 0],
-                                                 self.sim_state.goal_tolerance):
-                            if distance_to_object < distance:
-                                goal_found = True
-                    if goal_found:
-                        distance = distance_to_object
-                        x_end = distant_x
-                        y_end = distant_y
-                        collision = True
-                        type = 0
+                if current_agent.id == agent.id:
+                    for goal in agent.goals:
+                        goal_found = False
+                        goal_type = goal.type
+                        if goal_type == 1:
+                            width = goal.box[0]
+                            height = goal.box[1]
+                            x_min = goal.pos[0, 0] - width / 2
+                            y_min = goal.pos[1, 0] - height / 2
+                            if self._point_in_rectangle(distant_x, distant_y,
+                                                        x_min, y_min, width, height):
+                                if distance_to_object < distance:
+                                    goal_found = True
+                        else:
+                            if self._point_in_circle(distant_x, distant_y, goal.pos[0, 0], goal.pos[1, 0],
+                                                     self.sim_state.goal_tolerance):
+                                if distance_to_object < distance:
+                                    goal_found = True
+                        if goal_found:
+                            distance = distance_to_object
+                            x_end = distant_x
+                            y_end = distant_y
+                            collision = True
+                            type = 0
                 else:
                     if self._point_in_circle(distant_x, distant_y, agent.pos[0, 0], agent.pos[1, 0], agent.radius):
                         distance = distance_to_object
                         x_end = distant_x
                         y_end = distant_y
                         collision = True
-                        type = 10
+                        type = 1000
 
             for obstacle in self.obstacles:
                 if obstacle.contains(distant_x, distant_y):
@@ -349,7 +371,7 @@ class MultiAgentCentralized(gym.Env):
                         x_end = distant_x
                         y_end = distant_y
                         collision = True
-                        type = 20
+                        type = 2000
                         break
 
             if collision:
@@ -361,14 +383,8 @@ class MultiAgentCentralized(gym.Env):
                         distance = distance_to_object
                         x_end = distant_x
                         y_end = distant_y
-                        type = 20
-                        collision = True
+                        type = 2000
                     break
-
-        """if distance_to_object >= 10 and not collision:
-            distance = 0
-            x_end = distant_x
-            y_end = distant_y"""
 
         return distance, x_end, y_end, type
 
@@ -411,6 +427,11 @@ class MultiAgentCentralized(gym.Env):
         external_states_laser = []
         external_states_type = []
 
+        self.dones = [False] * len(self.steering_agents)
+        self.step_counts = [0] * len(self.sim_state.agents)
+        self.step_counts_same = [0] * len(self.sim_state.agents)
+        self.step_counts_obs = [0] * len(self.sim_state.agents)
+
         for agent in self.steering_agents:
             max_distance_to_goal = 0
             first = True
@@ -423,11 +444,14 @@ class MultiAgentCentralized(gym.Env):
                 if distance_to_goal <= max_distance_to_goal:
                     shortest_goal = goal
 
-            internal_states = self._get_internal_state(agent, shortest_goal, internal_states)
-            external_states_laser, external_states_type = self._get_external_state(agent, external_states_laser,
-                                                                                   external_states_type)
+            internal_state = self._get_internal_state(agent, shortest_goal)
+            internal_states.append(internal_state[0])
+            internal_states.append(internal_state[1])
+            external_state_laser, external_state_type = self._get_external_state(agent)
+            external_states_laser.append(external_state_laser)
+            external_states_type.append(external_state_type)
 
-        observation = [internal_states, external_states_laser, external_states_type]
+        observation = [np.array(internal_states), np.array(external_states_laser), np.array(external_states_type)]
 
         return observation
 

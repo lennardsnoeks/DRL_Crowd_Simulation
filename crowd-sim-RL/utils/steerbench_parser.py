@@ -143,6 +143,7 @@ class XMLSimulationState:
             self.parse_agent_region(region)
 
     def parse_agent(self, element):
+        name = element.find('steerbench:name', self.namespace).text
         initial_config = element.find('steerbench:initialConditions', self.namespace)
         pos = self.parse_vector(initial_config.find('steerbench:position', self.namespace),
                                 self.simulation_state.bounds)
@@ -163,8 +164,12 @@ class XMLSimulationState:
 
         orientation = math.atan2(direction[1, 0], direction[0, 0])
 
-        color = rainbow[self.rainbow_index % 7]
-        self.rainbow_index += 1
+        if "_" in name:
+            index = int(name.split("_")[1])
+            color = rainbow[index]
+        else:
+            color = rainbow[self.rainbow_index]
+            self.rainbow_index += 1
 
         self.simulation_state.agents.append(
             Agent(pos=pos, radius=0.5, orientation=orientation, goals=goals,
