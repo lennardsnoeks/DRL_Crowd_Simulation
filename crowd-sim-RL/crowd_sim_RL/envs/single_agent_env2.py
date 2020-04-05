@@ -314,7 +314,7 @@ class SingleAgentEnv2(gym.Env):
         collision = False
         collision_obstacle = False
 
-        # detect collision with obstacles
+        # detect collision with 2-obstacles
         for obstacle in self.obstacles:
             if self._collision_circle_rectangle(obstacle.x, obstacle.y, obstacle.width, obstacle.height,
                                                 current_agent.pos[0, 0], current_agent.pos[1, 0], current_agent.radius):

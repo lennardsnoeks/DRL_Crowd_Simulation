@@ -6,7 +6,7 @@
   cases. Users are encouraged to create and share their own test cases.
   
   Test cases are XML using the "http://www.magix.ucla.edu/steerbench" namespace.  The schema
-  for this namespace is provided in SteerSuite, in the file testcases/TestCaseSchema.xsd.  Be
+  for this namespace is provided in SteerSuite, in the file steerbench_test_files/TestCaseSchema.xsd.  Be
   sure to validate your test case XML file against the schema to ensure there are no errors in
   the specification.
 
@@ -72,7 +72,7 @@
   -->
 
   <!--
-    Single obstacles are (for now) just axis-aligned static rectangular objects.
+    Single 2-obstacles are (for now) just axis-aligned static rectangular objects.
   -->  
   <obstacle>
     <xmin>-20</xmin>
@@ -84,8 +84,8 @@
   </obstacle>
 
   <!-- 
-    Obstacle regions can be used to specify a fixed number of randomly-placed obstacles.
-    Currently, only square obstacles of the same size are supported;  It is possible
+    Obstacle regions can be used to specify a fixed number of randomly-placed 2-obstacles.
+    Currently, only square 2-obstacles of the same size are supported;  It is possible
     that more options will be provided in the future.
   -->
   <obstacleRegion>

@@ -1,0 +1,210 @@
+<!--
+  Copyright (c) 2009 Shawn Singh, Mubbasir Kapadia, Petros Faloutsos, Glenn Reinman
+  See license.txt for complete license.
+-->
+
+<SteerBenchTestCase xmlns="http://www.magix.ucla.edu/steerbench"
+                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                    xsi:schemaLocation="http://www.magix.ucla.edu/steerbench
+                                        TestCaseSchema.xsd">
+
+  <header>
+    <version>1.0</version>
+    <name>bottleneck-evacuation</name>
+    <worldBounds>
+      <xmin>-100</xmin>
+      <xmax>100</xmax>
+      <ymin>0</ymin>
+      <ymax>0</ymax>
+      <zmin>-100</zmin>
+      <zmax>100</zmax>
+    </worldBounds>
+  </header>
+
+  <suggestedCameraView>
+    <position> <x>44</x> <y>30</y> <z>0</z> </position>
+    <lookat> <x>27</x> <y>0</y> <z>0</z> </lookat>
+    <up> <x>0</x> <y>1</y> <z>0</z> </up>
+    <fovy>45</fovy>
+  </suggestedCameraView>
+
+  <suggestedCameraView>
+    <position> <x>104</x> <y>80</y> <z>0</z> </position>
+    <lookat> <x>47</x> <y>0</y> <z>0</z> </lookat>
+    <up> <x>0</x> <y>1</y> <z>0</z> </up>
+    <fovy>45</fovy>
+  </suggestedCameraView>
+
+  <obstacle>
+    <xmin>-18.5</xmin>
+    <xmax>-17.5</xmax>
+    <ymin>0</ymin>
+    <ymax>1</ymax>
+    <zmin>-18</zmin>
+    <zmax>18</zmax>
+  </obstacle>
+
+    <obstacle>
+    <xmin>-17.5</xmin>
+    <xmax>-7.5</xmax>
+    <ymin>0</ymin>
+    <ymax>1</ymax>
+    <zmin>-18</zmin>
+    <zmax>-7</zmax>
+  </obstacle>
+
+
+  <obstacle>
+    <xmin>-18.5</xmin>
+    <xmax>18.5</xmax>
+    <ymin>0</ymin>
+    <ymax>1</ymax>
+    <zmin>-19</zmin>
+    <zmax>-18</zmax>
+  </obstacle>
+
+    <obstacle>
+    <xmin>7.5</xmin>
+    <xmax>18.5</xmax>
+    <ymin>0</ymin>
+    <ymax>1</ymax>
+    <zmin>7</zmin>
+    <zmax>18</zmax>
+  </obstacle>
+
+  <obstacle>
+    <xmin>-18.5</xmin>
+    <xmax>18.5</xmax>
+    <ymin>0</ymin>
+    <ymax>1</ymax>
+    <zmin>18</zmin>
+    <zmax>19</zmax>
+  </obstacle>
+
+    <obstacle>
+    <xmin>-17.5</xmin>
+    <xmax>-7.5</xmax>
+    <ymin>0</ymin>
+    <ymax>1</ymax>
+    <zmin>7</zmin>
+    <zmax>18</zmax>
+  </obstacle>
+
+  <obstacle>
+    <xmin>18.5</xmin>
+    <xmax>19.5</xmax>
+    <ymin>0</ymin>
+    <ymax>1</ymax>
+    <zmin>-19</zmin>
+    <zmax>19</zmax>
+  </obstacle>
+
+    <obstacle>
+    <xmin>7.5</xmin>
+    <xmax>18.5</xmax>
+    <ymin>0</ymin>
+    <ymax>1</ymax>
+    <zmin>-18</zmin>
+    <zmax>-7</zmax>
+  </obstacle>
+
+    <agentRegion>
+    <numAgents>3</numAgents>
+    <regionBounds>
+      <xmin>-14</xmin>
+      <xmax>-9</xmax>
+      <ymin>0</ymin>
+      <ymax>0</ymax>
+      <zmin>-5</zmin>
+      <zmax>5</zmax>
+    </regionBounds>
+    <initialConditions>
+      <direction> <x>1</x> <y>0</y> <z>0</z> </direction>
+      <radius>0.5</radius>
+      <speed>0</speed>
+    </initialConditions>
+    <goalSequence>
+      <seekStaticTarget>
+        <targetLocation> <x>18</x> <y>1</y> <z>0</z> </targetLocation>
+        <desiredSpeed>2</desiredSpeed>
+        <timeDuration>14</timeDuration>
+      </seekStaticTarget>
+    </goalSequence>
+
+  </agentRegion>
+
+      <agentRegion>
+    <numAgents>3</numAgents>
+    <regionBounds>
+      <xmin>9</xmin>
+      <xmax>14</xmax>
+      <ymin>0</ymin>
+      <ymax>0</ymax>
+      <zmin>-5</zmin>
+      <zmax>5</zmax>
+    </regionBounds>
+    <initialConditions>
+      <direction> <x>-1</x> <y>0</y> <z>0</z> </direction>
+      <radius>0.5</radius>
+      <speed>0</speed>
+    </initialConditions>
+    <goalSequence>
+      <seekStaticTarget>
+        <targetLocation> <x>-17</x> <y>1</y> <z>0</z> </targetLocation>
+        <desiredSpeed>2</desiredSpeed>
+        <timeDuration>14</timeDuration>
+      </seekStaticTarget>
+    </goalSequence>
+
+  </agentRegion>
+
+    <agentRegion>
+    <numAgents>3</numAgents>
+    <regionBounds>
+      <xmin>-5</xmin>
+      <xmax>5</xmax>
+      <ymin>0</ymin>
+      <ymax>0</ymax>
+      <zmin>8</zmin>
+      <zmax>13</zmax>
+    </regionBounds>
+    <initialConditions>
+      <direction> <x>0</x> <y>0</y> <z>-1</z> </direction>
+      <radius>0.5</radius>
+      <speed>0</speed>
+    </initialConditions>
+    <goalSequence>
+      <seekStaticTarget>
+        <targetLocation> <x>0</x> <y>1</y> <z>-17.5</z> </targetLocation>
+        <desiredSpeed>15</desiredSpeed>
+        <timeDuration>2</timeDuration>
+      </seekStaticTarget>
+    </goalSequence>
+  </agentRegion>
+
+
+    <agentRegion>
+    <numAgents>3</numAgents>
+    <regionBounds>
+      <xmin>-5</xmin>
+      <xmax>5</xmax>
+      <ymin>0</ymin>
+      <ymax>0</ymax>
+      <zmin>-13</zmin>
+      <zmax>-8</zmax>
+    </regionBounds>
+    <initialConditions>
+      <direction> <x>0</x> <y>0</y> <z>1</z> </direction>
+      <radius>0.5</radius>
+      <speed>0</speed>
+    </initialConditions>
+    <goalSequence>
+      <seekStaticTarget>
+        <targetLocation> <x>0</x> <y>1</y> <z>17.5</z> </targetLocation>
+        <desiredSpeed>15</desiredSpeed>
+        <timeDuration>2</timeDuration>
+      </seekStaticTarget>
+    </goalSequence>
+  </agentRegion>
+
+</SteerBenchTestCase>

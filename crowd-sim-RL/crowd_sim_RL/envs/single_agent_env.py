@@ -128,7 +128,7 @@ class SingleAgentEnv(gym.Env):
         observation = [internal_state, external_state_laser, external_state_type]
 
         # When training, do manual reset once if the agent is stuck in local optima or
-        # if they are wandering in obstacles
+        # if they are wandering in 2-obstacles
         if "train" in self.mode:
             self._check_resets(agent, previous_pos, collision_obstacle)
 
@@ -311,7 +311,7 @@ class SingleAgentEnv(gym.Env):
         collision = False
         collision_obstacle = False
 
-        # detect collision with obstacles
+        # detect collision with 2-obstacles
         for obstacle in self.obstacles:
             if self._collision_circle_rectangle(obstacle.x, obstacle.y, obstacle.width, obstacle.height,
                                                 current_agent.pos[0, 0], current_agent.pos[1, 0], current_agent.radius):

@@ -20,7 +20,7 @@ count_over = 0
 
 
 def main():
-    filename = "2/2_way_confusion"
+    filename = "2/3-confusion"
     seed = 1
     sim_state = parse_sim_state(filename, seed)
 
@@ -50,7 +50,7 @@ def on_train_result(info):
 
     # curriculum learning
     """if iterations_count % 20:
-        sim_state = parse_sim_state("obstacles", iterations_count)
+        sim_state = parse_sim_state("2-obstacles", iterations_count)
         trainer.workers.foreach_worker(
             lambda ev: ev.foreach_env(
                 lambda env: env.set_phase(sim_state)))"""

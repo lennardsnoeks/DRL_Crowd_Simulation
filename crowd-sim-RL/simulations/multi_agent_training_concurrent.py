@@ -13,7 +13,7 @@ mean_max = 300
 
 
 def main():
-    filename = "2/2_way_confusion"
+    filename = "2/3-confusion"
     sim_state = parse_sim_state(filename)
 
     checkpoint = ""

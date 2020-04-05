@@ -8,7 +8,7 @@
     - <agent> - defines the initial conditions of a single agent.
     - <agentRegion> - defines initial conditions of many agents at once, where agents are randomly located in a region.
     - <obstacle> - defines the initial conditions of an obstacle.
-    - <obstacleRegion> - defines the initial conditions of many obstacles that are randomly located in a region.
+    - <obstacleRegion> - defines the initial conditions of many 2-obstacles that are randomly located in a region.
 -->
 
 <?xml version="1.0"?>
@@ -189,7 +189,7 @@
    - suggestedCameraView allows the test case to suggest to the user what camera views would be useful
    - agent specifies a single agent in the test case
    - agentRegion specifies a region of randomly-placed agents
-   - obstacleRegion specifies a region of randomly-placed obstacles
+   - obstacleRegion specifies a region of randomly-placed 2-obstacles
    - NOTE: "obstacle", for now, is a simple bounding box, but may become a xsd:complexType in the future.
   -->
   <xsd:complexType name="HeaderType">

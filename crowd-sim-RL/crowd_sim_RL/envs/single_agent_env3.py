@@ -112,6 +112,7 @@ class SingleAgentEnv3(gym.Env):
                 shortest_goal = goal
             if new_distance_to_goal <= self.sim_state.goal_tolerance:
                 done = True
+                agent.done = True
                 reward += self.reward_goal_reached
         reward += self.reward_goal * diff
 
@@ -131,7 +132,7 @@ class SingleAgentEnv3(gym.Env):
         observation = [internal_state, external_state_laser, external_state_type]
 
         # When training, do manual reset once if the agent is stuck in local optima or
-        # if they are wandering in obstacles
+        # if they are wandering in 2-obstacles
         if "train" in self.mode:
             self._check_resets(agent, previous_pos, collision_obstacle)
 
@@ -284,7 +285,7 @@ class SingleAgentEnv3(gym.Env):
                             y_end = distant_y
                             collision = True
                             type = 0
-                else:
+                elif not agent.done:   # dont detect other agent if they are in done state
                     if self._point_in_circle(distant_x, distant_y, agent.pos[0, 0], agent.pos[1, 0], agent.radius):
                         distance = distance_to_object
                         x_end = distant_x
@@ -321,10 +322,11 @@ class SingleAgentEnv3(gym.Env):
         collision = False
         collision_obstacle = False
 
-        # detect collision with obstacles
+        # detect collision with 2-obstacles
         for obstacle in self.obstacles:
             if self._collision_circle_rectangle(obstacle.x, obstacle.y, obstacle.width, obstacle.height,
-                                                current_agent.pos[0, 0], current_agent.pos[1, 0], current_agent.radius):
+                                                current_agent.pos[0, 0], current_agent.pos[1, 0],
+                                                current_agent.radius):
                 reward -= self.reward_collision
                 collision = True
                 collision_obstacle = True
@@ -332,9 +334,10 @@ class SingleAgentEnv3(gym.Env):
         # detect collision with other agents
         if not collision:
             for agent in self.compare_agents:
-                if current_agent.id != agent.id:
-                    if self._collision_circle_circle(current_agent.pos[0, 0], current_agent.pos[1, 0], current_agent.radius,
-                                                     agent.pos[0, 0], agent.pos[1, 0], agent.radius):
+                if current_agent.id != agent.id and not agent.done:  # only detect collision when agent not done
+                    if self._collision_circle_circle(current_agent.pos[0, 0], current_agent.pos[1, 0],
+                                                     current_agent.radius, agent.pos[0, 0], agent.pos[1, 0],
+                                                     agent.radius):
                         reward -= self.reward_collision
                         collision = True
 

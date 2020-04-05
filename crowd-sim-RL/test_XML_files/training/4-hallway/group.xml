@@ -29,7 +29,7 @@
     <ymin>0</ymin>
     <ymax>1</ymax>
     <zmin>3</zmin>
-    <zmax>25</zmax>
+    <zmax>4</zmax>
   </obstacle>
 
   <obstacle>
@@ -37,45 +37,61 @@
     <xmax>25</xmax>
     <ymin>0</ymin>
     <ymax>1</ymax>
-    <zmin>-25</zmin>
+    <zmin>-4</zmin>
     <zmax>-3</zmax>
   </obstacle>
 
-  <agent>
-    <name>A</name>
+    <agentRegion>
+    <numAgents>4</numAgents>
+    <regionBounds>
+      <xmin>-12</xmin>
+      <xmax>-8</xmax>
+      <ymin>0</ymin>
+      <ymax>0</ymax>
+      <zmin>-2.4</zmin>
+      <zmax>2.4</zmax>
+    </regionBounds>
     <initialConditions>
-      <radius>0.5</radius>
-      <position> <x>-20</x> <y>0</y> <z>0</z> </position>
       <direction> <x>1</x> <y>0</y> <z>0</z> </direction>
-      <speed>0</speed>
-    </initialConditions>
-    <goalSequence>
-      <seekStaticTarget>
-        <targetLocation> <x>15</x> <y>0</y> <z>0</z> </targetLocation>
-        <desiredSpeed>1.2</desiredSpeed>
-        <timeDuration>1000.0</timeDuration>
-      </seekStaticTarget>
-    </goalSequence>
-
-  </agent>
-
-  <agent>
-    <name>B</name>
-    <initialConditions>
       <radius>0.5</radius>
-      <position> <x>20</x> <y>0</y> <z>0</z> </position>
-      <direction> <x>-1</x> <y>0</y> <z>0</z> </direction>
       <speed>0</speed>
     </initialConditions>
     <goalSequence>
       <seekStaticTarget>
-        <targetLocation> <x>-15</x> <y>0</y> <z>0</z> </targetLocation>
-        <desiredSpeed>1.2</desiredSpeed>
-        <timeDuration>1000.0</timeDuration>
+        <targetLocation> <x>15</x> <y>1</y> <z>0</z> </targetLocation>
+        <desiredSpeed>1</desiredSpeed>
+        <timeDuration>6</timeDuration>
       </seekStaticTarget>
     </goalSequence>
 
-  </agent>
+  </agentRegion>
+
+
+    <agentRegion>
+    <numAgents>4</numAgents>
+    <regionBounds>
+      <xmin>8</xmin>
+      <xmax>12</xmax>
+      <ymin>0</ymin>
+      <ymax>0</ymax>
+      <zmin>-2.4</zmin>
+      <zmax>2.4</zmax>
+    </regionBounds>
+    <initialConditions>
+      <direction> <x>-1</x> <y>0</y> <z>0</z> </direction>
+      <radius>0.5</radius>
+      <speed>0</speed>
+    </initialConditions>
+    <goalSequence>
+      <seekStaticTarget>
+        <targetLocation> <x>-15</x> <y>1</y> <z>0</z> </targetLocation>
+        <desiredSpeed>1</desiredSpeed>
+        <timeDuration>6</timeDuration>
+      </seekStaticTarget>
+    </goalSequence>
+
+  </agentRegion>
+
 
 
 

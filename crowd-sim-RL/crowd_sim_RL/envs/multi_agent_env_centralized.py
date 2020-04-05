@@ -187,7 +187,7 @@ class MultiAgentCentralized(gym.Env):
                 reward += reward_collision
 
                 # When training, do manual reset once if the agent is stuck in local optima or
-                # if they are wandering in obstacles
+                # if they are wandering in 2-obstacles
                 if "train" in self.mode:
                     if self.step_counts_same[agent.id] == 0:
                         agent_x = previous_pos[0, 0]
@@ -393,7 +393,7 @@ class MultiAgentCentralized(gym.Env):
         collision = False
         collision_obstacle = False
 
-        # detect collision with obstacles
+        # detect collision with 2-obstacles
         for obstacle in self.obstacles:
             if self._collision_circle_rectangle(obstacle.x, obstacle.y, obstacle.width, obstacle.height,
                                                 current_agent.pos[0, 0], current_agent.pos[1, 0], current_agent.radius):

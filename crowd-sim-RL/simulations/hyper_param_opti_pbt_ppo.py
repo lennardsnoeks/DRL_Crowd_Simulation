@@ -10,7 +10,7 @@ from simulations.configs import ppo_config
 
 def main():
     dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, "../test_XML_files/obstacles/obstacles.xml")
+    filename = os.path.join(dirname, "../test_XML_files/2-obstacles/1.xml")
     seed = 1
     sim_state = XMLSimulationState(filename, seed).simulation_state
 

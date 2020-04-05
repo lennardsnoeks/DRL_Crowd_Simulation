@@ -11,7 +11,7 @@ from visualization.visualize_simulation_multi import VisualizationSimMulti
 
 def main():
     dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, "../test_XML_files/hallway_slimmer/hallway_4.xml")
+    filename = os.path.join(dirname, "../test_XML_files/hallway_slimmer/4.xml")
     seed = 1
     sim_state = XMLSimulationState(filename, seed).simulation_state
 

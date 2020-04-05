@@ -11,7 +11,7 @@ from hyperopt import hp
 
 def main():
     dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, "../test_XML_files/hallway_test/hallway_single.xml")
+    filename = os.path.join(dirname, "../test_XML_files/hallway_test/1.xml")
     seed = 22222
     sim_state = XMLSimulationState(filename, seed).simulation_state
 

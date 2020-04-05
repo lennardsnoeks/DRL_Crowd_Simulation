@@ -38,6 +38,7 @@ class Agent:
     laser_history_obstacles = []
     laser_lines = []
     type_colors = []
+    done = False
 
     # used in centralized env
     internal_states = None

@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 
 def main():
     dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, "../test_XML_files/obstacles.xml")
+    filename = os.path.join(dirname, "../test_XML_files/1.xml")
     sim_state = XMLSimulationState(filename).simulation_state
 
     train(sim_state)

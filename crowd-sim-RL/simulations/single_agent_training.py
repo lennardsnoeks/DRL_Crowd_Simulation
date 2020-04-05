@@ -12,8 +12,8 @@ from simulations.configs import ppo_config, ddpg_config
 
 def main():
     dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, "../test_XML_files/obstacles.xml")
-    #filename = os.path.join(dirname, "../test_XML_files/hallway_test/hallway_single.xml")
+    filename = os.path.join(dirname, "../test_XML_files/1.xml")
+    #filename = os.path.join(dirname, "../test_XML_files/hallway_test/1.xml")
     #seed = 16
     seed = 22222
     sim_state = XMLSimulationState(filename, seed).simulation_state
