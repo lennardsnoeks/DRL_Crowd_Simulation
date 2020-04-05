@@ -24,8 +24,8 @@
   </suggestedCameraView>
 
   <obstacle>
-    <xmin>-25</xmin>
-    <xmax>25</xmax>
+    <xmin>-16</xmin>
+    <xmax>16</xmax>
     <ymin>0</ymin>
     <ymax>1</ymax>
     <zmin>3</zmin>
@@ -33,8 +33,8 @@
   </obstacle>
 
   <obstacle>
-    <xmin>-25</xmin>
-    <xmax>25</xmax>
+    <xmin>-16</xmin>
+    <xmax>16</xmax>
     <ymin>0</ymin>
     <ymax>1</ymax>
     <zmin>-4</zmin>
