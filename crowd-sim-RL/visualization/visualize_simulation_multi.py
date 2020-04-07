@@ -61,6 +61,8 @@ class VisualizationSimMulti:
             prev_actions[i] = [0.0, 0.0]
         state = self.trainer.get_policy("policy_0").get_initial_state()
 
+        dones = None
+
         while True:
             dt = clock.tick(self.framerate)
 
@@ -80,8 +82,17 @@ class VisualizationSimMulti:
                                                                     # for concurrent + str(self.sim_state.agents[i].id))
 
                     scale = dt / 1000
-                    action_rescales[i] = [linear_vel * scale, angular_vel * scale]
-                    actions[i] = [linear_vel, angular_vel]
+
+                    if dones is None:
+                        action_rescales[i] = [linear_vel * scale, angular_vel * scale]
+                        actions[i] = [linear_vel, angular_vel]
+                    else:
+                        if not dones[i]:
+                            action_rescales[i] = [linear_vel * scale, angular_vel * scale]
+                            actions[i] = [linear_vel, angular_vel]
+                        else:
+                            action_rescales[i] = [0, 0]
+                            actions[i] = [0, 0]
 
                 observations, rewards, dones, info = env.step(action_rescales)
 

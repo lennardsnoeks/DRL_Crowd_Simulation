@@ -1,5 +1,8 @@
 from ray.rllib.agents import with_common_config
 
+"""config["exploration_should_anneal"] = False
+    config["exploration_noise_type"] = "ou"""""
+
 DDPG_CONFIG = with_common_config({
     # === Twin Delayed DDPG (TD3) and Soft Actor-Critic (SAC) tricks ===
     # TD3: https://spinningup.openai.com/en/latest/algorithms/td3.html
@@ -86,7 +89,7 @@ DDPG_CONFIG = with_common_config({
     # optimization step happens) to decrease dependence of exploration &
     # optimization on initial policy parameters. Note that this will be
     # disabled when the action noise scale is set to 0 (e.g during evaluation).
-    "pure_exploration_steps": 1000,
+    "pure_exploration_steps": 1500,
     # Extra configuration that disables exploration.
     "evaluation_config": {
         "exploration_fraction": 0,
@@ -135,7 +138,7 @@ DDPG_CONFIG = with_common_config({
     "learning_starts": 1500,
     # Update the replay buffer with this many samples at once. Note that this
     # setting applies per-worker if num_workers > 1.
-    "sample_batch_size": 1,
+    "sample_batch_size": 20,
     # Size of a batched sampled from replay buffer for training. Note that
     # if async_updates is set, then each worker returns gradients for a
     # batch of this size.

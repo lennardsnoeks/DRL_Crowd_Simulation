@@ -36,75 +36,75 @@
   </suggestedCameraView>
 
   <obstacle>
-    <xmin>-18.5</xmin>
-    <xmax>-17.5</xmax>
+    <xmin>-16.5</xmin>
+    <xmax>-15.5</xmax>
     <ymin>0</ymin>
     <ymax>1</ymax>
-    <zmin>-18</zmin>
-    <zmax>18</zmax>
+    <zmin>-16</zmin>
+    <zmax>16</zmax>
   </obstacle>
 
     <obstacle>
-    <xmin>-17.5</xmin>
+    <xmin>-15.5</xmin>
     <xmax>-7.5</xmax>
     <ymin>0</ymin>
     <ymax>1</ymax>
-    <zmin>-18</zmin>
+    <zmin>-15</zmin>
     <zmax>-7</zmax>
   </obstacle>
 
 
   <obstacle>
-    <xmin>-18.5</xmin>
-    <xmax>18.5</xmax>
+    <xmin>-15.5</xmin>
+    <xmax>15.5</xmax>
     <ymin>0</ymin>
     <ymax>1</ymax>
-    <zmin>-19</zmin>
-    <zmax>-18</zmax>
+    <zmin>-16</zmin>
+    <zmax>-15</zmax>
   </obstacle>
 
     <obstacle>
     <xmin>7.5</xmin>
-    <xmax>18.5</xmax>
+    <xmax>15.5</xmax>
     <ymin>0</ymin>
     <ymax>1</ymax>
     <zmin>7</zmin>
-    <zmax>18</zmax>
+    <zmax>15</zmax>
   </obstacle>
 
   <obstacle>
-    <xmin>-18.5</xmin>
-    <xmax>18.5</xmax>
+    <xmin>-15.5</xmin>
+    <xmax>15.5</xmax>
     <ymin>0</ymin>
     <ymax>1</ymax>
-    <zmin>18</zmin>
-    <zmax>19</zmax>
+    <zmin>15</zmin>
+    <zmax>16</zmax>
   </obstacle>
 
     <obstacle>
-    <xmin>-17.5</xmin>
+    <xmin>-15.5</xmin>
     <xmax>-7.5</xmax>
     <ymin>0</ymin>
     <ymax>1</ymax>
     <zmin>7</zmin>
-    <zmax>18</zmax>
+    <zmax>15</zmax>
   </obstacle>
 
   <obstacle>
-    <xmin>18.5</xmin>
-    <xmax>19.5</xmax>
+    <xmin>15.5</xmin>
+    <xmax>16.5</xmax>
     <ymin>0</ymin>
     <ymax>1</ymax>
-    <zmin>-19</zmin>
-    <zmax>19</zmax>
+    <zmin>-16</zmin>
+    <zmax>16</zmax>
   </obstacle>
 
     <obstacle>
     <xmin>7.5</xmin>
-    <xmax>18.5</xmax>
+    <xmax>15.5</xmax>
     <ymin>0</ymin>
     <ymax>1</ymax>
-    <zmin>-18</zmin>
+    <zmin>-15</zmin>
     <zmax>-7</zmax>
   </obstacle>
 
@@ -125,9 +125,9 @@
     </initialConditions>
     <goalSequence>
       <seekStaticTarget>
-        <targetLocation> <x>18</x> <y>1</y> <z>0</z> </targetLocation>
+        <targetLocation> <x>13</x> <y>1</y> <z>0</z> </targetLocation>
         <desiredSpeed>2</desiredSpeed>
-        <timeDuration>14</timeDuration>
+        <timeDuration>13</timeDuration>
       </seekStaticTarget>
     </goalSequence>
 
@@ -150,8 +150,8 @@
     </initialConditions>
     <goalSequence>
       <seekStaticTarget>
-        <targetLocation> <x>0</x> <y>1</y> <z>-17.5</z> </targetLocation>
-        <desiredSpeed>15</desiredSpeed>
+        <targetLocation> <x>0</x> <y>1</y> <z>-12.5</z> </targetLocation>
+        <desiredSpeed>13</desiredSpeed>
         <timeDuration>2</timeDuration>
       </seekStaticTarget>
     </goalSequence>

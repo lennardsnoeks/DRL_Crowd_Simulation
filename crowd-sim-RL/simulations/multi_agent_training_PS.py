@@ -1,26 +1,23 @@
 import os
 import ray
-from ray.rllib.agents.ddpg.ddpg_policy import DDPGTFPolicy
-from ray.rllib.agents.ppo.ppo_tf_policy import PPOTFPolicy
-from ray.rllib.agents.ddpg import ddpg
 from ray.tune import register_env, run
 from crowd_sim_RL.envs import SingleAgentEnv, SingleAgentEnv2, SingleAgentEnv3
 from crowd_sim_RL.envs.multi_agent_env import MultiAgentEnvironment
 from utils.steerbench_parser import XMLSimulationState
-from simulations.configs import ddpg_config, ddpg_config2, ppo_config
+from simulations.configs import ddpg_config, ddpg_config2, ppo_config, a2c_config, a3c_config, td3_config, apex_ddpg
 
 phase2_set = False
 phase3_set = False
 test_set = False
 iterations_count = 0
 iterations_max = 100
-mean_max = 500
+mean_max = 600
 count_over_max = 10
 count_over = 0
 
 
 def main():
-    filename = "2/3-confusion"
+    filename = "5-crossway_2_groups/group"
     seed = 1
     sim_state = parse_sim_state(filename, seed)
 
@@ -31,7 +28,7 @@ def main():
 
 def parse_sim_state(filename, seed):
     dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, "../test_XML_files/training/test_case_" + filename + ".xml")
+    filename = os.path.join(dirname, "../test_XML_files/training/" + filename + ".xml")
     sim_state = XMLSimulationState(filename, seed).simulation_state
 
     return sim_state
@@ -102,23 +99,18 @@ def train(sim_state, checkpoint):
     checkpoint_freq = 5
 
     # DDPG
-    config = ddpg_config.DDPG_CONFIG.copy()
-    config["exploration_should_anneal"] = False
-    config["exploration_noise_type"] = "ou"
+    #config = ddpg_config.DDPG_CONFIG.copy()
 
     # PPO
-    #config = ppo_config.PPO_CONFIG.copy()
-    """config["gamma"] = 0.99
-    config["num_sgd_iter"] = 5
-    config["sgd_minibatch_size"] = 32
-    config["train_batch_size"] = 2048
-    config["lr"] = 0.0003
-    config["clip_param"] = 0.2
-    config["kl_coeff"] = 1
-    config["kl_target"] = 0.01
-    config["lambda"] = 0.95
-    config["entropy_coeff"] = 0.01"""
+    config = ppo_config.PPO_CONFIG.copy()
 
+    # A2C
+    #config = a2c_config.A2C_CONFIG.copy()
+
+    # TD3
+    #config = td3_config.TD3_CONFIG.copy()
+
+    config["gamma"] = 0.99
     config["num_workers"] = 0
     config["num_gpus"] = 0
     config["observation_filter"] = "MeanStdFilter"
@@ -141,10 +133,10 @@ def train(sim_state, checkpoint):
     obs_space = single_env.get_observation_space()
     action_space = single_env.get_action_space()
 
+    gamma = config["gamma"]
     config["multiagent"] = {
         "policies": {
-            "policy_0": (DDPGTFPolicy, obs_space, action_space, {"gamma": 0.95})
-            #"policy_0": (PPOTFPolicy, obs_space, action_space, {"gamma": 0.99})
+            "policy_0": (None, obs_space, action_space, {"gamma": gamma}),
         },
         "policy_mapping_fn": lambda agent_id: "policy_0"
     }
@@ -159,16 +151,13 @@ def train(sim_state, checkpoint):
         #"training_iteration": iterations_max
     }
 
-    name = "training_case_1"
-    if checkpoint == "":
-        run("DDPG", name=name, checkpoint_freq=checkpoint_freq, stop=stop, config=config)
-    else:
-        run("DDPG", name=name, checkpoint_freq=checkpoint_freq, stop=stop, config=config, restore=checkpoint)
+    name = "test_5_ppo"
+    algo = "PPO"
 
-    """if checkpoint == "":
-        run("PPO", name=name, checkpoint_freq=checkpoint_freq, stop=stop, config=config)
+    if checkpoint == "":
+        run(algo, name=name, checkpoint_freq=checkpoint_freq, stop=stop, config=config)
     else:
-        run("PPO", name=name, checkpoint_freq=checkpoint_freq, stop=stop, config=config, restore=checkpoint)"""
+        run(algo, name=name, checkpoint_freq=checkpoint_freq, stop=stop, config=config, restore=checkpoint)
 
 
 if __name__ == "__main__":

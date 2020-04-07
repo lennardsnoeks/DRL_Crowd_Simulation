@@ -113,6 +113,9 @@ class SingleAgentEnv3(gym.Env):
             if new_distance_to_goal <= self.sim_state.goal_tolerance:
                 done = True
                 agent.done = True
+                self.step_count_same = 0
+                self.step_count_obs = 0
+                self.step_count = 0
                 reward += self.reward_goal_reached
         reward += self.reward_goal * diff
 
@@ -146,23 +149,23 @@ class SingleAgentEnv3(gym.Env):
         elif self.step_count_same == self.max_step_count:
             self.reset_pos_necessary = True
 
-        if self.step_count_obs == self.max_step_count:
+        """if self.step_count_obs == self.max_step_count:
             self.reset_pos_necessary = True
 
         if self.step_count == 5000:
-            self.reset_pos_necessary = True
+            self.reset_pos_necessary = True"""
 
         if self._in_local_optima(agent.pos):
             self.step_count_same += 1
         else:
             self.step_count_same = 0
 
-        if collision_obstacle:
+        """if collision_obstacle:
             self.step_count_obs += 1
         else:
             self.step_count_obs = 0
 
-        self.step_count += 1
+        self.step_count += 1"""
 
         if self.reset_pos_necessary:
             self.step_count_same = 0
