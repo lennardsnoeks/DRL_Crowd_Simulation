@@ -16,7 +16,7 @@ class VisualizationSimMulti:
     def __init__(self, sim_state: SimulationState, trainer: Trainer):
         pygame.init()
 
-        self.FPS_FONT = pygame.font.SysFont("Verdana", 12)
+        self.FPS_FONT = pygame.font.SysFont("Verdana", 11)
         self.GOLDENROD = pygame.Color("goldenrod")
 
         self.goals_visible = True
@@ -172,14 +172,18 @@ class VisualizationSimMulti:
             y_max = (obstacle.y + obstacle.height) * self.zoom_factor
 
             # draw obstacle
-            pygame.draw.rect(self.screen, SIM_COLORS['light gray'],
+            if obstacle.type == -1:
+                color = SIM_COLORS['light gray']
+            else:
+                color = SIM_COLORS['obs']
+            pygame.draw.rect(self.screen, color,
                              (x_min, y_min, obstacle.width * self.zoom_factor, obstacle.height * self.zoom_factor))
 
             # draw border
-            pygame.draw.line(self.screen, SIM_COLORS['black'], (x_min, y_min), (x_max, y_min), 1)
-            pygame.draw.line(self.screen, SIM_COLORS['black'], (x_min, y_min), (x_min, y_max), 1)
-            pygame.draw.line(self.screen, SIM_COLORS['black'], (x_max, y_min), (x_max, y_max), 1)
-            pygame.draw.line(self.screen, SIM_COLORS['black'], (x_min, y_max), (x_max, y_max), 1)
+            pygame.draw.line(self.screen, color, (x_min, y_min), (x_max, y_min), 1)
+            pygame.draw.line(self.screen, color, (x_min, y_min), (x_min, y_max), 1)
+            pygame.draw.line(self.screen, color, (x_max, y_min), (x_max, y_max), 1)
+            pygame.draw.line(self.screen, color, (x_min, y_max), (x_max, y_max), 1)
 
     def draw_agents(self):
         for agent in self.sim_state.agents:

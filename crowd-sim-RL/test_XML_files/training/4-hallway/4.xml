@@ -7,12 +7,12 @@
     <version>1.0</version>
     <name>hallway-two-way</name>
     <worldBounds>
-      <xmin>-25</xmin>
-      <xmax>25</xmax>
+      <xmin>-16</xmin>
+      <xmax>16</xmax>
       <ymin>0</ymin>
       <ymax>0</ymax>
-      <zmin>-25</zmin>
-      <zmax>25</zmax>
+      <zmin>-3.5</zmin>
+      <zmax>3.5</zmax>
     </worldBounds>
   </header>
 
@@ -23,7 +23,7 @@
     <fovy>45</fovy>
   </suggestedCameraView>
 
-  <obstacle>
+  <!--<obstacle>
     <xmin>-16</xmin>
     <xmax>16</xmax>
     <ymin>0</ymin>
@@ -39,7 +39,7 @@
     <ymax>1</ymax>
     <zmin>-3.5</zmin>
     <zmax>-3</zmax>
-  </obstacle>
+  </obstacle>-->
 
     <agent>
         <name>A_0</name>
@@ -51,7 +51,7 @@
         </initialConditions>
         <goalSequence>
           <seekStaticTarget>
-            <targetLocation> <x>15.5</x> <y>1</y> <z>0</z> </targetLocation>
+            <targetLocation> <x>15</x> <y>1</y> <z>0</z> </targetLocation>
             <desiredSpeed>1</desiredSpeed>
             <timeDuration>5</timeDuration>
           </seekStaticTarget>
@@ -68,7 +68,7 @@
         </initialConditions>
         <goalSequence>
           <seekStaticTarget>
-            <targetLocation> <x>15.5</x> <y>1</y> <z>0</z> </targetLocation>
+            <targetLocation> <x>15</x> <y>1</y> <z>0</z> </targetLocation>
             <desiredSpeed>1</desiredSpeed>
             <timeDuration>5</timeDuration>
           </seekStaticTarget>

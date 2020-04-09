@@ -108,41 +108,103 @@
     <zmax>-7.5</zmax>
   </obstacle>
 
-
-  <agent>
-    <name>A</name>
+    <agentRegion>
+    <numAgents>1</numAgents>
+    <regionBounds>
+      <xmin>-10</xmin>
+      <xmax>-9</xmax>
+      <ymin>0</ymin>
+      <ymax>0</ymax>
+      <zmin>-0.5</zmin>
+      <zmax>0.5</zmax>
+    </regionBounds>
     <initialConditions>
-      <radius>0.5</radius>
-      <position> <x>-13</x> <y>0</y> <z>0</z> </position>
       <direction> <x>1</x> <y>0</y> <z>0</z> </direction>
+      <radius>0.5</radius>
       <speed>0</speed>
     </initialConditions>
     <goalSequence>
       <seekStaticTarget>
-        <targetLocation> <x>13</x> <y>1</y> <z>0</z> </targetLocation>
-        <desiredSpeed>2</desiredSpeed>
+        <targetLocation> <x>14</x> <y>1</y> <z>0</z> </targetLocation>
+        <desiredSpeed>1</desiredSpeed>
         <timeDuration>13</timeDuration>
       </seekStaticTarget>
     </goalSequence>
 
-  </agent>
+  </agentRegion>
 
-      <agent>
-    <name>B</name>
+      <agentRegion>
+    <numAgents>1</numAgents>
+    <regionBounds>
+      <xmin>9</xmin>
+      <xmax>10</xmax>
+      <ymin>0</ymin>
+      <ymax>0</ymax>
+      <zmin>-0.5</zmin>
+      <zmax>0.5</zmax>
+    </regionBounds>
     <initialConditions>
+      <direction> <x>-1</x> <y>0</y> <z>0</z> </direction>
       <radius>0.5</radius>
-      <position> <x>0</x> <y>0</y> <z>13</z> </position>
-      <direction> <x>0</x> <y>0</y> <z>-1</z> </direction>
       <speed>0</speed>
     </initialConditions>
     <goalSequence>
       <seekStaticTarget>
-        <targetLocation> <x>0</x> <y>1</y> <z>-13</z> </targetLocation>
-        <desiredSpeed>13</desiredSpeed>
-        <timeDuration>2</timeDuration>
+        <targetLocation> <x>-14</x> <y>1</y> <z>0</z> </targetLocation>
+        <desiredSpeed>1</desiredSpeed>
+        <timeDuration>13</timeDuration>
       </seekStaticTarget>
     </goalSequence>
 
-  </agent>
+  </agentRegion>
+
+    <agentRegion>
+    <numAgents>1</numAgents>
+    <regionBounds>
+      <xmin>-0.5</xmin>
+      <xmax>0.5</xmax>
+      <ymin>0</ymin>
+      <ymax>0</ymax>
+      <zmin>9</zmin>
+      <zmax>10</zmax>
+    </regionBounds>
+    <initialConditions>
+      <direction> <x>0</x> <y>0</y> <z>-1</z> </direction>
+      <radius>0.5</radius>
+      <speed>0</speed>
+    </initialConditions>
+    <goalSequence>
+      <seekStaticTarget>
+        <targetLocation> <x>0</x> <y>1</y> <z>-14</z> </targetLocation>
+        <desiredSpeed>13</desiredSpeed>
+        <timeDuration>1</timeDuration>
+      </seekStaticTarget>
+    </goalSequence>
+  </agentRegion>
+
+
+    <agentRegion>
+    <numAgents>1</numAgents>
+    <regionBounds>
+      <xmin>-0.5</xmin>
+      <xmax>0.5</xmax>
+      <ymin>0</ymin>
+      <ymax>0</ymax>
+      <zmin>-10</zmin>
+      <zmax>-9</zmax>
+    </regionBounds>
+    <initialConditions>
+      <direction> <x>0</x> <y>0</y> <z>1</z> </direction>
+      <radius>0.5</radius>
+      <speed>0</speed>
+    </initialConditions>
+    <goalSequence>
+      <seekStaticTarget>
+        <targetLocation> <x>0</x> <y>1</y> <z>14</z> </targetLocation>
+        <desiredSpeed>13</desiredSpeed>
+        <timeDuration>1</timeDuration>
+      </seekStaticTarget>
+    </goalSequence>
+  </agentRegion>
 
 </SteerBenchTestCase>

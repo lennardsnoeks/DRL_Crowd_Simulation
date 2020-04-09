@@ -38,7 +38,7 @@
   <obstacle>
     <xmin>-21.5</xmin>
     <xmax>-20.5</xmax>
-    <ymin>0</ymin>
+    <ymin>-1</ymin>
     <ymax>1</ymax>
     <zmin>-15</zmin>
     <zmax>15</zmax>
@@ -47,7 +47,7 @@
   <obstacle>
     <xmin>-21.5</xmin>
     <xmax>21.5</xmax>
-    <ymin>0</ymin>
+    <ymin>-1</ymin>
     <ymax>1</ymax>
     <zmin>-15</zmin>
     <zmax>-14</zmax>
@@ -56,7 +56,7 @@
   <obstacle>
     <xmin>-21.5</xmin>
     <xmax>21.5</xmax>
-    <ymin>0</ymin>
+    <ymin>-1</ymin>
     <ymax>1</ymax>
     <zmin>14</zmin>
     <zmax>15</zmax>
@@ -65,7 +65,7 @@
   <obstacle>
     <xmin>20.5</xmin>
     <xmax>21.5</xmax>
-    <ymin>0</ymin>
+    <ymin>-1</ymin>
     <ymax>1</ymax>
     <zmin>-15</zmin>
     <zmax>15</zmax>

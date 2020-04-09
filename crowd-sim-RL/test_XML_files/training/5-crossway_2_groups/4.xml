@@ -109,12 +109,19 @@
   </obstacle>
 
 
-  <agent>
-    <name>A</name>
+    <agentRegion>
+    <numAgents>2</numAgents>
+    <regionBounds>
+      <xmin>-13</xmin>
+      <xmax>-8</xmax>
+      <ymin>0</ymin>
+      <ymax>0</ymax>
+      <zmin>-5</zmin>
+      <zmax>5</zmax>
+    </regionBounds>
     <initialConditions>
-      <radius>0.5</radius>
-      <position> <x>-13</x> <y>0</y> <z>0</z> </position>
       <direction> <x>1</x> <y>0</y> <z>0</z> </direction>
+      <radius>0.5</radius>
       <speed>0</speed>
     </initialConditions>
     <goalSequence>
@@ -125,14 +132,21 @@
       </seekStaticTarget>
     </goalSequence>
 
-  </agent>
+  </agentRegion>
 
-      <agent>
-    <name>B</name>
+    <agentRegion>
+    <numAgents>2</numAgents>
+    <regionBounds>
+      <xmin>-5</xmin>
+      <xmax>5</xmax>
+      <ymin>0</ymin>
+      <ymax>0</ymax>
+      <zmin>8</zmin>
+      <zmax>13</zmax>
+    </regionBounds>
     <initialConditions>
-      <radius>0.5</radius>
-      <position> <x>0</x> <y>0</y> <z>13</z> </position>
       <direction> <x>0</x> <y>0</y> <z>-1</z> </direction>
+      <radius>0.5</radius>
       <speed>0</speed>
     </initialConditions>
     <goalSequence>
@@ -143,6 +157,6 @@
       </seekStaticTarget>
     </goalSequence>
 
-  </agent>
+  </agentRegion>
 
 </SteerBenchTestCase>

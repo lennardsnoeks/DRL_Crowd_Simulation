@@ -15,7 +15,7 @@ A3C_CONFIG = with_common_config({
     # Max global norm for each gradient calculated by worker
     "grad_clip": 40.0,
     # Learning rate
-    "lr": 0.0001,
+    "lr": 0.0007,
     # Learning rate schedule
     "lr_schedule": None,
     # Value Function Loss coefficient

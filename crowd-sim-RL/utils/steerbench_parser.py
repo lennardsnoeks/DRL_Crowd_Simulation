@@ -122,7 +122,8 @@ class XMLSimulationState:
         self.parse_obstacles(root)
         self.parse_agents(root)
 
-        self.simulation_state.clip_bounds()
+        #self.simulation_state.clip_bounds()
+        self.simulation_state.clipped_bounds = self.simulation_state.bounds
         self.simulation_state.shift_center()
         self.simulation_state.move_agents_from_obstacles()
 
@@ -231,8 +232,9 @@ class XMLSimulationState:
 
     def parse_obstacle(self, element):
         bounds = self.parse_bounds(element)
+        type = int(element.find('steerbench:ymin', self.namespace).text)
         self.simulation_state.obstacles.append(
-            Obstacle(bounds[1] - bounds[0], bounds[5] - bounds[4], bounds[0], bounds[4]))
+            Obstacle(bounds[1] - bounds[0], bounds[5] - bounds[4], bounds[0], bounds[4], type))
 
     def parse_obstacle_region(self, region_elem):
         bounds = self.parse_bounds(region_elem.find('steerbench:regionBounds', self.namespace))
@@ -240,7 +242,7 @@ class XMLSimulationState:
         size = float(region_elem.find('steerbench:obstacleSize', self.namespace).text)
         for i in range(num):
             self.simulation_state.obstacles.append(
-                Obstacle(size, size, random.uniform(bounds[0], bounds[1]), random.uniform(bounds[4], bounds[5])))
+                Obstacle(size, size, random.uniform(bounds[0], bounds[1]), random.uniform(bounds[4], bounds[5]), 0))
 
     def parse_bounds(self, bounds_elem):
         bounds = [min(float(bounds_elem.find('steerbench:xmin', self.namespace).text),

@@ -1,5 +1,8 @@
 from ray.tune.utils import merge_dicts
-from simulations.configs.ddpg_config import DDPG_CONFIG
+#from simulations.configs.ddpg_config import DDPG_CONFIG
+import ray.rllib.agents.ddpg as ddpg
+
+DDPG_CONFIG = ddpg.DEFAULT_CONFIG.copy()
 
 TD3_CONFIG = merge_dicts(
     DDPG_CONFIG,
@@ -24,12 +27,12 @@ TD3_CONFIG = merge_dicts(
         "critic_hiddens": [64, 64],
         "n_step": 1,
         "gamma": 0.95,
-        "actor_lr": 1e-4,
+        "actor_lr": 1e-3,
         "critic_lr": 1e-3,
         "l2_reg": 0.0,
-        "tau": 1e-3,
-        "train_batch_size": 32,
-        "sample_batch_size": 20,
+        "tau": 5e-3,
+        "train_batch_size": 64,
+        "sample_batch_size": 16,
         "use_huber": False,
         "target_network_update_freq": 0,
         "num_workers": 0,
@@ -39,6 +42,6 @@ TD3_CONFIG = merge_dicts(
         "buffer_size": 100000,
         "prioritized_replay": False,
         "clip_rewards": False,
-        "use_state_preprocessor": True,
+        "use_state_preprocessor": True
     },
 )

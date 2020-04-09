@@ -12,12 +12,12 @@
     <version>1.0</version>
     <name>bottleneck-evacuation</name>
     <worldBounds>
-      <xmin>-100</xmin>
-      <xmax>100</xmax>
+      <xmin>-10.5</xmin>
+      <xmax>10.5</xmax>
       <ymin>0</ymin>
       <ymax>0</ymax>
-      <zmin>-100</zmin>
-      <zmax>100</zmax>
+      <zmin>-15</zmin>
+      <zmax>15</zmax>
     </worldBounds>
   </header>
 
@@ -35,7 +35,7 @@
     <fovy>45</fovy>
   </suggestedCameraView>
 
-  <obstacle>
+  <!--<obstacle>
     <xmin>-11.5</xmin>
     <xmax>-10.5</xmax>
     <ymin>0</ymin>
@@ -69,9 +69,9 @@
     <ymax>1</ymax>
     <zmin>-15</zmin>
     <zmax>15</zmax>
-  </obstacle>
+  </obstacle>-->
 
-    <obstacle>
+  <obstacle>
     <xmin>-10.5</xmin>
     <xmax>-1</xmax>
     <ymin>0</ymin>
@@ -80,7 +80,7 @@
     <zmax>0</zmax>
   </obstacle>
 
-        <obstacle>
+  <obstacle>
     <xmin>1</xmin>
     <xmax>10.5</xmax>
     <ymin>0</ymin>
@@ -89,7 +89,7 @@
     <zmax>0</zmax>
   </obstacle>
 
-        <agentRegion>
+  <agentRegion>
     <numAgents>6</numAgents>
     <regionBounds>
       <xmin>-5</xmin>

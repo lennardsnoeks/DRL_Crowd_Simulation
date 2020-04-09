@@ -40,7 +40,7 @@ class VisualizationLive:
         clock = pygame.time.Clock()
 
         self.GOLDENROD = pygame.Color("goldenrod")
-        self.FPS_FONT = pygame.font.SysFont("Verdana", 12)
+        self.FPS_FONT = pygame.font.SysFont("Verdana", 11)
 
         while self.active:
             self.time_passed = clock.tick()
@@ -65,7 +65,7 @@ class VisualizationLive:
         x_size = self.sim_state.clipped_bounds[1] - self.sim_state.clipped_bounds[0]
         y_size = self.sim_state.clipped_bounds[3] - self.sim_state.clipped_bounds[2]
         size_overlay = self.FPS_FONT.render(str(x_size) + " x " + str(y_size), True, self.GOLDENROD)
-        window.blit(size_overlay, (10, 4))
+        window.blit(size_overlay, (1, 1))
 
     def initialize_screen(self):
         self.width = self.sim_state.clipped_bounds[1] - self.sim_state.clipped_bounds[0]
@@ -113,14 +113,18 @@ class VisualizationLive:
             y_max = (obstacle.y + obstacle.height) * self.zoom_factor
 
             # draw obstacle
-            pygame.draw.rect(self.screen, SIM_COLORS['light gray'],
+            if obstacle.type == -1:
+                color = SIM_COLORS['light gray']
+            else:
+                color = SIM_COLORS['obs']
+            pygame.draw.rect(self.screen, color,
                              (x_min, y_min, obstacle.width * self.zoom_factor, obstacle.height * self.zoom_factor))
 
             # draw border
-            pygame.draw.line(self.screen, SIM_COLORS['black'], (x_min, y_min), (x_max, y_min), 1)
-            pygame.draw.line(self.screen, SIM_COLORS['black'], (x_min, y_min), (x_min, y_max), 1)
-            pygame.draw.line(self.screen, SIM_COLORS['black'], (x_max, y_min), (x_max, y_max), 1)
-            pygame.draw.line(self.screen, SIM_COLORS['black'], (x_min, y_max), (x_max, y_max), 1)
+            pygame.draw.line(self.screen, color, (x_min, y_min), (x_max, y_min), 1)
+            pygame.draw.line(self.screen, color, (x_min, y_min), (x_min, y_max), 1)
+            pygame.draw.line(self.screen, color, (x_max, y_min), (x_max, y_max), 1)
+            pygame.draw.line(self.screen, color, (x_min, y_max), (x_max, y_max), 1)
 
     def draw_agents(self):
         for agent in self.sim_state.agents:

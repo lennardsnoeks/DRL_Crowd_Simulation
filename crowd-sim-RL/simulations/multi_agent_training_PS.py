@@ -4,20 +4,20 @@ from ray.tune import register_env, run
 from crowd_sim_RL.envs import SingleAgentEnv, SingleAgentEnv2, SingleAgentEnv3
 from crowd_sim_RL.envs.multi_agent_env import MultiAgentEnvironment
 from utils.steerbench_parser import XMLSimulationState
-from simulations.configs import ddpg_config, ddpg_config2, ppo_config, a2c_config, a3c_config, td3_config, apex_ddpg
+from simulations.configs import ddpg_config, ppo_config, a2c_config, a3c_config, td3_config, sac_config, apex_config
 
 phase2_set = False
 phase3_set = False
 test_set = False
 iterations_count = 0
 iterations_max = 100
-mean_max = 600
+mean_max = 880
 count_over_max = 10
 count_over = 0
 
 
 def main():
-    filename = "5-crossway_2_groups/group"
+    filename = "4-hallway/2"
     seed = 1
     sim_state = parse_sim_state(filename, seed)
 
@@ -96,13 +96,13 @@ def on_episode_end(info):
 
 def train(sim_state, checkpoint):
     global iterations_max, mean_max
-    checkpoint_freq = 5
+    checkpoint_freq = 1
 
     # DDPG
-    #config = ddpg_config.DDPG_CONFIG.copy()
+    config = ddpg_config.DDPG_CONFIG.copy()
 
     # PPO
-    config = ppo_config.PPO_CONFIG.copy()
+    #config = ppo_config.PPO_CONFIG.copy()
 
     # A2C
     #config = a2c_config.A2C_CONFIG.copy()
@@ -110,12 +110,18 @@ def train(sim_state, checkpoint):
     # TD3
     #config = td3_config.TD3_CONFIG.copy()
 
-    config["gamma"] = 0.99
+    # SAC
+    #config = sac_config.SAC_CONFIG.copy()
+
+    # APEX
+    #config = apex_config.APEX_DDPG_CONFIG.copy()
+
+    config["gamma"] = 0.95
     config["num_workers"] = 0
     config["num_gpus"] = 0
     config["observation_filter"] = "MeanStdFilter"
     config["clip_actions"] = True
-    config["timesteps_per_iteration"] = 1000
+    #config["timesteps_per_iteration"] = 1000
     config["env_config"] = {
         "sim_state": sim_state,
         "mode": "multi_train_vis",
@@ -151,8 +157,8 @@ def train(sim_state, checkpoint):
         #"training_iteration": iterations_max
     }
 
-    name = "test_5_ppo"
-    algo = "PPO"
+    name = "test_ddpg"
+    algo = "DDPG"
 
     if checkpoint == "":
         run(algo, name=name, checkpoint_freq=checkpoint_freq, stop=stop, config=config)

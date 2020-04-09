@@ -1,6 +1,7 @@
 from pygame import Color
 
 SIM_COLORS = {
+    'obs': Color(80, 80, 80),
     'aqua': Color(0, 255, 255),
     'black': Color(0, 0, 0),
     'blue': Color(0, 0, 255),

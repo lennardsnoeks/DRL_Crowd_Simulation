@@ -12,12 +12,12 @@
     <version>1.0</version>
     <name>bottleneck-evacuation</name>
     <worldBounds>
-      <xmin>-100</xmin>
-      <xmax>100</xmax>
+      <xmin>-15</xmin>
+      <xmax>15</xmax>
       <ymin>0</ymin>
       <ymax>0</ymax>
-      <zmin>-100</zmin>
-      <zmax>100</zmax>
+      <zmin>-15</zmin>
+      <zmax>15</zmax>
     </worldBounds>
   </header>
 
@@ -35,84 +35,84 @@
     <fovy>45</fovy>
   </suggestedCameraView>
 
-  <obstacle>
-    <xmin>-18.5</xmin>
-    <xmax>-17.5</xmax>
-    <ymin>0</ymin>
+  <!--<obstacle>
+    <xmin>-16.5</xmin>
+    <xmax>-15.5</xmax>
+    <ymin>-1</ymin>
     <ymax>1</ymax>
-    <zmin>-18</zmin>
-    <zmax>18</zmax>
-  </obstacle>
+    <zmin>-16</zmin>
+    <zmax>16</zmax>
+  </obstacle>-->
 
     <obstacle>
-    <xmin>-17.5</xmin>
+    <xmin>-15</xmin>
     <xmax>-7.5</xmax>
-    <ymin>0</ymin>
+    <ymin>-1</ymin>
     <ymax>1</ymax>
-    <zmin>-18</zmin>
-    <zmax>-7</zmax>
+    <zmin>-15</zmin>
+    <zmax>-7.5</zmax>
   </obstacle>
 
 
-  <obstacle>
-    <xmin>-18.5</xmin>
-    <xmax>18.5</xmax>
-    <ymin>0</ymin>
+  <!--<obstacle>
+    <xmin>-15.5</xmin>
+    <xmax>15.5</xmax>
+    <ymin>-1</ymin>
     <ymax>1</ymax>
-    <zmin>-19</zmin>
-    <zmax>-18</zmax>
-  </obstacle>
+    <zmin>-16</zmin>
+    <zmax>-15</zmax>
+  </obstacle>-->
 
     <obstacle>
     <xmin>7.5</xmin>
-    <xmax>18.5</xmax>
-    <ymin>0</ymin>
+    <xmax>15.5</xmax>
+    <ymin>-1</ymin>
     <ymax>1</ymax>
-    <zmin>7</zmin>
-    <zmax>18</zmax>
+    <zmin>7.5</zmin>
+    <zmax>15</zmax>
   </obstacle>
 
-  <obstacle>
-    <xmin>-18.5</xmin>
-    <xmax>18.5</xmax>
-    <ymin>0</ymin>
+  <!--<obstacle>
+    <xmin>-15.5</xmin>
+    <xmax>15.5</xmax>
+    <ymin>-1</ymin>
     <ymax>1</ymax>
-    <zmin>18</zmin>
-    <zmax>19</zmax>
-  </obstacle>
+    <zmin>15</zmin>
+    <zmax>16</zmax>
+  </obstacle>-->
 
     <obstacle>
-    <xmin>-17.5</xmin>
+    <xmin>-15</xmin>
     <xmax>-7.5</xmax>
-    <ymin>0</ymin>
+    <ymin>-1</ymin>
     <ymax>1</ymax>
-    <zmin>7</zmin>
-    <zmax>18</zmax>
+    <zmin>7.5</zmin>
+    <zmax>15</zmax>
   </obstacle>
 
-  <obstacle>
-    <xmin>18.5</xmin>
-    <xmax>19.5</xmax>
-    <ymin>0</ymin>
+  <!--<obstacle>
+    <xmin>15.5</xmin>
+    <xmax>16.5</xmax>
+    <ymin>-1</ymin>
     <ymax>1</ymax>
-    <zmin>-19</zmin>
-    <zmax>19</zmax>
-  </obstacle>
+    <zmin>-16</zmin>
+    <zmax>16</zmax>
+  </obstacle>-->
 
     <obstacle>
     <xmin>7.5</xmin>
-    <xmax>18.5</xmax>
-    <ymin>0</ymin>
+    <xmax>15</xmax>
+    <ymin>-1</ymin>
     <ymax>1</ymax>
-    <zmin>-18</zmin>
-    <zmax>-7</zmax>
+    <zmin>-15</zmin>
+    <zmax>-7.5</zmax>
   </obstacle>
 
     <agentRegion>
     <numAgents>3</numAgents>
     <regionBounds>
-      <xmin>-14</xmin>
-      <xmax>-9</xmax>
+      <xmin>-13</xmin>
+      <xmax>-8</xmax>
       <ymin>0</ymin>
       <ymax>0</ymax>
       <zmin>-5</zmin>
@@ -125,9 +125,9 @@
     </initialConditions>
     <goalSequence>
       <seekStaticTarget>
-        <targetLocation> <x>18</x> <y>1</y> <z>0</z> </targetLocation>
-        <desiredSpeed>2</desiredSpeed>
-        <timeDuration>14</timeDuration>
+        <targetLocation> <x>14</x> <y>1</y> <z>0</z> </targetLocation>
+        <desiredSpeed>1</desiredSpeed>
+        <timeDuration>13</timeDuration>
       </seekStaticTarget>
     </goalSequence>
 
@@ -136,8 +136,8 @@
       <agentRegion>
     <numAgents>3</numAgents>
     <regionBounds>
-      <xmin>9</xmin>
-      <xmax>14</xmax>
+      <xmin>8</xmin>
+      <xmax>13</xmax>
       <ymin>0</ymin>
       <ymax>0</ymax>
       <zmin>-5</zmin>
@@ -150,9 +150,9 @@
     </initialConditions>
     <goalSequence>
       <seekStaticTarget>
-        <targetLocation> <x>-17</x> <y>1</y> <z>0</z> </targetLocation>
-        <desiredSpeed>2</desiredSpeed>
-        <timeDuration>14</timeDuration>
+        <targetLocation> <x>-14</x> <y>1</y> <z>0</z> </targetLocation>
+        <desiredSpeed>1</desiredSpeed>
+        <timeDuration>13</timeDuration>
       </seekStaticTarget>
     </goalSequence>
 
@@ -175,9 +175,9 @@
     </initialConditions>
     <goalSequence>
       <seekStaticTarget>
-        <targetLocation> <x>0</x> <y>1</y> <z>-17.5</z> </targetLocation>
-        <desiredSpeed>15</desiredSpeed>
-        <timeDuration>2</timeDuration>
+        <targetLocation> <x>0</x> <y>1</y> <z>-14</z> </targetLocation>
+        <desiredSpeed>14</desiredSpeed>
+        <timeDuration>1</timeDuration>
       </seekStaticTarget>
     </goalSequence>
   </agentRegion>
@@ -200,9 +200,9 @@
     </initialConditions>
     <goalSequence>
       <seekStaticTarget>
-        <targetLocation> <x>0</x> <y>1</y> <z>17.5</z> </targetLocation>
-        <desiredSpeed>15</desiredSpeed>
-        <timeDuration>2</timeDuration>
+        <targetLocation> <x>0</x> <y>1</y> <z>14</z> </targetLocation>
+        <desiredSpeed>14</desiredSpeed>
+        <timeDuration>1</timeDuration>
       </seekStaticTarget>
     </goalSequence>
   </agentRegion>
