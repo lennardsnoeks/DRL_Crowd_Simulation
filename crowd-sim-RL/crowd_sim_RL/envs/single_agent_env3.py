@@ -14,10 +14,9 @@ class SingleAgentEnv3(gym.Env):
 
         self.reward_goal = 4
         #self.reward_goal = 5
-        #self.reward_collision = 5
-        self.reward_collision = 5
+        self.reward_collision = 7
         #self.reward_collision = 10
-        self.reward_goal_reached = 10
+        self.reward_goal_reached = 0
         self.reset_pos_necessary = False
 
         self.sim_state: SimulationState
@@ -37,9 +36,11 @@ class SingleAgentEnv3(gym.Env):
         self.step_count = 0
         self.step_count_same = 0
         self.step_count_obs = 0
+
         # keep IDs of agents current agent collided with, if they collide again in next timestep don't add
         # another negative reward, becomes too large and agents won't go near each other again
-        self.collision_ids = []
+        self.collision_ids_agent = []
+        self.collision_ids_obs = []
 
         if "train" in self.mode:
             self.max_step_count = env_config["timesteps_reset"]
@@ -60,7 +61,7 @@ class SingleAgentEnv3(gym.Env):
                        np.array([self.WORLD_BOUND, self.WORLD_BOUND])),
             spaces.Box(low=0, high=self.WORLD_BOUND * 2,
                        shape=(self.sim_state.laser_history_amount, self.sim_state.laser_amount + 1)),
-            spaces.Box(low=0, high=2000, shape=(self.sim_state.laser_history_amount, self.sim_state.laser_amount + 1))
+            #spaces.Box(low=0, high=2000, shape=(self.sim_state.laser_history_amount, self.sim_state.laser_amount + 1))
         ))
 
     def _load_world(self):
@@ -78,12 +79,15 @@ class SingleAgentEnv3(gym.Env):
         angular_vel = action[1]
         agent = self.steering_agents[self.id]
 
+        # set agent pos back to intial state, neceassary in some cases (see _check_resets method)
         if self.reset_pos_necessary:
             agent.pos[0, 0] = self.orig_sim_state.agents[agent.id].pos[0, 0]
             agent.pos[1, 0] = self.orig_sim_state.agents[agent.id].pos[1, 0]
             agent.orientation = self.orig_sim_state.agents[agent.id].orientation
             self.reset_pos_necessary = False
+            reward = 0
 
+        # adjust linear and angular velocity according to timestep
         if "train" in self.mode:
             linear_vel *= self.time_step
             angular_vel *= self.time_step
@@ -123,22 +127,24 @@ class SingleAgentEnv3(gym.Env):
                 reward += self.reward_goal_reached
         reward += self.reward_goal * diff
 
-        # clip and assign new position and orientation to the agent
+        # assign new pos/ori
         previous_pos = agent.pos
-        new_pos = self._clip_pos(new_pos, agent.radius)
         agent.pos = new_pos
         agent.orientation = new_ori
 
         # check for collisions and assign rewards
-        reward_collision, collision_obstacle = self._detect_collisions(agent)
+        reward_collision, collision_obstacle, collided_obs_id = self._detect_collisions(agent)
         reward += reward_collision
+
+        # if collision with bounds or bound obstacle, revert to previous pos/ori
+        agent.pos = self._clip_pos(agent.pos, collided_obs_id, agent.radius)
 
         # get internal and external state of agents (observation)
         internal_state = self._get_internal_state(agent, shortest_goal)
         external_state_laser, external_state_type = self._get_external_state(agent)
-        observation = [internal_state, external_state_laser, external_state_type]
+        observation = [internal_state, external_state_laser] #, external_state_type]
 
-        # When training, do manual reset once if the agent is stuck in local optima or
+        # when training, do manual reset once if the agent is stuck in local optima or
         # if they are wandering in 2-obstacles
         if "train" in self.mode:
             self._check_resets(agent, previous_pos, collision_obstacle)
@@ -169,7 +175,7 @@ class SingleAgentEnv3(gym.Env):
         else:
             self.step_count_obs = 0
 
-        #self.step_count += 1
+        self.step_count += 1
 
         if self.reset_pos_necessary:
             self.step_count_same = 0
@@ -187,16 +193,35 @@ class SingleAgentEnv3(gym.Env):
 
         return x_min <= agent_x <= x_max and y_min <= agent_y <= y_max
 
-    def _clip_pos(self, pos, radius):
-        if (pos[0, 0] - radius) < self.bounds[0]:
-            pos[0, 0] = self.bounds[0]
-        elif (pos[0, 0] + radius) > self.bounds[1]:
-            pos[0, 0] = self.bounds[1]
+    def _clip_pos(self, pos, collided_obs_id, radius):
+        if collided_obs_id is None:
+            return pos
 
-        if (pos[1, 0] - radius) < self.bounds[2]:
-            pos[1, 0] = self.bounds[2]
-        elif (pos[1, 0] + radius) > self.bounds[3]:
-            pos[1, 0] = self.bounds[3]
+        if collided_obs_id == -1:
+            if (pos[0, 0] - radius) < self.bounds[0]:
+                pos[0, 0] = self.bounds[0] + radius
+            elif (pos[0, 0] + radius) > self.bounds[1]:
+                pos[0, 0] = self.bounds[1] - radius
+
+            if (pos[1, 0] - radius) < self.bounds[2]:
+                pos[1, 0] = self.bounds[2] + radius
+            elif (pos[1, 0] + radius) > self.bounds[3]:
+                pos[1, 0] = self.bounds[3] - radius
+        else:
+            x_min = self.sim_state.obstacles[collided_obs_id].x
+            x_max = x_min + self.sim_state.obstacles[collided_obs_id].width
+            y_min = self.sim_state.obstacles[collided_obs_id].y
+            y_max = y_min + self.sim_state.obstacles[collided_obs_id].height
+
+            if (pos[0, 0] + radius) > x_min:
+                pos[0, 0] = x_min - radius
+            elif (pos[0, 0] - radius) < x_max:
+                pos[0, 0] = x_max + radius
+
+            if (pos[1, 0] + radius) > y_min:
+                pos[1, 0] = y_min - radius
+            elif (pos[1, 0] - radius) < y_max:
+                pos[1, 0] = y_max + radius
 
         return pos
 
@@ -314,7 +339,8 @@ class SingleAgentEnv3(gym.Env):
                 break
             else:
                 if self._collision_bound(distant_x, distant_y,
-                                         self.bounds[0], self.bounds[1], self.bounds[2], self.bounds[3]):
+                                         self.bounds[0], self.bounds[1], self.bounds[2], self.bounds[3],
+                                         current_agent.radius):
                     if distance_to_object < distance:
                         distance = distance_to_object
                         x_end = distant_x
@@ -328,15 +354,23 @@ class SingleAgentEnv3(gym.Env):
         reward = 0
         collision = False
         collision_obstacle = False
-        collision_ids = []
+        collision_ids_agent = []
+        collision_ids_obs = []
+        collided_obs_id = None
 
-        # detect collision with 2-obstacles
+        # detect collision with obstacles
         for obstacle in self.obstacles:
             if self._collision_circle_rectangle(obstacle.x, obstacle.y, obstacle.width, obstacle.height,
                                                 current_agent.pos[0, 0], current_agent.pos[1, 0],
                                                 current_agent.radius):
-                collision = True
                 collision_obstacle = True
+                if obstacle.type == 0:
+                    collision_ids_obs.append(obstacle.id)
+                else:
+                    collided_obs_id = obstacle.id
+                if obstacle.id not in self.collision_ids_obs and obstacle.type == 0:
+                #if obstacle.type == 0:
+                    collision = True
 
         # detect collision with other agents
         if not collision:
@@ -345,22 +379,23 @@ class SingleAgentEnv3(gym.Env):
                     if self._collision_circle_circle(current_agent.pos[0, 0], current_agent.pos[1, 0],
                                                      current_agent.radius, agent.pos[0, 0], agent.pos[1, 0],
                                                      agent.radius):
-                        if agent.id not in self.collision_ids:
+                        collision_ids_agent.append(agent.id)
+                        if agent.id not in self.collision_ids_agent:
                             collision = True
-                            collision_ids.append(agent.id)
 
         # detect collision with world bounds
-        if not collision:
-            if self._collision_bound(current_agent.pos[0, 0], current_agent.pos[1, 0],
-                                     self.bounds[0], self.bounds[1], self.bounds[2], self.bounds[3],
-                                     current_agent.radius):
-                reward -= self.reward_collision
-        else:
+        if self._collision_bound(current_agent.pos[0, 0], current_agent.pos[1, 0],
+                                 self.bounds[0], self.bounds[1], self.bounds[2], self.bounds[3],
+                                 current_agent.radius):
+            collided_obs_id = -1
+
+        if collision:
             reward -= self.reward_collision
 
-        self.collision_ids = collision_ids
+        self.collision_ids_agent = collision_ids_agent
+        self.collision_ids_obs = collision_ids_obs
 
-        return reward, collision_obstacle
+        return reward, collision_obstacle, collided_obs_id
 
     def reset(self):
         if "multi" not in self.mode:
@@ -385,7 +420,7 @@ class SingleAgentEnv3(gym.Env):
 
         internal_state = self._get_internal_state(agent, shortest_goal)
         external_state_laser, external_state_type = self._get_external_state(agent)
-        observation = [internal_state, external_state_laser, external_state_type]
+        observation = [internal_state, external_state_laser] #, external_state_type]
 
         return observation
 
@@ -457,10 +492,7 @@ class SingleAgentEnv3(gym.Env):
 
         distance = math.sqrt((x_circle - x_test) ** 2 + (y_circle - y_test) ** 2)
 
-        if distance <= r:
-            return True
-
-        return False
+        return distance <= r
 
     @staticmethod
     def _collision_circle_circle(x_c1, y_c1, r_c1, x_c2, y_c2, r_c2):

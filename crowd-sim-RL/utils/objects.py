@@ -5,12 +5,13 @@ class Obstacle:
     height = 0.0
     type = 0
 
-    def __init__(self, width, height, x, y, type):
+    def __init__(self, width, height, x, y, type, id):
         self.width = width
         self.height = height
         self.x = x
         self.y = y
         self.type = type
+        self.id = id
 
     def contains(self, x, y):
         return (self.x <= x <= (self.x + self.width)) and (self.y <= y <= (self.y + self.height))

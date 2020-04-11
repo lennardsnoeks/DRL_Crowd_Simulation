@@ -18,7 +18,7 @@ class MultiAgentCentralized(gym.Env):
         #self.reward_goal = 5
         self.reward_collision = 5
         #self.reward_collision = 10
-        self.reward_goal_reached = 0
+        self.reward_goal_reached = 10
 
         self.sim_state: SimulationState
         self.visualizer: VisualizationLive
@@ -41,9 +41,15 @@ class MultiAgentCentralized(gym.Env):
         self.dones = [False] * len(self.steering_agents)
         self.resets_necessary = [False] * len(self.steering_agents)
         self.boxes = []
+        self.collision_ids_agent = []
+        self.collision_ids_obs = []
         for i in range(0, len(self.sim_state.agents)):
             box = [0] * 4
             self.boxes.append(box)
+            collision_ids_agent = []
+            self.collision_ids_agent.append(collision_ids_agent)
+            collision_ids_obs = []
+            self.collision_ids_obs.append(collision_ids_obs)
 
         self.action_space = self.make_action_space()
 
@@ -131,11 +137,11 @@ class MultiAgentCentralized(gym.Env):
         for agent in self.steering_agents:
             i = agent.id * 2
 
-            """if self.resets_necessary[agent.id]:
+            if self.resets_necessary[agent.id]:
                 agent.pos[0, 0] = self.orig_sim_state.agents[agent.id].pos[0, 0]
                 agent.pos[1, 0] = self.orig_sim_state.agents[agent.id].pos[1, 0]
                 agent.orientation = self.orig_sim_state.agents[agent.id].orientation
-                self.reset_pos_necessary = False"""
+                self.reset_pos_necessary = False
 
             # clip and assign new position and orientation to the agent
             if not self.dones[agent.id]:
@@ -174,17 +180,27 @@ class MultiAgentCentralized(gym.Env):
                         shortest_goal = goal
                     if new_distance_to_goal <= self.sim_state.goal_tolerance:
                         self.dones[agent.id] = True
+                        agent.done = True
+                        self.step_counts = [0] * len(self.sim_state.agents)
+                        self.step_counts_same = [0] * len(self.sim_state.agents)
+                        self.step_counts_obs = [0] * len(self.sim_state.agents)
                         reward += self.reward_goal_reached
                 reward += self.reward_goal * diff
 
+                # Assisgn new pos/ori, keep old pos/ori if collision with bound occurs
                 previous_pos = agent.pos
-                new_pos = self._clip_pos(new_pos)
+                previous_ori = agent.orientation
                 agent.pos = new_pos
                 agent.orientation = new_ori
 
                 # check for collisions and assign rewards
-                reward_collision, collision_obstacle = self._detect_collisions(agent, copy_agents)
+                reward_collision, collision_obstacle, collision_clip = self._detect_collisions(agent, copy_agents)
                 reward += reward_collision
+
+                # if collision with bounds or bound obstacle, revert to previous pos/ori
+                if collision_clip:
+                    agent.pos = previous_pos
+                    agent.orientation = previous_ori
 
                 # When training, do manual reset once if the agent is stuck in local optima or
                 # if they are wandering in 2-obstacles
@@ -213,7 +229,7 @@ class MultiAgentCentralized(gym.Env):
                     else:
                         self.step_counts_obs[agent.id] = 0
 
-                    #self.step_counts[agent.id] += 1
+                    self.step_counts[agent.id] += 1
 
                 # get internal and external state of agents (observation)
                 internal_state = self._get_internal_state(agent, shortest_goal)
@@ -239,13 +255,6 @@ class MultiAgentCentralized(gym.Env):
         #done = sum(self.dones) == len(self.steering_agents)
         done = sum(self.dones) > 0
 
-        """if reset_necessary:
-            observation = self.reset()
-            reward = 0
-            done = False
-            self.step_counts_same = [0] * len(self.steering_agents)
-            self.step_counts_obs = [0] * len(self.steering_agents)"""
-
         return observation, reward, done, {}
 
     def in_local_optima(self, agent):
@@ -259,7 +268,7 @@ class MultiAgentCentralized(gym.Env):
 
         return x_min <= agent_x <= x_max and y_min <= agent_y <= y_max
 
-    def _clip_pos(self, pos):
+    """def _clip_pos(self, pos):
         if pos[0, 0] < self.bounds[0]:
             pos[0, 0] = self.bounds[0]
         elif pos[0, 0] > self.bounds[1]:
@@ -270,7 +279,7 @@ class MultiAgentCentralized(gym.Env):
         elif pos[1, 0] > self.bounds[3]:
             pos[1, 0] = self.bounds[3]
 
-        return pos
+        return pos"""
 
     @staticmethod
     def _get_internal_state(agent, goal):
@@ -356,7 +365,7 @@ class MultiAgentCentralized(gym.Env):
                             y_end = distant_y
                             collision = True
                             type = 0
-                else:
+                elif not agent.done:   # dont detect other agent if they are in done state
                     if self._point_in_circle(distant_x, distant_y, agent.pos[0, 0], agent.pos[1, 0], agent.radius):
                         distance = distance_to_object
                         x_end = distant_x
@@ -378,7 +387,8 @@ class MultiAgentCentralized(gym.Env):
                 break
             else:
                 if self._collision_bound(distant_x, distant_y,
-                                         self.bounds[0], self.bounds[1], self.bounds[2], self.bounds[3]):
+                                         self.bounds[0], self.bounds[1], self.bounds[2], self.bounds[3],
+                                         current_agent.radius):
                     if distance_to_object < distance:
                         distance = distance_to_object
                         x_end = distant_x
@@ -392,31 +402,43 @@ class MultiAgentCentralized(gym.Env):
         reward = 0
         collision = False
         collision_obstacle = False
+        collision_clip = False
+        collision_ids_agent = []
+        collision_ids_obs = []
 
         # detect collision with 2-obstacles
         for obstacle in self.obstacles:
             if self._collision_circle_rectangle(obstacle.x, obstacle.y, obstacle.width, obstacle.height,
                                                 current_agent.pos[0, 0], current_agent.pos[1, 0], current_agent.radius):
-                reward -= self.reward_collision
-                collision = True
                 collision_obstacle = True
+                if obstacle.type == 0:
+                    collision_ids_obs.append(obstacle.id)
+                else:
+                    collision_clip = True
+                if obstacle.id not in self.collision_ids_obs[current_agent.id]:
+                    collision = True
 
         # detect collision with other agents
         if not collision:
             for agent in agents:
-                if current_agent.id != agent.id:
+                if current_agent.id != agent.id and not agent.done:  # only detect collision when agent not done
                     if self._collision_circle_circle(current_agent.pos[0, 0], current_agent.pos[1, 0], current_agent.radius,
                                                      agent.pos[0, 0], agent.pos[1, 0], agent.radius):
-                        reward -= self.reward_collision
-                        collision = True
+                        collision_ids_agent.append(agent.id)
+                        if agent.id not in self.collision_ids_agent[current_agent.id]:
+                            collision = True
 
         # detect collision with world bounds
         if not collision:
             if self._collision_bound(current_agent.pos[0, 0], current_agent.pos[1, 0],
-                                     self.bounds[0], self.bounds[1], self.bounds[2], self.bounds[3]):
+                                     self.bounds[0], self.bounds[1], self.bounds[2], self.bounds[3],
+                                     current_agent.radius):
                 reward -= self.reward_collision
+                collision_clip = True
+        else:
+            reward -= self.reward_collision
 
-        return reward, collision_obstacle
+        return reward, collision_obstacle, collision_clip
 
     def reset(self):
         self.sim_state = copy.deepcopy(self.orig_sim_state)
@@ -542,5 +564,5 @@ class MultiAgentCentralized(gym.Env):
         return (x_r <= x_p <= (x_r + width)) and (y_r <= y_p <= (y_r + height))
 
     @staticmethod
-    def _collision_bound(x_p, y_p, x_min, x_max, y_min, y_max):
-        return x_p <= x_min or x_p >= x_max or y_p <= y_min or y_p >= y_max
+    def _collision_bound(x_p, y_p, x_min, x_max, y_min, y_max, radius):
+        return (x_p - radius) <= x_min or (x_p + radius) >= x_max or (y_p - radius) <= y_min or (y_p + radius) >= y_max

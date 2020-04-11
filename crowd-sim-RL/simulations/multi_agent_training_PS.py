@@ -17,7 +17,7 @@ count_over = 0
 
 
 def main():
-    filename = "4-hallway/2"
+    filename = "2-obstacles/1"
     seed = 1
     sim_state = parse_sim_state(filename, seed)
 
@@ -96,7 +96,7 @@ def on_episode_end(info):
 
 def train(sim_state, checkpoint):
     global iterations_max, mean_max
-    checkpoint_freq = 1
+    checkpoint_freq = 10
 
     # DDPG
     config = ddpg_config.DDPG_CONFIG.copy()
