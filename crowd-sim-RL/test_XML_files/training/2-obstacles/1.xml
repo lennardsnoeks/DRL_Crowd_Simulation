@@ -12,12 +12,12 @@
     <version>1.0</version>
     <name>bottleneck-evacuation</name>
     <worldBounds>
-      <xmin>-21.5</xmin>
-      <xmax>21.5</xmax>
+      <xmin>-17</xmin>
+      <xmax>17</xmax>
       <ymin>0</ymin>
       <ymax>0</ymax>
-      <zmin>-15</zmin>
-      <zmax>15</zmax>
+      <zmin>-12</zmin>
+      <zmax>12</zmax>
     </worldBounds>
   </header>
 
@@ -95,7 +95,7 @@
     </initialConditions>
     <goalSequence>
       <seekStaticTarget>
-        <targetLocation> <x>18</x> <y>1</y> <z>0</z> </targetLocation>
+        <targetLocation> <x>16</x> <y>1</y> <z>0</z> </targetLocation>
         <desiredSpeed>2</desiredSpeed>
         <timeDuration>5</timeDuration>
       </seekStaticTarget>

@@ -16,8 +16,8 @@
       <xmax>10.5</xmax>
       <ymin>0</ymin>
       <ymax>0</ymax>
-      <zmin>-15</zmin>
-      <zmax>15</zmax>
+      <zmin>-7</zmin>
+      <zmax>12</zmax>
     </worldBounds>
   </header>
 
@@ -74,18 +74,18 @@
   <obstacle>
     <xmin>-10.5</xmin>
     <xmax>-1</xmax>
-    <ymin>0</ymin>
+    <ymin>-1</ymin>
     <ymax>1</ymax>
-    <zmin>-15</zmin>
+    <zmin>-7</zmin>
     <zmax>0</zmax>
   </obstacle>
 
   <obstacle>
     <xmin>1</xmin>
     <xmax>10.5</xmax>
-    <ymin>0</ymin>
+    <ymin>-1</ymin>
     <ymax>1</ymax>
-    <zmin>-15</zmin>
+    <zmin>-7</zmin>
     <zmax>0</zmax>
   </obstacle>
 
@@ -106,7 +106,7 @@
     </initialConditions>
     <goalSequence>
       <seekStaticTarget>
-        <targetLocation> <x>0</x> <y>1</y> <z>-7</z> </targetLocation>
+        <targetLocation> <x>0</x> <y>1</y> <z>-6.5</z> </targetLocation>
         <desiredSpeed>2</desiredSpeed>
         <timeDuration>1</timeDuration>
       </seekStaticTarget>

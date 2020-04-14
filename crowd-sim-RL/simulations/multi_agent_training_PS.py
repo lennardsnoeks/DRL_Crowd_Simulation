@@ -17,8 +17,8 @@ count_over = 0
 
 
 def main():
-    filename = "2-obstacles/1"
-    seed = 1
+    filename = "5-crossway_2_groups/group"
+    seed = 63626
     sim_state = parse_sim_state(filename, seed)
 
     checkpoint = ""
@@ -96,13 +96,13 @@ def on_episode_end(info):
 
 def train(sim_state, checkpoint):
     global iterations_max, mean_max
-    checkpoint_freq = 10
+    checkpoint_freq = 1
 
     # DDPG
-    config = ddpg_config.DDPG_CONFIG.copy()
+    #config = ddpg_config.DDPG_CONFIG.copy()
 
     # PPO
-    #config = ppo_config.PPO_CONFIG.copy()
+    config = ppo_config.PPO_CONFIG.copy()
 
     # A2C
     #config = a2c_config.A2C_CONFIG.copy()
@@ -116,15 +116,15 @@ def train(sim_state, checkpoint):
     # APEX
     #config = apex_config.APEX_DDPG_CONFIG.copy()
 
-    config["gamma"] = 0.95
-    config["num_workers"] = 0
+    config["gamma"] = 0.99
+    config["num_workers"] = 6
     config["num_gpus"] = 0
     config["observation_filter"] = "MeanStdFilter"
     config["clip_actions"] = True
-    #config["timesteps_per_iteration"] = 1000
+    config["timesteps_per_iteration"] = 1000
     config["env_config"] = {
         "sim_state": sim_state,
-        "mode": "multi_train_vis",
+        "mode": "multi_train",
         "agent_id": 0,
         "timesteps_reset": config["timesteps_per_iteration"]
     }
@@ -153,12 +153,12 @@ def train(sim_state, checkpoint):
     ray.init()
 
     stop = {
-        "episode_reward_mean": mean_max,
+        #"episode_reward_mean": mean_max,
         #"training_iteration": iterations_max
     }
 
-    name = "test_ddpg"
-    algo = "DDPG"
+    name = "test_ppo"
+    algo = "PPO"    # Options: DDPG, PPO, TD3, APEX_DDPG, A2C, SAC
 
     if checkpoint == "":
         run(algo, name=name, checkpoint_freq=checkpoint_freq, stop=stop, config=config)

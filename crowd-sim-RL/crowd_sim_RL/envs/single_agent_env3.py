@@ -12,10 +12,10 @@ class SingleAgentEnv3(gym.Env):
         self.id = env_config["agent_id"]
         self.time_step = 0.1
 
-        self.reward_goal = 4
-        #self.reward_goal = 5
-        self.reward_collision = 7
-        #self.reward_collision = 10
+        self.reward_goal = 5
+        self.reward_collision = 5
+        self.reward_collision_clip = 1
+        #self.reward_goal_reached = 5
         self.reward_goal_reached = 0
         self.reset_pos_necessary = False
 
@@ -61,7 +61,7 @@ class SingleAgentEnv3(gym.Env):
                        np.array([self.WORLD_BOUND, self.WORLD_BOUND])),
             spaces.Box(low=0, high=self.WORLD_BOUND * 2,
                        shape=(self.sim_state.laser_history_amount, self.sim_state.laser_amount + 1)),
-            #spaces.Box(low=0, high=2000, shape=(self.sim_state.laser_history_amount, self.sim_state.laser_amount + 1))
+            spaces.Box(low=0, high=2, shape=(self.sim_state.laser_history_amount, self.sim_state.laser_amount + 1))
         ))
 
     def _load_world(self):
@@ -85,7 +85,7 @@ class SingleAgentEnv3(gym.Env):
             agent.pos[1, 0] = self.orig_sim_state.agents[agent.id].pos[1, 0]
             agent.orientation = self.orig_sim_state.agents[agent.id].orientation
             self.reset_pos_necessary = False
-            reward = 0
+            #reward = 0
 
         # adjust linear and angular velocity according to timestep
         if "train" in self.mode:
@@ -142,7 +142,7 @@ class SingleAgentEnv3(gym.Env):
         # get internal and external state of agents (observation)
         internal_state = self._get_internal_state(agent, shortest_goal)
         external_state_laser, external_state_type = self._get_external_state(agent)
-        observation = [internal_state, external_state_laser] #, external_state_type]
+        observation = [internal_state, external_state_laser, external_state_type]
 
         # when training, do manual reset once if the agent is stuck in local optima or
         # if they are wandering in 2-obstacles
@@ -165,17 +165,17 @@ class SingleAgentEnv3(gym.Env):
         if self.step_count == 4000:
             self.reset_pos_necessary = True
 
-        if self._in_local_optima(agent.pos):
+        """if self._in_local_optima(agent.pos):
             self.step_count_same += 1
         else:
-            self.step_count_same = 0
+            self.step_count_same = 0"""
 
         if collision_obstacle:
             self.step_count_obs += 1
         else:
             self.step_count_obs = 0
 
-        self.step_count += 1
+        #self.step_count += 1
 
         if self.reset_pos_necessary:
             self.step_count_same = 0
@@ -244,6 +244,7 @@ class SingleAgentEnv3(gym.Env):
         types = []
         agent.laser_lines = []
         agent.type_colors = []
+        max_view = 15
 
         start_point = agent.orientation - math.radians(90)
         increment = math.radians(180 / self.sim_state.laser_amount)
@@ -251,8 +252,8 @@ class SingleAgentEnv3(gym.Env):
             laser_ori = start_point + i * increment
             x_ori = math.cos(laser_ori)
             y_ori = math.sin(laser_ori)
-            distance, x_end, y_end, type = self._get_first_crossed_object(agent, x_ori, y_ori)
-            if type != 0:
+            distance, x_end, y_end, type = self._get_first_crossed_object(agent, x_ori, y_ori, max_view)
+            if type != 0:  # and distance <= max_view:
                 laser_distances[i] = distance
             types.append(type)
             agent.laser_lines.append(np.array([x_end, y_end]))
@@ -273,7 +274,7 @@ class SingleAgentEnv3(gym.Env):
 
         return observation_laser, observation_type
 
-    def _get_first_crossed_object(self, current_agent, x_ori, y_ori):
+    def _get_first_crossed_object(self, current_agent, x_ori, y_ori, max_view):
         distance = 1000000
         x_end = 0
         y_end = 0
@@ -286,8 +287,10 @@ class SingleAgentEnv3(gym.Env):
 
         distant_x = x_agent
         distant_y = y_agent
+        distance_to_object = 0
 
-        while True:
+        while distance_to_object < max_view:
+        #while True:
             distant_x += x_ori * iteration_step
             distant_y += y_ori * iteration_step
             distance_to_object = math.hypot(x_agent - distant_x, y_agent - distant_y)
@@ -323,7 +326,7 @@ class SingleAgentEnv3(gym.Env):
                         x_end = distant_x
                         y_end = distant_y
                         collision = True
-                        type = 1000
+                        type = 1
 
             for obstacle in self.obstacles:
                 if obstacle.contains(distant_x, distant_y):
@@ -332,7 +335,7 @@ class SingleAgentEnv3(gym.Env):
                         x_end = distant_x
                         y_end = distant_y
                         collision = True
-                        type = 2000
+                        type = 2
                         break
 
             if collision:
@@ -345,8 +348,14 @@ class SingleAgentEnv3(gym.Env):
                         distance = distance_to_object
                         x_end = distant_x
                         y_end = distant_y
-                        type = 2000
+                        type = 2
                     break
+
+        if distance_to_object >= max_view and not collision:
+            x_end = distant_x
+            y_end = distant_y
+            distance = max_view
+            type = 2
 
         return distance, x_end, y_end, type
 
@@ -369,8 +378,12 @@ class SingleAgentEnv3(gym.Env):
                 else:
                     collided_obs_id = obstacle.id
                 if obstacle.id not in self.collision_ids_obs and obstacle.type == 0:
-                #if obstacle.type == 0:
                     collision = True
+
+                """if obstacle.type == 0:
+                    collision = True
+                else:
+                    collided_obs_id = -1"""
 
         # detect collision with other agents
         if not collision:
@@ -391,6 +404,11 @@ class SingleAgentEnv3(gym.Env):
 
         if collision:
             reward -= self.reward_collision
+            #reward -= self.reward_collision_clip
+
+        #if collided_obs_id is not None:
+        if collided_obs_id == -1:
+            reward -= self.reward_collision_clip
 
         self.collision_ids_agent = collision_ids_agent
         self.collision_ids_obs = collision_ids_obs
@@ -420,7 +438,7 @@ class SingleAgentEnv3(gym.Env):
 
         internal_state = self._get_internal_state(agent, shortest_goal)
         external_state_laser, external_state_type = self._get_external_state(agent)
-        observation = [internal_state, external_state_laser] #, external_state_type]
+        observation = [internal_state, external_state_laser, external_state_type]
 
         return observation
 

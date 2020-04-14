@@ -12,6 +12,8 @@ class SingleAgentEnv2(gym.Env):
         self.id = env_config["agent_id"]
         self.step_count = 0
         self.time_step = 0.1
+        self.step_count_obs = 0
+        self.step_count_same = 0
 
         self.reward_goal = 4
         #self.reward_goal = 5
@@ -145,7 +147,7 @@ class SingleAgentEnv2(gym.Env):
         if self.step_count_obs == self.max_step_count:
             self.reset_pos_necessary = True
 
-        if self._in_local_optima(agent):
+        if self._in_local_optima(agent.pos):
             self.step_count_same += 1
         else:
             self.step_count_same = 0

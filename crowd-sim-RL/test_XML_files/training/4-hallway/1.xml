@@ -51,7 +51,7 @@
     </initialConditions>
     <goalSequence>
       <seekStaticTarget>
-            <targetLocation> <x>15</x> <y>1</y> <z>0</z> </targetLocation>
+            <targetLocation> <x>15.5</x> <y>1</y> <z>0</z> </targetLocation>
             <desiredSpeed>1</desiredSpeed>
             <timeDuration>7</timeDuration>
       </seekStaticTarget>

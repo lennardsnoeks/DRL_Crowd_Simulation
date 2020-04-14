@@ -22,7 +22,7 @@ APEX_DDPG_CONFIG = merge_dicts(
         "per_worker_exploration": True,
         "worker_side_prioritization": True,
         "min_iter_time_s": 30,
-        "evaluation_interval": 5,
+        "evaluation_interval": 0,
         "evaluation_num_episodes": 10
     },
 )
