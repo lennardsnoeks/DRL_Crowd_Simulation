@@ -80,11 +80,18 @@ def centralized_critic_postprocessing(policy,
     if policy.loss_initialized():
         assert other_agent_batches is not None
 
-        [(_, opponents_batch)] = list(other_agent_batches.values())
+        global_obs_batch = np.stack(
+            [other_agent_batches[batch]["obs"] for batch in other_agent_batches],
+            axis=1
+        )
+        global_act_batch = np.stack(
+            [other_agent_batches[batch]["actions"] for batch in other_agent_batches],
+            axis=1
+        )
 
         # also record the opponent obs and actions in the trajectory
-        sample_batch[OPPONENT_OBS] = opponents_batch[SampleBatch.CUR_OBS]
-        sample_batch[OPPONENT_ACTION] = opponents_batch[SampleBatch.ACTIONS]
+        sample_batch[OPPONENT_OBS] = global_obs_batch
+        sample_batch[OPPONENT_ACTION] = global_act_batch
 
         # overwrite default VF prediction with the central VF
         sample_batch[SampleBatch.VF_PREDS] = policy.compute_central_vf(
@@ -92,10 +99,8 @@ def centralized_critic_postprocessing(policy,
             sample_batch[OPPONENT_ACTION])
     else:
         # policy hasn't initialized yet, use zeros
-        sample_batch[OPPONENT_OBS] = np.zeros_like(
-            sample_batch[SampleBatch.CUR_OBS])
-        sample_batch[OPPONENT_ACTION] = np.zeros_like(
-            sample_batch[SampleBatch.ACTIONS])
+        sample_batch[OPPONENT_OBS] = np.zeros_like([np.zeros(128 * (num_agents - 1))])
+        sample_batch[OPPONENT_ACTION] = np.zeros_like([np.zeros(2 * (num_agents - 1))])
         sample_batch[SampleBatch.VF_PREDS] = np.zeros_like(
             sample_batch[SampleBatch.REWARDS], dtype=np.float32)
 
@@ -180,7 +185,7 @@ CCTrainer = PPOTrainer.with_updates(name="CCPPOTrainer", get_policy_class=lambda
 
 ##### Below is code to run, above is code that implements centralized critic #####
 def main():
-    filename = "4-hallway/2"
+    filename = "4-hallway/4"
     sim_state = parse_sim_state(filename)
 
     checkpoint = ""
@@ -228,12 +233,16 @@ def train(sim_state, checkpoint):
 
     config = ppo_config.PPO_CONFIG.copy()
     config["gamma"] = 0.99
-    config["observation_filter"] = "MeanStdFilter"
+    """config = {}
+    config["gamma"] = 0.99"""
     config["clip_actions"] = True
+    config["observation_filter"] = "MeanStdFilter"
+
     config["env_config"] = {
         "sim_state": sim_state,
         "mode": "multi_train_vis",
-        "timesteps_reset": config["timesteps_per_iteration"]
+        "timesteps_reset": 1000
+        #"timesteps_reset": config["timesteps_per_iteration"]
     }
     multi_agent_config = make_multi_agent_config(sim_state, config)
     config["multiagent"] = multi_agent_config

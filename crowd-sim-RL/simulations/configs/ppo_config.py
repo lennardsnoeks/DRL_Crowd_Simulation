@@ -45,7 +45,7 @@ PPO_CONFIG = with_common_config({
     # Coefficient of the value function loss. IMPORTANT: you must tune this if
     # you set vf_share_layers: True.
     #"vf_loss_coeff": 1.0,
-    "vf_loss_coeff": 0.5,
+    "vf_loss_coeff": 1.0,
     # Coefficient of the entropy regularizer.
     "entropy_coeff": 0.01,
     # Decay schedule for the entropy regularizer.
