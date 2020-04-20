@@ -15,7 +15,7 @@ class VisualizationLive:
         pygame.init()
 
         self.goals_visible = True
-        self.lasers_visible = True
+        self.lasers_visible = False
         self.color_lasers = True
 
         self.offset = 0.0

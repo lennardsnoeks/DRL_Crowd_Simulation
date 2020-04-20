@@ -17,7 +17,7 @@ count_over = 0
 
 
 def main():
-    filename = "5-crossway_2_groups/group"
+    filename = "4-hallway/2"
     seed = 63626
     sim_state = parse_sim_state(filename, seed)
 
@@ -117,14 +117,14 @@ def train(sim_state, checkpoint):
     #config = apex_config.APEX_DDPG_CONFIG.copy()
 
     config["gamma"] = 0.99
-    config["num_workers"] = 6
+    config["num_workers"] = 0
     config["num_gpus"] = 0
     config["observation_filter"] = "MeanStdFilter"
     config["clip_actions"] = True
     config["timesteps_per_iteration"] = 1000
     config["env_config"] = {
         "sim_state": sim_state,
-        "mode": "multi_train",
+        "mode": "multi_train_vis",
         "agent_id": 0,
         "timesteps_reset": config["timesteps_per_iteration"]
     }

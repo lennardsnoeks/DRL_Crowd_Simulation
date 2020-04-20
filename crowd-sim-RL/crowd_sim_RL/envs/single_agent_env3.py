@@ -13,8 +13,8 @@ class SingleAgentEnv3(gym.Env):
         self.time_step = 0.1
 
         self.reward_goal = 5
-        self.reward_collision = 5
-        self.reward_collision_clip = 1
+        self.reward_collision = 15
+        self.reward_collision_clip = 5
         #self.reward_goal_reached = 5
         self.reward_goal_reached = 0
         self.reset_pos_necessary = False
@@ -213,15 +213,17 @@ class SingleAgentEnv3(gym.Env):
             y_min = self.sim_state.obstacles[collided_obs_id].y
             y_max = y_min + self.sim_state.obstacles[collided_obs_id].height
 
-            if (pos[0, 0] + radius) > x_min:
-                pos[0, 0] = x_min - radius
-            elif (pos[0, 0] - radius) < x_max:
-                pos[0, 0] = x_max + radius
-
-            if (pos[1, 0] + radius) > y_min:
-                pos[1, 0] = y_min - radius
-            elif (pos[1, 0] - radius) < y_max:
-                pos[1, 0] = y_max + radius
+            # clipping now only works for rectangular obstacles placed on bounds (as with the crossway examples)
+            if x_min <= pos[0, 0] <= x_max:
+                if pos[1, 0] < y_min and pos[1, 0] < y_max:
+                    pos[1, 0] = y_min - radius
+                if pos[1, 0] > y_min and pos[1, 0] > y_max:
+                    pos[1, 0] = y_max + radius
+            if y_min <= pos[1, 0] <= y_max:
+                if pos[0, 0] < x_min and pos[0, 0] < x_max:
+                    pos[0, 0] = x_min - radius
+                if pos[0, 0] > x_min and pos[0, 0] > x_max:
+                    pos[0, 0] = x_max + radius
 
         return pos
 
@@ -404,10 +406,8 @@ class SingleAgentEnv3(gym.Env):
 
         if collision:
             reward -= self.reward_collision
-            #reward -= self.reward_collision_clip
 
-        #if collided_obs_id is not None:
-        if collided_obs_id == -1:
+        if collided_obs_id is not None:
             reward -= self.reward_collision_clip
 
         self.collision_ids_agent = collision_ids_agent

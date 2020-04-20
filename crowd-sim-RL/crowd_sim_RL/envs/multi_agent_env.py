@@ -80,6 +80,9 @@ class MultiAgentEnvironment(MultiAgentEnv):
             self.env_config["agent_id"] = i
             self.agents.append(SingleAgentEnv3(self.env_config))
 
+        self.observation_space = SingleAgentEnv3(self.env_config).get_observation_space()
+        self.action_space = SingleAgentEnv3(self.env_config).get_action_space()
+
     def set_phase(self, new_sim_state):
         self.sim_state = new_sim_state
         self.env_config["sim_state"] = self.sim_state

@@ -1,11 +1,12 @@
 import os
 import numpy as np
 from ray.rllib.agents.ppo.ppo import PPOTrainer
+from ray.rllib.agents.impala.vtrace_policy import BEHAVIOUR_LOGITS
 from ray.rllib.agents.ppo.ppo_tf_policy import PPOTFPolicy, KLCoeffMixin, PPOLoss
 from ray.rllib.evaluation.postprocessing import compute_advantages, Postprocessing
 from ray.rllib.models import ModelCatalog
 from ray.rllib.policy.sample_batch import SampleBatch
-from ray.rllib.policy.tf_policy import LearningRateSchedule, EntropyCoeffSchedule
+from ray.rllib.policy.tf_policy import LearningRateSchedule, EntropyCoeffSchedule, ACTION_LOGP
 from ray.rllib.models.tf.tf_modelv2 import TFModelV2
 from ray.rllib.models.tf.fcnet_v2 import FullyConnectedNetwork
 from ray.rllib.utils.explained_variance import explained_variance
@@ -14,7 +15,7 @@ from ray.rllib.utils import try_import_tf
 from ray.tune import register_env, run
 from crowd_sim_RL.envs import SingleAgentEnv3
 from crowd_sim_RL.envs.multi_agent_env import MultiAgentEnvironment
-from simulations.configs import ppo_config
+from simulations.configs import ppo_config, ppo_config2
 from utils.steerbench_parser import XMLSimulationState
 
 tf = try_import_tf()
@@ -26,8 +27,7 @@ num_agents = 0
 
 
 class CentralizedCriticModel(TFModelV2):
-    def __init__(self, obs_space, action_space, num_outputs, model_config,
-                 name):
+    def __init__(self, obs_space, action_space, num_outputs, model_config, name):
         super(CentralizedCriticModel, self).__init__(obs_space, action_space, num_outputs, model_config, name)
         # Base of the model
         self.model = FullyConnectedNetwork(obs_space, action_space, num_outputs, model_config, name)
@@ -54,23 +54,18 @@ class CentralizedCriticModel(TFModelV2):
         self.register_variables(self.central_vf.variables)
 
     def forward(self, input_dict, state, seq_lens):
-        print(input_dict)
         return self.model.forward(input_dict, state, seq_lens)
 
     def central_value_function(self, obs, opponent_obs, opponent_actions):
         return tf.reshape(
             self.central_vf(
-                [obs, opponent_obs,
-                 tf.one_hot(opponent_actions, 2 * (num_agents - 1))]), [-1])
+                [obs, opponent_obs, opponent_actions]), [-1])
 
-    # not in use, replaced by central_value_function
     def value_function(self):
         return self.model.value_function()
 
 
 class CentralizedValueMixin:
-    """Add method to evaluate the central value function from the model."""
-
     def __init__(self):
         self.compute_central_vf = make_tf_callable(self.get_session())(
             self.model.central_value_function)
@@ -83,22 +78,18 @@ def centralized_critic_postprocessing(policy,
                                       other_agent_batches=None,
                                       episode=None):
     if policy.loss_initialized():
+        assert other_agent_batches is not None
 
-        completed = sample_batch["dones"][-1]
+        [(_, opponents_batch)] = list(other_agent_batches.values())
 
-        if completed:
-            last_r = 0.0
-        else:
-            [(_, opponent_batch)] = list(other_agent_batches.values())
+        # also record the opponent obs and actions in the trajectory
+        sample_batch[OPPONENT_OBS] = opponents_batch[SampleBatch.CUR_OBS]
+        sample_batch[OPPONENT_ACTION] = opponents_batch[SampleBatch.ACTIONS]
 
-            # also record the opponent obs and actions in the trajectory
-            sample_batch[OPPONENT_OBS] = opponent_batch[SampleBatch.CUR_OBS]
-            sample_batch[OPPONENT_ACTION] = opponent_batch[SampleBatch.ACTIONS]
-
-            # overwrite default VF prediction with the central VF
-            sample_batch[SampleBatch.VF_PREDS] = policy.compute_central_vf(
-                sample_batch[SampleBatch.CUR_OBS], sample_batch[OPPONENT_OBS],
-                sample_batch[OPPONENT_ACTION])
+        # overwrite default VF prediction with the central VF
+        sample_batch[SampleBatch.VF_PREDS] = policy.compute_central_vf(
+            sample_batch[SampleBatch.CUR_OBS], sample_batch[OPPONENT_OBS],
+            sample_batch[OPPONENT_ACTION])
     else:
         # policy hasn't initialized yet, use zeros
         sample_batch[OPPONENT_OBS] = np.zeros_like(
@@ -106,11 +97,17 @@ def centralized_critic_postprocessing(policy,
         sample_batch[OPPONENT_ACTION] = np.zeros_like(
             sample_batch[SampleBatch.ACTIONS])
         sample_batch[SampleBatch.VF_PREDS] = np.zeros_like(
-            sample_batch[SampleBatch.ACTIONS], dtype=np.float32)
+            sample_batch[SampleBatch.REWARDS], dtype=np.float32)
+
+    completed = sample_batch["dones"][-1]
+    if completed:
+        last_r = 0.0
+    else:
+        last_r = sample_batch[SampleBatch.VF_PREDS][-1]
 
     train_batch = compute_advantages(
         sample_batch,
-        0.0,
+        last_r,
         policy.config["gamma"],
         policy.config["lambda"],
         use_gae=policy.config["use_gae"])
@@ -128,14 +125,13 @@ def loss_with_central_critic(policy, model, dist_class, train_batch):
         train_batch[OPPONENT_ACTION])
 
     policy.loss_obj = PPOLoss(
-        policy.action_space,
         dist_class,
         model,
         train_batch[Postprocessing.VALUE_TARGETS],
         train_batch[Postprocessing.ADVANTAGES],
         train_batch[SampleBatch.ACTIONS],
-        train_batch[SampleBatch.ACTION_DIST_INPUTS],
-        train_batch[SampleBatch.ACTION_LOGP],
+        train_batch[BEHAVIOUR_LOGITS],
+        train_batch[ACTION_LOGP],
         train_batch[SampleBatch.VF_PREDS],
         action_dist,
         policy.central_value_out,
@@ -145,8 +141,8 @@ def loss_with_central_critic(policy, model, dist_class, train_batch):
         clip_param=policy.config["clip_param"],
         vf_clip_param=policy.config["vf_clip_param"],
         vf_loss_coeff=policy.config["vf_loss_coeff"],
-        use_gae=policy.config["use_gae"],
-        model_config=policy.config["model"])
+        use_gae=policy.config["use_gae"]
+    )
 
     return policy.loss_obj.loss
 
@@ -179,12 +175,12 @@ CCPPO = PPOTFPolicy.with_updates(
         CentralizedValueMixin
     ])
 
-CCTrainer = PPOTrainer.with_updates(name="CCPPOTrainer", default_policy=CCPPO)
+CCTrainer = PPOTrainer.with_updates(name="CCPPOTrainer", get_policy_class=lambda config: CCPPO)
 
 
 ##### Below is code to run, above is code that implements centralized critic #####
 def main():
-    filename = "4-hallway/4"
+    filename = "4-hallway/2"
     sim_state = parse_sim_state(filename)
 
     checkpoint = ""
@@ -232,6 +228,28 @@ def train(sim_state, checkpoint):
 
     config = ppo_config.PPO_CONFIG.copy()
     config["gamma"] = 0.99
+    config["observation_filter"] = "MeanStdFilter"
+    config["clip_actions"] = True
+    config["env_config"] = {
+        "sim_state": sim_state,
+        "mode": "multi_train_vis",
+        "timesteps_reset": config["timesteps_per_iteration"]
+    }
+    multi_agent_config = make_multi_agent_config(sim_state, config)
+    config["multiagent"] = multi_agent_config
+    register_env("multi_agent_env", lambda _: MultiAgentEnvironment(config["env_config"]))
+    ModelCatalog.register_custom_model("cc_model", CentralizedCriticModel)
+    config["env"] = "multi_agent_env"
+    config["batch_mode"] = "truncate_episodes"
+    config["eager"] = False
+    config["num_workers"] = 0
+    config["model"] = {
+        "custom_model": "cc_model"
+    }
+
+    """config = ppo_config.PPO_CONFIG.copy()
+    #config = ppo_config2.PPO_CONFIG.copy()
+    config["gamma"] = 0.99
     config["num_workers"] = 0
     config["observation_filter"] = "MeanStdFilter"
     config["clip_actions"] = True
@@ -241,16 +259,13 @@ def train(sim_state, checkpoint):
         "timesteps_reset": config["timesteps_per_iteration"]
     }
 
-    multi_agent_config = make_multi_agent_config(sim_state, config)
-    config["multiagent"] = multi_agent_config
-
     register_env("multi_agent_env", lambda _: MultiAgentEnvironment(config["env_config"]))
     config["env"] = "multi_agent_env"
 
     ModelCatalog.register_custom_model("cc_model", CentralizedCriticModel)
 
     config["model"] = {"custom_model": "cc_model"}
-    config["batch_mode"] = "complete_episodes"
+    config["batch_mode"] = "truncate_episodes" """
 
     stop = {}
 
