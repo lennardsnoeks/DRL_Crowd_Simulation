@@ -80,18 +80,20 @@ def centralized_critic_postprocessing(policy,
     if policy.loss_initialized():
         assert other_agent_batches is not None
 
-        global_obs_batch = np.stack(
-            [other_agent_batches[batch]["obs"] for batch in other_agent_batches],
-            axis=1
-        )
-        global_act_batch = np.stack(
-            [other_agent_batches[batch]["actions"] for batch in other_agent_batches],
-            axis=1
-        )
-
         # also record the opponent obs and actions in the trajectory
-        sample_batch[OPPONENT_OBS] = global_obs_batch
-        sample_batch[OPPONENT_ACTION] = global_act_batch
+        sample_batch_size = len(sample_batch["agent_index"])
+        total_obs_sample = []
+        total_act_sample = []
+        for i in range(0, sample_batch_size):
+            sample_obs_all_agents = []
+            sample_act_all_agents = []
+            for batch in other_agent_batches:
+                sample_obs_all_agents = np.append(sample_obs_all_agents, other_agent_batches[batch][1]["obs"][i])
+                sample_act_all_agents = np.append(sample_act_all_agents, other_agent_batches[batch][1]["actions"][i])
+            total_obs_sample.append(sample_obs_all_agents)
+            total_act_sample.append(sample_act_all_agents)
+        sample_batch[OPPONENT_OBS] = np.array(total_obs_sample, dtype="float32")
+        sample_batch[OPPONENT_ACTION] = np.array(total_act_sample, dtype="float32")
 
         # overwrite default VF prediction with the central VF
         sample_batch[SampleBatch.VF_PREDS] = policy.compute_central_vf(
