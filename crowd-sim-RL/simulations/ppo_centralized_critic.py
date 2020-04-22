@@ -128,7 +128,6 @@ def centralized_critic_postprocessing(policy,
         for i in range(0, sample_batch_size):
             sample_obs_all_agents = []
             sample_act_all_agents = []
-
             for j in range(0, num_agents):
                 if j != current_agent_id:
                     if j in other_agent_batches.keys():
@@ -148,25 +147,10 @@ def centralized_critic_postprocessing(policy,
                                                           np.zeros_like(sample_batch[SampleBatch.CUR_OBS][0]))
                         sample_act_all_agents = np.append(sample_act_all_agents,
                                                           np.zeros_like(sample_batch[SampleBatch.ACTIONS][0]))
-
-            """for batch in other_agent_batches:
-                if i < len(other_agent_batches[batch][1]["obs"]):
-                    sample_obs_all_agents = np.append(sample_obs_all_agents,
-                                                      other_agent_batches[batch][1]["obs"][i])
-                    sample_act_all_agents = np.append(sample_act_all_agents,
-                                                      other_agent_batches[batch][1]["actions"][i])
-                else:
-                    # opponent agent is done and number of samples in batch is not 10, append with zeros
-                    sample_obs_all_agents = np.append(sample_obs_all_agents,
-                                                      np.zeros_like(other_agent_batches[batch][1]["obs"][0]))
-                    sample_act_all_agents = np.append(sample_act_all_agents,
-                                                      np.zeros_like(other_agent_batches[batch][1]["actions"][0]))"""
             total_obs_sample.append(sample_obs_all_agents)
             total_act_sample.append(sample_act_all_agents)
         sample_batch[OPPONENT_OBS] = np.array(total_obs_sample, dtype="float32")
         sample_batch[OPPONENT_ACTION] = np.array(total_act_sample, dtype="float32")
-
-        print(other_agent_batches.keys())
 
         # overwrite default VF prediction with the central VF
         sample_batch[SampleBatch.VF_PREDS] = policy.compute_central_vf(
@@ -308,16 +292,14 @@ def train(sim_state, checkpoint):
 
     config = ppo_config.PPO_CONFIG.copy()
     config["gamma"] = 0.99
-    """config = {}
-    config["gamma"] = 0.99"""
     config["clip_actions"] = True
     config["observation_filter"] = "MeanStdFilter"
+    config["timesteps_per_iteration"] = 1000
 
     config["env_config"] = {
         "sim_state": sim_state,
         "mode": "multi_train_vis",
-        "timesteps_reset": 1000
-        #"timesteps_reset": config["timesteps_per_iteration"]
+        "timesteps_reset": config["timesteps_per_iteration"]
     }
     multi_agent_config = make_multi_agent_config(sim_state, config)
     config["multiagent"] = multi_agent_config
@@ -330,26 +312,6 @@ def train(sim_state, checkpoint):
     config["model"] = {
         "custom_model": "cc_model"
     }
-
-    """config = ppo_config.PPO_CONFIG.copy()
-    #config = ppo_config2.PPO_CONFIG.copy()
-    config["gamma"] = 0.99
-    config["num_workers"] = 0
-    config["observation_filter"] = "MeanStdFilter"
-    config["clip_actions"] = True
-    config["env_config"] = {
-        "sim_state": sim_state,
-        "mode": "multi_train_vis",
-        "timesteps_reset": config["timesteps_per_iteration"]
-    }
-
-    register_env("multi_agent_env", lambda _: MultiAgentEnvironment(config["env_config"]))
-    config["env"] = "multi_agent_env"
-
-    ModelCatalog.register_custom_model("cc_model", CentralizedCriticModel)
-
-    config["model"] = {"custom_model": "cc_model"}
-    config["batch_mode"] = "truncate_episodes" """
 
     stop = {}
 

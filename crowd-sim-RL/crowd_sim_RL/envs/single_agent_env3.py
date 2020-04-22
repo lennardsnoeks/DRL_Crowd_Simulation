@@ -16,7 +16,7 @@ class SingleAgentEnv3(gym.Env):
         self.reward_collision = 15
         self.reward_collision_clip = 5
         #self.reward_goal_reached = 5
-        self.reward_goal_reached = 0
+        self.reward_goal_reached = 5
         self.reset_pos_necessary = False
 
         self.sim_state: SimulationState
