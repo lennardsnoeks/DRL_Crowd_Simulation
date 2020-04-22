@@ -80,20 +80,93 @@ def centralized_critic_postprocessing(policy,
     if policy.loss_initialized():
         assert other_agent_batches is not None
 
+        sample_batch_size = 10
+
+        # agent is done and number of samples in batch is not 10, append zeros all elements that don't have
+        # amounts that equal sample batch size
+        cur_sample_len = len(sample_batch[SampleBatch.CUR_OBS])
+        if cur_sample_len < sample_batch_size:
+            for i in range(cur_sample_len, sample_batch_size):
+                zeros = np.zeros_like(sample_batch[SampleBatch.CUR_OBS][0])
+                sample_batch[SampleBatch.CUR_OBS] = np.concatenate((sample_batch[SampleBatch.CUR_OBS],
+                                                                    np.array([zeros])))
+                sample_batch["new_obs"] = np.concatenate((sample_batch["new_obs"],
+                                                          np.array([zeros])))
+
+                zeros = np.zeros_like(sample_batch[SampleBatch.ACTIONS][0])
+                sample_batch[SampleBatch.ACTIONS] = np.concatenate((sample_batch[SampleBatch.ACTIONS],
+                                                                    np.array([zeros])))
+                sample_batch["prev_actions"] = np.concatenate((sample_batch["prev_actions"],
+                                                               np.array([zeros])))
+
+                zeros = np.zeros_like(sample_batch["behaviour_logits"][0])
+                sample_batch["behaviour_logits"] = np.concatenate((sample_batch["behaviour_logits"],
+                                                                   np.array([zeros])))
+
+            diff = sample_batch_size - cur_sample_len
+            zeros = np.zeros(diff)
+            sample_batch[SampleBatch.REWARDS] = np.concatenate((sample_batch[SampleBatch.REWARDS], np.array(zeros)))
+            sample_batch["prev_rewards"] = np.concatenate((sample_batch["prev_rewards"], np.array(zeros)))
+            sample_batch["action_prob"] = np.concatenate((sample_batch["action_prob"], np.array(zeros)))
+            sample_batch["action_logp"] = np.concatenate((sample_batch["action_logp"], np.array(zeros)))
+            sample_batch["t"] = np.concatenate((sample_batch["t"], np.array(zeros)))
+
+            sample_batch["dones"] = np.concatenate((sample_batch["dones"], [True] * diff))
+            sample_batch["infos"] = np.concatenate((sample_batch["infos"], [{}] * diff))
+
+            ep_id = sample_batch["eps_id"][0]
+            sample_batch["eps_id"] = np.concatenate((sample_batch["eps_id"], [ep_id] * diff))
+            agent_index = sample_batch["agent_index"][0]
+            sample_batch["agent_index"] = np.concatenate((sample_batch["agent_index"], [agent_index] * diff))
+            unroll_id = sample_batch["unroll_id"][0]
+            sample_batch["unroll_id"] = np.concatenate((sample_batch["unroll_id"], [unroll_id] * diff))
+
         # also record the opponent obs and actions in the trajectory
-        sample_batch_size = len(sample_batch["agent_index"])
+        current_agent_id = sample_batch["agent_index"][0]
         total_obs_sample = []
         total_act_sample = []
         for i in range(0, sample_batch_size):
             sample_obs_all_agents = []
             sample_act_all_agents = []
-            for batch in other_agent_batches:
-                sample_obs_all_agents = np.append(sample_obs_all_agents, other_agent_batches[batch][1]["obs"][i])
-                sample_act_all_agents = np.append(sample_act_all_agents, other_agent_batches[batch][1]["actions"][i])
+
+            for j in range(0, num_agents):
+                if j != current_agent_id:
+                    if j in other_agent_batches.keys():
+                        if i < len(other_agent_batches[j][1]["obs"]):
+                            sample_obs_all_agents = np.append(sample_obs_all_agents,
+                                                              other_agent_batches[j][1]["obs"][i])
+                            sample_act_all_agents = np.append(sample_act_all_agents,
+                                                              other_agent_batches[j][1]["actions"][i])
+                        else:
+                            # opponent agent is done and number of samples in batch is not 10, append with zeros
+                            sample_obs_all_agents = np.append(sample_obs_all_agents,
+                                                              np.zeros_like(sample_batch[SampleBatch.CUR_OBS][0]))
+                            sample_act_all_agents = np.append(sample_act_all_agents,
+                                                              np.zeros_like(sample_batch[SampleBatch.ACTIONS][0]))
+                    else:
+                        sample_obs_all_agents = np.append(sample_obs_all_agents,
+                                                          np.zeros_like(sample_batch[SampleBatch.CUR_OBS][0]))
+                        sample_act_all_agents = np.append(sample_act_all_agents,
+                                                          np.zeros_like(sample_batch[SampleBatch.ACTIONS][0]))
+
+            """for batch in other_agent_batches:
+                if i < len(other_agent_batches[batch][1]["obs"]):
+                    sample_obs_all_agents = np.append(sample_obs_all_agents,
+                                                      other_agent_batches[batch][1]["obs"][i])
+                    sample_act_all_agents = np.append(sample_act_all_agents,
+                                                      other_agent_batches[batch][1]["actions"][i])
+                else:
+                    # opponent agent is done and number of samples in batch is not 10, append with zeros
+                    sample_obs_all_agents = np.append(sample_obs_all_agents,
+                                                      np.zeros_like(other_agent_batches[batch][1]["obs"][0]))
+                    sample_act_all_agents = np.append(sample_act_all_agents,
+                                                      np.zeros_like(other_agent_batches[batch][1]["actions"][0]))"""
             total_obs_sample.append(sample_obs_all_agents)
             total_act_sample.append(sample_act_all_agents)
         sample_batch[OPPONENT_OBS] = np.array(total_obs_sample, dtype="float32")
         sample_batch[OPPONENT_ACTION] = np.array(total_act_sample, dtype="float32")
+
+        print(other_agent_batches.keys())
 
         # overwrite default VF prediction with the central VF
         sample_batch[SampleBatch.VF_PREDS] = policy.compute_central_vf(
