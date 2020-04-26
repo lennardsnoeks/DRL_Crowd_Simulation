@@ -31,7 +31,7 @@ TD3_CONFIG = merge_dicts(
         "critic_lr": 1e-3,
         "l2_reg": 0.0,
         "tau": 5e-3,
-        "train_batch_size": 32,
+        "train_batch_size": 16,
         "sample_batch_size": 1,
         "use_huber": False,
         "target_network_update_freq": 0,

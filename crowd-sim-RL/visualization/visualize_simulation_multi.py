@@ -248,7 +248,7 @@ class VisualizationSimMulti:
                 type = agent.type_history[self.sim_state.laser_history_amount][i]
                 if self.color_lasers and type == 0:
                     color = SIM_COLORS['green']
-                elif self.color_lasers and type == 1000:
+                elif self.color_lasers and type == 1:
                     color = SIM_COLORS['red']
                 else:
                     color = SIM_COLORS['white']

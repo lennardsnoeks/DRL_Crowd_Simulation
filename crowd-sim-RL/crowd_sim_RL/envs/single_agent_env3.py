@@ -13,9 +13,8 @@ class SingleAgentEnv3(gym.Env):
         self.time_step = 0.1
 
         self.reward_goal = 5
-        self.reward_collision = 15
+        self.reward_collision = 5
         self.reward_collision_clip = 5
-        #self.reward_goal_reached = 5
         self.reward_goal_reached = 5
         self.reset_pos_necessary = False
 
@@ -24,18 +23,16 @@ class SingleAgentEnv3(gym.Env):
         self.MIN_LIN_VELO = -0.5
         self.MAX_LIN_VELO = 1.5
         self.MAX_ANG_VELO = math.radians(45)
-
         self.WORLD_BOUND = 0
+        self.step_count = 0
+        self.step_count_same = 0
+        self.step_count_obs = 0
 
         self.action_space = spaces.Box(np.array([self.MIN_LIN_VELO, -self.MAX_ANG_VELO]),
                                        np.array([self.MAX_LIN_VELO, self.MAX_ANG_VELO]))
 
         self.mode = env_config["mode"]
         self.load_params(env_config["sim_state"])
-
-        self.step_count = 0
-        self.step_count_same = 0
-        self.step_count_obs = 0
 
         # keep IDs of agents current agent collided with, if they collide again in next timestep don't add
         # another negative reward, becomes too large and agents won't go near each other again
@@ -146,8 +143,8 @@ class SingleAgentEnv3(gym.Env):
 
         # when training, do manual reset once if the agent is stuck in local optima or
         # if they are wandering in 2-obstacles
-        if "train" in self.mode:
-            self._check_resets(agent, previous_pos, collision_obstacle)
+        """if "train" in self.mode:
+            self._check_resets(agent, previous_pos, collision_obstacle)"""
 
         return observation, reward, done, {}
 
@@ -165,17 +162,17 @@ class SingleAgentEnv3(gym.Env):
         if self.step_count == 4000:
             self.reset_pos_necessary = True
 
-        """if self._in_local_optima(agent.pos):
+        if self._in_local_optima(agent.pos):
             self.step_count_same += 1
         else:
-            self.step_count_same = 0"""
+            self.step_count_same = 0
 
         if collision_obstacle:
             self.step_count_obs += 1
         else:
             self.step_count_obs = 0
 
-        #self.step_count += 1
+        self.step_count += 1
 
         if self.reset_pos_necessary:
             self.step_count_same = 0
@@ -242,11 +239,12 @@ class SingleAgentEnv3(gym.Env):
         return observation
 
     def _get_external_state(self, agent):
-        laser_distances = [self.WORLD_BOUND * 2] * (self.sim_state.laser_amount + 1)
+        #laser_distances = [self.WORLD_BOUND] * (self.sim_state.laser_amount + 1)
+        laser_distances = [self.WORLD_BOUND / 2] * (self.sim_state.laser_amount + 1)
         types = []
         agent.laser_lines = []
         agent.type_colors = []
-        max_view = 15
+        max_view = 10
 
         start_point = agent.orientation - math.radians(90)
         increment = math.radians(180 / self.sim_state.laser_amount)
@@ -255,7 +253,9 @@ class SingleAgentEnv3(gym.Env):
             x_ori = math.cos(laser_ori)
             y_ori = math.sin(laser_ori)
             distance, x_end, y_end, type = self._get_first_crossed_object(agent, x_ori, y_ori, max_view)
-            if type != 0:  # and distance <= max_view:
+            """if type != 0:
+                laser_distances[i] = distance"""
+            if type != 0 and distance <= max_view:
                 laser_distances[i] = distance
             types.append(type)
             agent.laser_lines.append(np.array([x_end, y_end]))

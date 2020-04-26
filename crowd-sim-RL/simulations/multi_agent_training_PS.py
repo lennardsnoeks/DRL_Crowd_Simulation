@@ -17,8 +17,9 @@ count_over = 0
 
 
 def main():
-    filename = "4-hallway/2"
+    filename = "4-hallway/4"
     seed = 63626
+    seed = 1234
     sim_state = parse_sim_state(filename, seed)
 
     checkpoint = ""

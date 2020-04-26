@@ -23,13 +23,13 @@ PPO_CONFIG = with_common_config({
     # Initial coefficient for KL divergence.
     "kl_coeff": 0.5,
     # Size of batches collected from each worker.
-    "sample_batch_size": 10,
+    "sample_batch_size": 16,
     # Number of timesteps collected for each SGD round. This defines the size
     # of each SGD epoch.
-    "train_batch_size": 500,
+    "train_batch_size": 2048,
     # Total SGD batch size across all devices for SGD. This defines the
     # minibatch size within each epoch.
-    "sgd_minibatch_size": 50,
+    "sgd_minibatch_size": 32,
     # Whether to shuffle sequences in the batch when training (recommended).
     "shuffle_sequences": True,
     # Number of SGD iterations in each outer loop (i.e., number of epochs to
@@ -41,17 +41,17 @@ PPO_CONFIG = with_common_config({
     "lr_schedule": None,
     # Share layers for value function. If you set this to True, it's important
     # to tune vf_loss_coeff.
-    "vf_share_layers": True,
+    "vf_share_layers": False,
     # Coefficient of the value function loss. IMPORTANT: you must tune this if
     # you set vf_share_layers: True.
     #"vf_loss_coeff": 1.0,
-    "vf_loss_coeff": 0.5,
+    "vf_loss_coeff": 1.0,
     # Coefficient of the entropy regularizer.
     "entropy_coeff": 0.01,
     # Decay schedule for the entropy regularizer.
     "entropy_coeff_schedule": None,
     # PPO clip parameter.
-    "clip_param": 0.2,
+    "clip_param": 0.1,
     # Clip param for the value function. Note that this is sensitive to the
     # scale of the rewards. If your expected V is large, increase this.
     "vf_clip_param": 10.0,

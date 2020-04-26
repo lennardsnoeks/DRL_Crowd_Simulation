@@ -12,12 +12,12 @@
     <version>1.0</version>
     <name>crossing-1</name>
     <worldBounds>
-      <xmin>-15</xmin>
-      <xmax>15</xmax>
+      <xmin>-10</xmin>
+      <xmax>10</xmax>
       <ymin>0</ymin>
       <ymax>0</ymax>
-      <zmin>-15</zmin>
-      <zmax>15</zmax>
+      <zmin>-10</zmin>
+      <zmax>10</zmax>
     </worldBounds>
   </header>
 
@@ -68,13 +68,13 @@
     <name>A_0</name>
     <initialConditions>
       <radius>0.5</radius>
-      <position> <x>9</x> <y>0</y> <z>1</z> </position>
+      <position> <x>9</x> <y>0</y> <z>0</z> </position>
       <direction> <x>-1</x> <y>0</y> <z>0</z> </direction>
       <speed>0</speed>
     </initialConditions>
     <goalSequence>
       <seekStaticTarget>
-        <targetLocation> <x>-10</x> <y>1</y> <z>1</z> </targetLocation>
+        <targetLocation> <x>-9</x> <y>1</y> <z>0</z> </targetLocation>
         <desiredSpeed>1</desiredSpeed>
         <timeDuration>5</timeDuration>
       </seekStaticTarget>
@@ -86,13 +86,13 @@
     <name>B_1</name>
     <initialConditions>
       <radius>0.5</radius>
-      <position> <x>1</x> <y>0</y> <z>10</z> </position>
+      <position> <x>0</x> <y>0</y> <z>9</z> </position>
       <direction> <x>0</x> <y>0</y> <z>-1</z> </direction>
       <speed>0</speed>
     </initialConditions>
     <goalSequence>
       <seekStaticTarget>
-        <targetLocation> <x>1</x> <y>1</y> <z>-10</z> </targetLocation>
+        <targetLocation> <x>0</x> <y>1</y> <z>-9</z> </targetLocation>
         <desiredSpeed>5</desiredSpeed>
         <timeDuration>1</timeDuration>
       </seekStaticTarget>

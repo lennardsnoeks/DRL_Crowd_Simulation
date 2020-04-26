@@ -72,7 +72,7 @@
   </obstacle>-->
 
   <obstacleRegion>
-    <numObstacles>15</numObstacles>
+    <numObstacles>30</numObstacles>
     <obstacleSize>1.0</obstacleSize>
     <obstacleHeight>0.2</obstacleHeight>
     <regionBounds>
@@ -95,9 +95,9 @@
     </initialConditions>
     <goalSequence>
       <seekStaticTarget>
-        <targetLocation> <x>16</x> <y>1</y> <z>0</z> </targetLocation>
-        <desiredSpeed>2</desiredSpeed>
-        <timeDuration>5</timeDuration>
+        <targetLocation> <x>16.5</x> <y>1</y> <z>0</z> </targetLocation>
+        <desiredSpeed>1</desiredSpeed>
+        <timeDuration>12</timeDuration>
       </seekStaticTarget>
     </goalSequence>
 
