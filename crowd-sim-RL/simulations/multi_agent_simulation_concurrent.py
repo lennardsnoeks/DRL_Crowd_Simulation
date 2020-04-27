@@ -4,7 +4,7 @@ import ray.rllib.agents.ddpg as ddpg
 from ray.rllib.agents.ddpg.ddpg_policy import DDPGTFPolicy
 from crowd_sim_RL.envs import SingleAgentEnv
 from crowd_sim_RL.envs.multi_agent_env import MultiAgentEnvironment
-from simulations.ppo_centralized_critic import CCTrainer
+from simulations.ppo_centralized_critic import CCTrainer, CCPPO
 from utils.steerbench_parser import XMLSimulationState
 from simulations.configs import ddpg_config, ppo_config, td3_config
 from visualization.visualize_simulation_multi import VisualizationSimMulti
@@ -21,12 +21,14 @@ def main():
     simulate(sim_state, checkpoint_path)
 
 
-def make_multi_agent_config(sim_state, config):
+def make_multi_agent_config(sim_state, config, centralized):
     multi_agent_config = {}
     policy_dict = {}
 
     env_config = config["env_config"]
     env_config["agent_id"] = 0
+
+    gamma = config["gamma"]
 
     single_env = SingleAgentEnv(env_config)
     obs_space = single_env.get_observation_space()
@@ -34,7 +36,10 @@ def make_multi_agent_config(sim_state, config):
 
     for agent in sim_state.agents:
         policy_id = "policy_" + str(agent.id)
-        policy_dict[policy_id] = (DDPGTFPolicy, obs_space, action_space, {"gamma": 0.95})
+        if centralized:
+            policy_dict[policy_id] = (CCPPO, obs_space, action_space, {"gamma": gamma})
+        else:
+            policy_dict[policy_id] = (None, obs_space, action_space, {"gamma": gamma})
 
     multi_agent_config["policies"] = policy_dict
     multi_agent_config["policy_mapping_fn"] = lambda agent_id: "policy_" + str(agent_id)
@@ -61,7 +66,9 @@ def simulate(sim_state, checkpoint_path):
         "timesteps_per_iteration": config["timesteps_per_iteration"]
     }
 
-    multi_agent_config = make_multi_agent_config(sim_state, config)
+    centralized = True
+
+    multi_agent_config = make_multi_agent_config(sim_state, config, centralized)
     config["multiagent"] = multi_agent_config
 
     ray.init()

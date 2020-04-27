@@ -49,13 +49,15 @@ def make_multi_agent_config(sim_state, config):
     env_config = config["env_config"]
     env_config["agent_id"] = 0
 
+    gamma = config["gamma"]
+
     single_env = SingleAgentEnv3(env_config)
     obs_space = single_env.get_observation_space()
     action_space = single_env.get_action_space()
 
     for agent in sim_state.agents:
         policy_id = "policy_" + str(agent.id)
-        policy_dict[policy_id] = (DDPGTFPolicy, obs_space, action_space, {"gamma": 0.95})
+        policy_dict[policy_id] = (None, obs_space, action_space, {"gamma": gamma})
 
     multi_agent_config["policies"] = policy_dict
     multi_agent_config["policy_mapping_fn"] = lambda agent_id: "policy_" + str(agent_id)

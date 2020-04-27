@@ -276,7 +276,7 @@ def make_multi_agent_config(sim_state, config):
 
     for agent in sim_state.agents:
         policy_id = "policy_" + str(agent.id)
-        policy_dict[policy_id] = (None, obs_space, action_space, {"gamma": gamma})
+        policy_dict[policy_id] = (CCPPO, obs_space, action_space, {"gamma": gamma})
 
     multi_agent_config["policies"] = policy_dict
     multi_agent_config["policy_mapping_fn"] = lambda agent_id: "policy_" + str(agent_id)
