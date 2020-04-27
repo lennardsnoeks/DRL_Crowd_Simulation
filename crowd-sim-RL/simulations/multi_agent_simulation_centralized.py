@@ -5,7 +5,7 @@ import ray.rllib.agents.ppo as ppo
 from crowd_sim_RL.envs.multi_agent_env_centralized import MultiAgentCentralized
 from utils.steerbench_parser import XMLSimulationState
 from visualization.visualize_simulation import VisualizationSim
-from simulations.configs import ddpg_config, ppo_config
+from simulations.configs import ddpg_config, ppo_config, td3_config
 
 
 def main():
@@ -20,7 +20,10 @@ def main():
 
 
 def simulate(sim_state, checkpoint_path):
-    config = ddpg_config.DDPG_CONFIG.copy()
+    #config = ddpg_config.DDPG_CONFIG.copy()
+    config = ppo_config.PPO_CONFIG.copy()
+    #config = td3_config.TD3_CONFIG.copy()
+
     config["gamma"] = 0.95
     config["num_workers"] = 0
     config["num_gpus"] = 0
@@ -38,6 +41,7 @@ def simulate(sim_state, checkpoint_path):
     ray.init()
     trainer = ddpg.DDPGTrainer(env=MultiAgentCentralized, config=config)
     #trainer = ppo.PPOTrainer(env=MultiAgentCentralized, config=config)
+    #trainer = ddpg.TD3Trainer(env=MultiAgentEnvironment, config=config)
     trainer.restore(checkpoint_path)
 
     zoom_factor = 10

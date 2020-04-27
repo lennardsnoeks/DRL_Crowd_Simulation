@@ -6,7 +6,7 @@ from crowd_sim_RL.envs import SingleAgentEnv
 from crowd_sim_RL.envs.multi_agent_env import MultiAgentEnvironment
 from simulations.ppo_centralized_critic import CCTrainer
 from utils.steerbench_parser import XMLSimulationState
-from simulations.configs import ddpg_config, ppo_config
+from simulations.configs import ddpg_config, ppo_config, td3_config
 from visualization.visualize_simulation_multi import VisualizationSimMulti
 
 

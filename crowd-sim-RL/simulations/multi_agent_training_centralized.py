@@ -46,7 +46,8 @@ def train(sim_state, checkpoint):
 
     config = ddpg_config.DDPG_CONFIG.copy()
     config = ppo_config.PPO_CONFIG.copy()
-    config["gamma"] = 0.95
+
+    config["gamma"] = 0.99
     config["num_workers"] = 0
     config["num_gpus"] = 0
     config["eager"] = False
