@@ -4,18 +4,19 @@ import ray.rllib.agents.ddpg as ddpg
 from ray.rllib.agents.ddpg.ddpg_policy import DDPGTFPolicy
 from crowd_sim_RL.envs import SingleAgentEnv
 from crowd_sim_RL.envs.multi_agent_env import MultiAgentEnvironment
+from simulations.ppo_centralized_critic import CCTrainer
 from utils.steerbench_parser import XMLSimulationState
-from simulations.configs import ddpg_config
+from simulations.configs import ddpg_config, ppo_config
 from visualization.visualize_simulation_multi import VisualizationSimMulti
 
 
 def main():
     dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, "../test_XML_files/hallway_test/4.xml")
+    filename = os.path.join(dirname, "../test_XML_files/4-hallway/4.xml")
     seed = 22222
     sim_state = XMLSimulationState(filename, seed).simulation_state
 
-    checkpoint_path = "/home/lennard/ray_results/DDPG/DDPG_multi_agent_env_6960a2d6_0_2020-03-15_14-53-55_w30woiy/checkpoint_308_2/checkpoint-308"
+    checkpoint_path = "/home/lennard/ray_results/central_critic/CCPPOTrainer_multi_agent_env_17f4268c_0_2020-04-27_23-50-21_kx46i91/checkpoint_73"
 
     simulate(sim_state, checkpoint_path)
 
@@ -42,8 +43,11 @@ def make_multi_agent_config(sim_state, config):
 
 
 def simulate(sim_state, checkpoint_path):
-    config = ddpg_config.DDPG_CONFIG.copy()
-    config["gamma"] = 0.95
+    #config = ddpg_config.DDPG_CONFIG.copy()
+    config = ppo_config.PPO_CONFIG.copy()
+    #config = td3_config.TD3_CONFIG.copy()
+
+    config["gamma"] = 0.99
     config["num_workers"] = 0
     config["num_gpus"] = 0
     config["eager"] = False
@@ -61,7 +65,11 @@ def simulate(sim_state, checkpoint_path):
     config["multiagent"] = multi_agent_config
 
     ray.init()
-    trainer = ddpg.DDPGTrainer(env=MultiAgentEnvironment, config=config)
+    #trainer = ddpg.PPOTrainer(env=MultiAgentEnvironment, config=config)
+    #trainer = ddpg.DDPGTrainer(env=MultiAgentEnvironment, config=config)
+    #trainer = ddpg.TD3Trainer(env=MultiAgentEnvironment, config=config)
+    trainer = CCTrainer(env=MultiAgentEnvironment, config=config)
+
     trainer.restore(checkpoint_path)
 
     visualization_sim = VisualizationSimMulti(sim_state, trainer)

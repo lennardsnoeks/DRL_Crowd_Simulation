@@ -15,7 +15,7 @@ class SingleAgentEnv3(gym.Env):
         self.reward_goal = 5
         self.reward_collision = 5
         self.reward_collision_clip = 5
-        self.reward_goal_reached = 5
+        self.reward_goal_reached = 0
         self.reset_pos_necessary = False
 
         self.sim_state: SimulationState
@@ -49,8 +49,8 @@ class SingleAgentEnv3(gym.Env):
 
         self._load_world()
 
-        x_diff = (self.bounds[1] - self.bounds[0]) * 1.2
-        y_diff = (self.bounds[3] - self.bounds[2]) * 1.2
+        x_diff = (self.bounds[1] - self.bounds[0]) * 1.1
+        y_diff = (self.bounds[3] - self.bounds[2]) * 1.1
         self.WORLD_BOUND = math.ceil(max(x_diff, y_diff))
 
         self.observation_space = spaces.Tuple((
@@ -239,8 +239,8 @@ class SingleAgentEnv3(gym.Env):
         return observation
 
     def _get_external_state(self, agent):
-        #laser_distances = [self.WORLD_BOUND] * (self.sim_state.laser_amount + 1)
-        laser_distances = [self.WORLD_BOUND / 2] * (self.sim_state.laser_amount + 1)
+        laser_distances = [self.WORLD_BOUND] * (self.sim_state.laser_amount + 1)
+        #laser_distances = [self.WORLD_BOUND / 2] * (self.sim_state.laser_amount + 1)
         types = []
         agent.laser_lines = []
         agent.type_colors = []
@@ -253,10 +253,10 @@ class SingleAgentEnv3(gym.Env):
             x_ori = math.cos(laser_ori)
             y_ori = math.sin(laser_ori)
             distance, x_end, y_end, type = self._get_first_crossed_object(agent, x_ori, y_ori, max_view)
-            """if type != 0:
-                laser_distances[i] = distance"""
-            if type != 0 and distance <= max_view:
+            if type != 0:
                 laser_distances[i] = distance
+            """if type != 0 and distance <= max_view:
+                laser_distances[i] = distance"""
             types.append(type)
             agent.laser_lines.append(np.array([x_end, y_end]))
             agent.type_colors.append(type)
@@ -291,8 +291,8 @@ class SingleAgentEnv3(gym.Env):
         distant_y = y_agent
         distance_to_object = 0
 
-        while distance_to_object < max_view:
-        #while True:
+        #while distance_to_object < max_view:
+        while True:
             distant_x += x_ori * iteration_step
             distant_y += y_ori * iteration_step
             distance_to_object = math.hypot(x_agent - distant_x, y_agent - distant_y)
@@ -353,11 +353,11 @@ class SingleAgentEnv3(gym.Env):
                         type = 2
                     break
 
-        if distance_to_object >= max_view and not collision:
+        """if distance_to_object >= max_view and not collision:
             x_end = distant_x
             y_end = distant_y
             distance = max_view
-            type = 2
+            type = 2"""
 
         return distance, x_end, y_end, type
 
@@ -375,17 +375,17 @@ class SingleAgentEnv3(gym.Env):
                                                 current_agent.pos[0, 0], current_agent.pos[1, 0],
                                                 current_agent.radius):
                 collision_obstacle = True
-                if obstacle.type == 0:
+                """if obstacle.type == 0:
                     collision_ids_obs.append(obstacle.id)
                 else:
                     collided_obs_id = obstacle.id
                 if obstacle.id not in self.collision_ids_obs and obstacle.type == 0:
-                    collision = True
+                    collision = True"""
 
-                """if obstacle.type == 0:
+                if obstacle.type == 0:
                     collision = True
                 else:
-                    collided_obs_id = -1"""
+                    collided_obs_id = -1
 
         # detect collision with other agents
         if not collision:
@@ -394,9 +394,10 @@ class SingleAgentEnv3(gym.Env):
                     if self._collision_circle_circle(current_agent.pos[0, 0], current_agent.pos[1, 0],
                                                      current_agent.radius, agent.pos[0, 0], agent.pos[1, 0],
                                                      agent.radius):
-                        collision_ids_agent.append(agent.id)
+                        """collision_ids_agent.append(agent.id)
                         if agent.id not in self.collision_ids_agent:
-                            collision = True
+                            collision = True"""
+                        collision = True
 
         # detect collision with world bounds
         if self._collision_bound(current_agent.pos[0, 0], current_agent.pos[1, 0],
@@ -407,7 +408,7 @@ class SingleAgentEnv3(gym.Env):
         if collision:
             reward -= self.reward_collision
 
-        if collided_obs_id is not None:
+        if collided_obs_id == -1:
             reward -= self.reward_collision_clip
 
         self.collision_ids_agent = collision_ids_agent

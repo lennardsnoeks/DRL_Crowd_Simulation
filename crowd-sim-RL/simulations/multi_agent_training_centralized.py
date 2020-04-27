@@ -3,7 +3,7 @@ import ray
 from ray.tune import register_env, run
 from crowd_sim_RL.envs.multi_agent_env_centralized import MultiAgentCentralized
 from utils.steerbench_parser import XMLSimulationState
-from simulations.configs import ddpg_config
+from simulations.configs import ddpg_config, ppo_config
 
 iterations_count = 0
 iterations_max = 100
@@ -45,6 +45,7 @@ def train(sim_state, checkpoint):
     checkpoint_freq = 10
 
     config = ddpg_config.DDPG_CONFIG.copy()
+    config = ppo_config.PPO_CONFIG.copy()
     config["gamma"] = 0.95
     config["num_workers"] = 0
     config["num_gpus"] = 0
@@ -73,11 +74,13 @@ def train(sim_state, checkpoint):
         # "training_iteration": iterations_max
     }
 
-    name = "training_case_1"
+    name = "test_ppo"
+    algo = "PPO"    # Options: DDPG, PPO, TD3
+
     if checkpoint == "":
-        run("DDPG", name=name, checkpoint_freq=checkpoint_freq, stop=stop, config=config)
+        run(algo, name=name, checkpoint_freq=checkpoint_freq, stop=stop, config=config)
     else:
-        run("DDPG", name=name, checkpoint_freq=checkpoint_freq, stop=stop, config=config, restore=checkpoint)
+        run(algo, name=name, checkpoint_freq=checkpoint_freq, stop=stop, config=config, restore=checkpoint)
 
 
 if __name__ == "__main__":

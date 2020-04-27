@@ -59,7 +59,6 @@ class VisualizationSimMulti:
         for i in range(0, len(self.sim_state.agents)):
             prev_rewards[i] = 0
             prev_actions[i] = [0.0, 0.0]
-        state = self.trainer.get_policy("policy_0").get_initial_state()
 
         dones = None
 
@@ -73,13 +72,15 @@ class VisualizationSimMulti:
 
             if not done:
                 for i in range(0, len(self.sim_state.agents)):
+                    state = self.trainer.get_policy("policy_" + str(self.sim_state.agents[i].id)).get_initial_state()
+
                     linear_vel, angular_vel = self.trainer.compute_action(observations[i],
                                                                           state=state,
                                                                           prev_action=prev_actions[i],
                                                                           prev_reward=prev_rewards[i],
                                                                           explore=False,
-                                                                          policy_id="policy_0")
-                                                                    # for concurrent + str(self.sim_state.agents[i].id))
+                                                                          policy_id="policy_" +
+                                                                                    str(self.sim_state.agents[i].id))
 
                     scale = dt / 1000
 

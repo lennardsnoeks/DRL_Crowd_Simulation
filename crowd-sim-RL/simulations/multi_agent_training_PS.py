@@ -99,23 +99,9 @@ def train(sim_state, checkpoint):
     global iterations_max, mean_max
     checkpoint_freq = 1
 
-    # DDPG
     #config = ddpg_config.DDPG_CONFIG.copy()
-
-    # PPO
     config = ppo_config.PPO_CONFIG.copy()
-
-    # A2C
-    #config = a2c_config.A2C_CONFIG.copy()
-
-    # TD3
     #config = td3_config.TD3_CONFIG.copy()
-
-    # SAC
-    #config = sac_config.SAC_CONFIG.copy()
-
-    # APEX
-    #config = apex_config.APEX_DDPG_CONFIG.copy()
 
     config["gamma"] = 0.99
     config["num_workers"] = 0
@@ -159,7 +145,7 @@ def train(sim_state, checkpoint):
     }
 
     name = "test_ppo"
-    algo = "PPO"    # Options: DDPG, PPO, TD3, APEX_DDPG, A2C, SAC
+    algo = "PPO"    # Options: DDPG, PPO, TD3
 
     if checkpoint == "":
         run(algo, name=name, checkpoint_freq=checkpoint_freq, stop=stop, config=config)

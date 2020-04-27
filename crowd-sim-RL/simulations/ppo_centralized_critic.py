@@ -288,7 +288,7 @@ def train(sim_state, checkpoint):
     global num_agents
     num_agents = len(sim_state.agents)
 
-    checkpoint_freq = 5
+    checkpoint_freq = 1
 
     config = ppo_config.PPO_CONFIG.copy()
     config["gamma"] = 0.99
@@ -298,7 +298,7 @@ def train(sim_state, checkpoint):
 
     config["env_config"] = {
         "sim_state": sim_state,
-        "mode": "multi_train_vis",
+        "mode": "multi_train",
         "timesteps_reset": config["timesteps_per_iteration"]
     }
     multi_agent_config = make_multi_agent_config(sim_state, config)
@@ -308,7 +308,7 @@ def train(sim_state, checkpoint):
     config["env"] = "multi_agent_env"
     config["batch_mode"] = "truncate_episodes"
     config["eager"] = False
-    config["num_workers"] = 0
+    config["num_workers"] = 7
     config["model"] = {
         "custom_model": "cc_model"
     }
