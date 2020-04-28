@@ -1,10 +1,10 @@
 import os
 import ray
 from ray.tune import register_env, run
-from crowd_sim_RL.envs import SingleAgentEnv, SingleAgentEnv2, SingleAgentEnv3
+from crowd_sim_RL.envs import SingleAgentEnv
 from crowd_sim_RL.envs.multi_agent_env import MultiAgentEnvironment
 from utils.steerbench_parser import XMLSimulationState
-from simulations.configs import ddpg_config, ppo_config, a2c_config, a3c_config, td3_config, sac_config, apex_config
+from simulations.configs import ddpg_config, ppo_config, td3_config
 
 phase2_set = False
 phase3_set = False
@@ -99,8 +99,8 @@ def train(sim_state, checkpoint):
     global iterations_max, mean_max
     checkpoint_freq = 1
 
-    #config = ddpg_config.DDPG_CONFIG.copy()
-    config = ppo_config.PPO_CONFIG.copy()
+    config = ddpg_config.DDPG_CONFIG.copy()
+    #config = ppo_config.PPO_CONFIG.copy()
     #config = td3_config.TD3_CONFIG.copy()
 
     config["gamma"] = 0.99
@@ -145,7 +145,7 @@ def train(sim_state, checkpoint):
     }
 
     name = "test_ppo"
-    algo = "PPO"    # Options: DDPG, PPO, TD3
+    algo = "DDPG"    # Options: DDPG, PPO, TD3
 
     if checkpoint == "":
         run(algo, name=name, checkpoint_freq=checkpoint_freq, stop=stop, config=config)

@@ -1,3 +1,1 @@
 from crowd_sim_RL.envs.single_agent_env import SingleAgentEnv
-from crowd_sim_RL.envs.single_agent_env2 import SingleAgentEnv2
-from crowd_sim_RL.envs.single_agent_env3 import SingleAgentEnv3

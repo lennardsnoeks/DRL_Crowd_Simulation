@@ -2,7 +2,7 @@ import os
 import ray
 import ray.rllib.agents.ddpg as ddpg
 import ray.rllib.agents.ppo as ppo
-from crowd_sim_RL.envs import SingleAgentEnv, SingleAgentEnv2, SingleAgentEnv3
+from crowd_sim_RL.envs import SingleAgentEnv
 from crowd_sim_RL.envs.multi_agent_env import MultiAgentEnvironment
 from simulations.ppo_centralized_critic import CCTrainer
 from utils.steerbench_parser import XMLSimulationState
@@ -41,7 +41,7 @@ def simulate(sim_state, checkpoint_path):
     }
 
     env_config = config["env_config"]
-    single_env = SingleAgentEnv3(env_config)
+    single_env = SingleAgentEnv(env_config)
     obs_space = single_env.get_observation_space()
     action_space = single_env.get_action_space()
 

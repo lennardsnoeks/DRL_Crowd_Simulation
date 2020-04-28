@@ -2,7 +2,7 @@ import os
 import ray
 from ray.rllib.agents.ddpg.ddpg_policy import DDPGTFPolicy
 from ray.tune import register_env, run
-from crowd_sim_RL.envs import SingleAgentEnv3
+from crowd_sim_RL.envs import SingleAgentEnv
 from crowd_sim_RL.envs.multi_agent_env import MultiAgentEnvironment
 from utils.steerbench_parser import XMLSimulationState
 from simulations.configs import ddpg_config, ppo_config
@@ -51,7 +51,7 @@ def make_multi_agent_config(sim_state, config):
 
     gamma = config["gamma"]
 
-    single_env = SingleAgentEnv3(env_config)
+    single_env = SingleAgentEnv(env_config)
     obs_space = single_env.get_observation_space()
     action_space = single_env.get_action_space()
 
@@ -71,7 +71,8 @@ def train(sim_state, checkpoint):
 
     config = ddpg_config.DDPG_CONFIG.copy()
     config = ppo_config.PPO_CONFIG.copy()
-    config["gamma"] = 0.95
+
+    config["gamma"] = 0.99
     config["num_workers"] = 0
     config["num_gpus"] = 0
     config["eager"] = False

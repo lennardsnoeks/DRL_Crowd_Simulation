@@ -1,6 +1,6 @@
 import copy
 from threading import Thread
-from crowd_sim_RL.envs import SingleAgentEnv, SingleAgentEnv2, SingleAgentEnv3
+from crowd_sim_RL.envs import SingleAgentEnv
 from utils.steerbench_parser import SimulationState
 from visualization.visualize_training import VisualizationLive
 from ray.rllib.env.multi_agent_env import MultiAgentEnv
@@ -78,10 +78,10 @@ class MultiAgentEnvironment(MultiAgentEnv):
         self.agents = []
         for i in range(0, len(self.sim_state.agents)):
             self.env_config["agent_id"] = i
-            self.agents.append(SingleAgentEnv3(self.env_config))
+            self.agents.append(SingleAgentEnv(self.env_config))
 
-        self.observation_space = SingleAgentEnv3(self.env_config).get_observation_space()
-        self.action_space = SingleAgentEnv3(self.env_config).get_action_space()
+        self.observation_space = SingleAgentEnv(self.env_config).get_observation_space()
+        self.action_space = SingleAgentEnv(self.env_config).get_action_space()
 
     def set_phase(self, new_sim_state):
         self.sim_state = new_sim_state

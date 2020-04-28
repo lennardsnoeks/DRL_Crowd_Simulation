@@ -13,9 +13,9 @@ from ray.rllib.utils.explained_variance import explained_variance
 from ray.rllib.utils.tf_ops import make_tf_callable
 from ray.rllib.utils import try_import_tf
 from ray.tune import register_env, run
-from crowd_sim_RL.envs import SingleAgentEnv3
+from crowd_sim_RL.envs import SingleAgentEnv
 from crowd_sim_RL.envs.multi_agent_env import MultiAgentEnvironment
-from simulations.configs import ppo_config, ppo_config2
+from simulations.configs import ppo_config
 from utils.steerbench_parser import XMLSimulationState
 
 tf = try_import_tf()
@@ -270,7 +270,7 @@ def make_multi_agent_config(sim_state, config):
 
     gamma = config["gamma"]
 
-    single_env = SingleAgentEnv3(env_config)
+    single_env = SingleAgentEnv(env_config)
     obs_space = single_env.get_observation_space()
     action_space = single_env.get_action_space()
 
