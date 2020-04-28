@@ -7,7 +7,7 @@ from crowd_sim_RL.envs.multi_agent_env import MultiAgentEnvironment
 from simulations.ppo_centralized_critic import CCTrainer
 from utils.steerbench_parser import XMLSimulationState
 from simulations.configs import ddpg_config, ppo_config, td3_config
-from visualization.visualize_simulation_multi import VisualizationSimMulti
+from visualization.visualize_simulation_multi_PS import VisualizationSimMultiPS
 
 
 def main():
@@ -16,7 +16,7 @@ def main():
     seed = 1234
     sim_state = XMLSimulationState(filename, seed).simulation_state
 
-    checkpoint_path = ""
+    checkpoint_path = "/home/lennard/ray_results/ppo_testing/PPO_multi_agent_env_1d7e5796_0_2020-04-28_16-54-09tcm6s5yn/checkpoint_150/checkpoint-150"
 
     simulate(sim_state, checkpoint_path)
 
@@ -60,7 +60,7 @@ def simulate(sim_state, checkpoint_path):
 
     trainer.restore(checkpoint_path)
 
-    visualization_sim = VisualizationSimMulti(sim_state, trainer)
+    visualization_sim = VisualizationSimMultiPS(sim_state, trainer)
     visualization_sim.run()
 
 

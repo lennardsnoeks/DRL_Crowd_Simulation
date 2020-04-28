@@ -4,19 +4,27 @@ import math
 import copy
 import numpy as np
 from pygame.locals import *
-from pygame import Color
+from ray.rllib.agents import Trainer
+
+from crowd_sim_RL.envs import MultiAgentCentralized
 from utils.steerbench_parser import SimulationState
 from visualization.color_config import SIM_COLORS
 
 
-class VisualizationLive:
+class VisualizationSimMultiCentralized:
 
-    def __init__(self, sim_state: SimulationState, zoom_factor):
+    def __init__(self, sim_state: SimulationState, trainer: Trainer, zoom_factor):
         pygame.init()
+
+        self.FPS_FONT = pygame.font.SysFont("Verdana", 11)
+        self.GOLDENROD = pygame.Color("goldenrod")
 
         self.goals_visible = True
         self.lasers_visible = False
+        self.show_path = True
         self.color_lasers = True
+
+        self.framerate = 30
 
         self.offset = 0.0
         self.zoom_factor = zoom_factor
@@ -25,47 +33,74 @@ class VisualizationLive:
         self.border_color = SIM_COLORS['light gray']
         self.obstacle_color = SIM_COLORS['gray']
         self.sim_state = copy.deepcopy(sim_state)
+        self.trainer = trainer
 
-        self.paused = False
-        self.time = 0
-        self.time_passed = 0
-        self.timer_interval = 10
-        self.active = True
+        self.history_all_agents = [None] * len(sim_state.agents)
+        for agent in self.sim_state.agents:
+            previous_positions = [agent.pos]
+            self.history_all_agents[agent.id] = previous_positions
 
     def run(self):
         pygame.init()
-        
         self.initialize_screen()
-
         clock = pygame.time.Clock()
 
-        self.GOLDENROD = pygame.Color("goldenrod")
-        self.FPS_FONT = pygame.font.SysFont("Verdana", 11)
+        config = {
+            "sim_state": self.sim_state,
+            "agent_id": 0,
+            "mode": "sim"
+        }
 
-        while self.active:
-            self.time_passed = clock.tick()
+        env = MultiAgentCentralized(config)
+        observation = env.reset()
+        done = False
+        prev_action = np.zeros_like(env.action_space.sample())
+        prev_reward = 0
+        state = self.trainer.get_policy().get_initial_state()
+
+        while True:
+            dt = clock.tick(self.framerate)
 
             self.process_events()
 
-            if not self.paused:
-                self.time += self.time_passed
-                if self.time > self.timer_interval:
-                    self.time -= self.timer_interval
-                    self.simulation_update()
+            if not done:
+                actions = self.trainer.compute_action(observation,
+                                                      state=state,
+                                                      prev_action=prev_action,
+                                                      prev_reward=prev_reward)
 
+                scale = dt / 1000
+
+                action_rescales = [action * scale for action in actions]
+
+                observation, reward, done, info = env.step(action_rescales)
+
+                prev_action = actions
+                prev_reward = reward
+
+                agents = env.get_agents()
+                self.sim_state.agents = agents
+
+                self.simulation_update()
+
+            self.show_fps(self.screen, clock)
             self.show_size(self.screen)
 
             pygame.display.flip()
 
-    def stop(self):
-        self.active = False
-        self.quit()
+    def show_fps(self, window, clock):
+        fps_overlay = self.FPS_FONT.render(str(round(clock.get_fps(), 2)) + " fps", True, self.GOLDENROD)
+        window.blit(fps_overlay, (0, 0))
 
     def show_size(self, window):
         x_size = self.sim_state.clipped_bounds[1] - self.sim_state.clipped_bounds[0]
         y_size = self.sim_state.clipped_bounds[3] - self.sim_state.clipped_bounds[2]
         size_overlay = self.FPS_FONT.render(str(x_size) + " x " + str(y_size), True, self.GOLDENROD)
-        window.blit(size_overlay, (1, 1))
+        window.blit(size_overlay, (0, 14))
+
+    def stop(self):
+        self.active = False
+        self.quit()
 
     def initialize_screen(self):
         self.width = self.sim_state.clipped_bounds[1] - self.sim_state.clipped_bounds[0]
@@ -140,6 +175,19 @@ class VisualizationLive:
 
             pygame.draw.line(self.screen, SIM_COLORS['white'], (agent_pos_x, agent_pos_y), (point2_x, point2_y), 1)
 
+            if self.show_path:
+                self.history_all_agents[agent.id].append(agent.pos)
+                history = self.history_all_agents[agent.id]
+
+                for i in range(0, len(history)):
+                    if i == len(history) - 1:
+                        break
+                    pos = history[i]
+                    pos2 = history[i + 1]
+                    pygame.draw.line(self.screen, color,
+                                     (pos[0, 0] * self.zoom_factor, pos[1, 0] * self.zoom_factor),
+                                     (pos2[0, 0] * self.zoom_factor, pos2[1, 0] * self.zoom_factor))
+
     def draw_goals(self):
         unique_goals = []
         for agent in self.sim_state.agents:
@@ -172,7 +220,8 @@ class VisualizationLive:
             for laser in agent.laser_lines:
                 laser_end_x = laser[0] * self.zoom_factor
                 laser_end_y = laser[1] * self.zoom_factor
-                type = agent.type_colors[i]
+
+                type = agent.type_history[self.sim_state.laser_history_amount][i]
                 if self.color_lasers and type == 0:
                     color = SIM_COLORS['green']
                 elif self.color_lasers and type == 1:
@@ -182,18 +231,6 @@ class VisualizationLive:
                 pygame.draw.line(self.screen, color,
                                  (agent_pos_x, agent_pos_y), (laser_end_x, laser_end_y), 1)
                 i += 1
-
-    def update_agents(self, updated_agents):
-        copy_agents = []
-        for agent in updated_agents:
-            copy_agents.append(copy.copy(agent))
-        self.sim_state.agents = copy_agents
-
-        try:
-            ev = pygame.event.Event(pygame.USEREVENT, {'data': copy_agents})
-            pygame.event.post(ev)
-        except pygame.error:
-            pass
 
     def quit(self):
         sys.exit()

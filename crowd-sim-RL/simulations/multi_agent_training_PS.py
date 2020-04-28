@@ -99,8 +99,8 @@ def train(sim_state, checkpoint):
     global iterations_max, mean_max
     checkpoint_freq = 1
 
-    config = ddpg_config.DDPG_CONFIG.copy()
-    #config = ppo_config.PPO_CONFIG.copy()
+    #config = ddpg_config.DDPG_CONFIG.copy()
+    config = ppo_config.PPO_CONFIG.copy()
     #config = td3_config.TD3_CONFIG.copy()
 
     config["gamma"] = 0.99
@@ -122,7 +122,7 @@ def train(sim_state, checkpoint):
 
     env_config = config["env_config"]
 
-    single_env = SingleAgentEnv3(env_config)
+    single_env = SingleAgentEnv(env_config)
     obs_space = single_env.get_observation_space()
     action_space = single_env.get_action_space()
 
@@ -144,8 +144,8 @@ def train(sim_state, checkpoint):
         #"training_iteration": iterations_max
     }
 
-    name = "test_ppo"
-    algo = "DDPG"    # Options: DDPG, PPO, TD3
+    name = "ppo_testing"
+    algo = "PPO"    # Options: DDPG, PPO, TD3
 
     if checkpoint == "":
         run(algo, name=name, checkpoint_freq=checkpoint_freq, stop=stop, config=config)

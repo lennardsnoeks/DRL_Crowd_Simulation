@@ -7,7 +7,7 @@ from crowd_sim_RL.envs.multi_agent_env import MultiAgentEnvironment
 from simulations.ppo_centralized_critic import CCTrainer, CCPPO
 from utils.steerbench_parser import XMLSimulationState
 from simulations.configs import ddpg_config, ppo_config, td3_config
-from visualization.visualize_simulation_multi import VisualizationSimMulti
+from visualization.visualize_simulation_multi_concurrent import VisualizationSimMultiConcurrent
 
 
 def main():
@@ -79,7 +79,7 @@ def simulate(sim_state, checkpoint_path):
 
     trainer.restore(checkpoint_path)
 
-    visualization_sim = VisualizationSimMulti(sim_state, trainer)
+    visualization_sim = VisualizationSimMultiConcurrent(sim_state, trainer)
     visualization_sim.run()
 
 

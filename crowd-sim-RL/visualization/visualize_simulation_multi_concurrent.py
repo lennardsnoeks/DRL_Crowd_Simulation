@@ -8,10 +8,10 @@ from ray.rllib.agents import Trainer
 
 from crowd_sim_RL.envs.multi_agent_env import MultiAgentEnvironment
 from utils.steerbench_parser import SimulationState
-from visualization.visualize_config import SIM_COLORS
+from visualization.color_config import SIM_COLORS
 
 
-class VisualizationSimMulti:
+class VisualizationSimMultiConcurrent:
 
     def __init__(self, sim_state: SimulationState, trainer: Trainer):
         pygame.init()

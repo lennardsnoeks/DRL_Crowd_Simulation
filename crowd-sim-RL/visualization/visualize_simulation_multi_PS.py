@@ -6,14 +6,14 @@ import numpy as np
 from pygame.locals import *
 from ray.rllib.agents import Trainer
 
-from crowd_sim_RL.envs import SingleAgentEnv
+from crowd_sim_RL.envs.multi_agent_env import MultiAgentEnvironment
 from utils.steerbench_parser import SimulationState
-from visualization.visualize_config import SIM_COLORS
+from visualization.color_config import SIM_COLORS
 
 
-class VisualizationSim:
+class VisualizationSimMultiPS:
 
-    def __init__(self, sim_state: SimulationState, trainer: Trainer, zoom_factor):
+    def __init__(self, sim_state: SimulationState, trainer: Trainer):
         pygame.init()
 
         self.FPS_FONT = pygame.font.SysFont("Verdana", 11)
@@ -27,7 +27,7 @@ class VisualizationSim:
         self.framerate = 30
 
         self.offset = 0.0
-        self.zoom_factor = zoom_factor
+        self.zoom_factor = 10
         self.background_color = SIM_COLORS['white']
         self.border_width = 1
         self.border_color = SIM_COLORS['light gray']
@@ -35,7 +35,7 @@ class VisualizationSim:
         self.sim_state = copy.deepcopy(sim_state)
         self.trainer = trainer
 
-        self.history_all_agents = [len(sim_state.agents)]
+        self.history_all_agents = [None] * len(sim_state.agents)
         for agent in self.sim_state.agents:
             previous_positions = [agent.pos]
             self.history_all_agents[agent.id] = previous_positions
@@ -48,36 +48,60 @@ class VisualizationSim:
         config = {
             "sim_state": self.sim_state,
             "agent_id": 0,
-            "mode": "sim"
+            "mode": "multi_sim"
         }
 
-        env = SingleAgentEnv(config)
-        observation = env.reset()
+        env = MultiAgentEnvironment(config)
+        observations = env.reset()
         done = False
-        prev_action = np.zeros_like(env.action_space.sample())
-        prev_reward = 0
-        state = self.trainer.get_policy().get_initial_state()
+        prev_actions = {}
+        prev_rewards = {}
+        for i in range(0, len(self.sim_state.agents)):
+            prev_rewards[i] = 0
+            prev_actions[i] = [0.0, 0.0]
+
+        dones = None
 
         while True:
             dt = clock.tick(self.framerate)
 
             self.process_events()
 
+            actions = {}
+            action_rescales = {}
+
+            state = self.trainer.get_policy("policy_0").get_initial_state()
+
             if not done:
-                linear_vel, angular_vel = self.trainer.compute_action(observation,
-                                                                      state=state,
-                                                                      prev_action=prev_action,
-                                                                      prev_reward=prev_reward)
+                for i in range(0, len(self.sim_state.agents)):
 
-                scale = dt / 1000
+                    linear_vel, angular_vel = self.trainer.compute_action(observations[i],
+                                                                          state=state,
+                                                                          prev_action=prev_actions[i],
+                                                                          prev_reward=prev_rewards[i],
+                                                                          explore=False,
+                                                                          policy_id="policy_0")
 
-                action = [linear_vel, angular_vel]
-                action_rescale = [linear_vel * scale, angular_vel * scale]
+                    scale = dt / 1000
 
-                observation, reward, done, info = env.step(action_rescale)
+                    if dones is None:
+                        action_rescales[i] = [linear_vel * scale, angular_vel * scale]
+                        actions[i] = [linear_vel, angular_vel]
+                    else:
+                        if not dones[i]:
+                            action_rescales[i] = [linear_vel * scale, angular_vel * scale]
+                            actions[i] = [linear_vel, angular_vel]
+                        else:
+                            action_rescales[i] = [0, 0]
+                            actions[i] = [0, 0]
 
-                prev_action = action
-                prev_reward = reward
+                observations, rewards, dones, info = env.step(action_rescales)
+
+                if dones["__all__"]:
+                    done = True
+
+                prev_actions = actions
+                prev_rewards = rewards
 
                 agents = env.get_agents()
                 self.sim_state.agents = agents

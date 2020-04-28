@@ -104,8 +104,8 @@ class MultiAgentCentralized(gym.Env):
                               self.sim_state.laser_history_amount,
                               self.sim_state.laser_amount + 1)),
             spaces.Box(low=0, high=2, shape=(num_agents,
-                                                self.sim_state.laser_history_amount,
-                                                self.sim_state.laser_amount + 1))
+                                             self.sim_state.laser_history_amount,
+                                             self.sim_state.laser_amount + 1))
         ))
 
         return observation_space
@@ -439,7 +439,6 @@ class MultiAgentCentralized(gym.Env):
         reward = 0
         collision = False
         collision_obstacle = False
-        collision_clip = False
         collision_ids_agent = []
         collision_ids_obs = []
         collided_obs_id = None
@@ -487,7 +486,7 @@ class MultiAgentCentralized(gym.Env):
         self.collision_ids_agent[current_agent.id] = collision_ids_agent
         self.collision_ids_obs[current_agent.id] = collision_ids_obs
 
-        return reward, collision_obstacle, collision_clip
+        return reward, collision_obstacle, collided_obs_id
 
     def reset(self):
         self.sim_state = copy.deepcopy(self.orig_sim_state)

@@ -11,7 +11,7 @@ mean_max = 300
 
 
 def main():
-    filename = "2/3-confusion"
+    filename = "3-confusion/2"
     sim_state = parse_sim_state(filename)
 
     checkpoint = ""
@@ -21,7 +21,7 @@ def main():
 
 def parse_sim_state(filename):
     dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, "../test_XML_files/training/test_case_" + filename + ".xml")
+    filename = os.path.join(dirname, "../test_XML_files/training/" + filename + ".xml")
     seed = 22222
     sim_state = XMLSimulationState(filename, seed).simulation_state
 
@@ -44,16 +44,13 @@ def train(sim_state, checkpoint):
     global iterations_max, mean_max
     checkpoint_freq = 10
 
-    config = ddpg_config.DDPG_CONFIG.copy()
+    #config = ddpg_config.DDPG_CONFIG.copy()
     config = ppo_config.PPO_CONFIG.copy()
 
     config["gamma"] = 0.99
     config["num_workers"] = 0
     config["num_gpus"] = 0
     config["eager"] = False
-    config["exploration_should_anneal"] = False
-    config["schedule_max_timesteps"] = 100000
-    config["exploration_noise_type"] = "ou"
     config["observation_filter"] = "MeanStdFilter"
     config["clip_actions"] = True
     config["env_config"] = {
