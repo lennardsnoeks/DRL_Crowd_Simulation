@@ -8,17 +8,15 @@ from simulations.configs import ddpg_config, ppo_config, td3_config
 
 phase2_set = False
 phase3_set = False
-test_set = False
 iterations_count = 0
 iterations_max = 100
-mean_max = 880
+mean_max = 175
 count_over_max = 10
 count_over = 0
 
 
 def main():
-    filename = "4-hallway/4"
-    seed = 63626
+    filename = "3-confusion/2"
     seed = 1234
     sim_state = parse_sim_state(filename, seed)
 
@@ -47,13 +45,7 @@ def on_train_result(info):
     iterations_count += 1
 
     # curriculum learning
-    """if iterations_count % 20:
-        sim_state = parse_sim_state("2-obstacles", iterations_count)
-        trainer.workers.foreach_worker(
-            lambda ev: ev.foreach_env(
-                lambda env: env.set_phase(sim_state)))"""
-
-    """if not phase2_set and mean > 157:
+    if not phase2_set and mean > 157:
         print("#### PHASE 2 ####")
 
         sim_state = parse_sim_state("crossway_2")
@@ -82,10 +74,6 @@ def on_train_result(info):
     if result["episode_reward_max"] >= 750:
         trainer.save()
 
-    if not test_set and mean >= 286:
-        test_set = True
-        trainer.save()"""
-
 
 def on_episode_end(info):
     global count_over
@@ -104,6 +92,7 @@ def train(sim_state, checkpoint):
     #config = td3_config.TD3_CONFIG.copy()
 
     config["gamma"] = 0.99
+    config["metrics_smoothing_episodes"] = 20
     config["num_workers"] = 0
     config["num_gpus"] = 0
     config["observation_filter"] = "MeanStdFilter"
@@ -111,13 +100,13 @@ def train(sim_state, checkpoint):
     config["timesteps_per_iteration"] = 1000
     config["env_config"] = {
         "sim_state": sim_state,
-        "mode": "multi_train_vis",
+        "mode": "multi_train",
         "agent_id": 0,
         "timesteps_reset": config["timesteps_per_iteration"]
     }
     config["callbacks"] = {
-        "on_train_result": on_train_result,
-        "on_episode_end": on_episode_end
+        #"on_train_result": on_train_result,
+        #"on_episode_end": on_episode_end
     }
 
     env_config = config["env_config"]
@@ -140,15 +129,15 @@ def train(sim_state, checkpoint):
     ray.init()
 
     stop = {
-        #"episode_reward_mean": mean_max,
+        "episode_reward_mean": mean_max,
         #"training_iteration": iterations_max
     }
 
-    name = "ppo_testing"
+    name = "ppo_confusion"
     algo = "PPO"    # Options: DDPG, PPO, TD3
 
     if checkpoint == "":
-        run(algo, name=name, checkpoint_freq=checkpoint_freq, stop=stop, config=config)
+        run(algo, num_samples=5, name=name, checkpoint_freq=checkpoint_freq, stop=stop, config=config)
     else:
         run(algo, name=name, checkpoint_freq=checkpoint_freq, stop=stop, config=config, restore=checkpoint)
 

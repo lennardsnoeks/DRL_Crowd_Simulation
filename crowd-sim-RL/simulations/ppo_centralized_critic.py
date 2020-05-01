@@ -244,7 +244,7 @@ CCTrainer = PPOTrainer.with_updates(name="CCPPOTrainer", get_policy_class=lambda
 
 ##### Below is code to run, above is code that implements centralized critic #####
 def main():
-    filename = "4-hallway/4"
+    filename = "3-confusion/2"
     sim_state = parse_sim_state(filename)
 
     checkpoint = ""
@@ -284,6 +284,10 @@ def make_multi_agent_config(sim_state, config):
     return multi_agent_config
 
 
+iterations_max = 100
+mean_max = 175
+
+
 def train(sim_state, checkpoint):
     global num_agents
     num_agents = len(sim_state.agents)
@@ -294,6 +298,7 @@ def train(sim_state, checkpoint):
     config["gamma"] = 0.99
     config["clip_actions"] = True
     config["observation_filter"] = "MeanStdFilter"
+    config["metrics_smoothing_episodes"] = 20
     config["timesteps_per_iteration"] = 1000
 
     config["env_config"] = {
@@ -308,16 +313,19 @@ def train(sim_state, checkpoint):
     config["env"] = "multi_agent_env"
     config["batch_mode"] = "truncate_episodes"
     config["eager"] = False
-    config["num_workers"] = 7
+    config["num_workers"] = 0
     config["model"] = {
         "custom_model": "cc_model"
     }
 
-    stop = {}
+    stop = {
+        "episode_reward_mean": mean_max,
+        # "training_iteration": iterations_max
+    }
 
-    name = "central_critic"
+    name = "ppo_confusion"
     if checkpoint == "":
-        run(CCTrainer, name=name, checkpoint_freq=checkpoint_freq, stop=stop, config=config)
+        run(CCTrainer, num_samples=5, name=name, checkpoint_freq=checkpoint_freq, stop=stop, config=config)
     else:
         run(CCTrainer, name=name, checkpoint_freq=checkpoint_freq, stop=stop, config=config, restore=checkpoint)
 

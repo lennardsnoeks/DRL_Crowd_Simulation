@@ -7,7 +7,7 @@ from simulations.configs import ddpg_config, ppo_config
 
 iterations_count = 0
 iterations_max = 100
-mean_max = 300
+mean_max = 175
 
 
 def main():
@@ -42,7 +42,7 @@ def on_train_result(info):
 
 def train(sim_state, checkpoint):
     global iterations_max, mean_max
-    checkpoint_freq = 10
+    checkpoint_freq = 4
 
     #config = ddpg_config.DDPG_CONFIG.copy()
     config = ppo_config.PPO_CONFIG.copy()
@@ -52,10 +52,11 @@ def train(sim_state, checkpoint):
     config["num_gpus"] = 0
     config["eager"] = False
     config["observation_filter"] = "MeanStdFilter"
+    config["metrics_smoothing_episodes"] = 20
     config["clip_actions"] = True
     config["env_config"] = {
         "sim_state": sim_state,
-        "mode": "train_vis",
+        "mode": "train",
         "timesteps_reset": config["timesteps_per_iteration"]
     }
     config["callbacks"] = {
@@ -72,11 +73,11 @@ def train(sim_state, checkpoint):
         # "training_iteration": iterations_max
     }
 
-    name = "test_ppo"
+    name = "ppo_confusion"
     algo = "PPO"    # Options: DDPG, PPO, TD3
 
     if checkpoint == "":
-        run(algo, name=name, checkpoint_freq=checkpoint_freq, stop=stop, config=config)
+        run(algo, num_samples=5, name=name, checkpoint_freq=checkpoint_freq, stop=stop, config=config)
     else:
         run(algo, name=name, checkpoint_freq=checkpoint_freq, stop=stop, config=config, restore=checkpoint)
 
