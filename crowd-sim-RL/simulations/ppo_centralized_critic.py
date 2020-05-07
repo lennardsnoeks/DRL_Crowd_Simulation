@@ -23,7 +23,7 @@ tf = try_import_tf()
 OPPONENT_OBS = "opponent_obs"
 OPPONENT_ACTION = "opponent_action"
 
-num_agents = 6
+num_agents = 4
 
 
 class CentralizedCriticModel(TFModelV2):
@@ -46,7 +46,7 @@ class CentralizedCriticModel(TFModelV2):
         concat_obs = tf.keras.layers.Concatenate(axis=1)(
             [obs, opp_obs, opp_act])
         central_vf_dense = tf.keras.layers.Dense(
-            1024, activation=tf.nn.tanh, name="c_vf_dense")(concat_obs)
+            512, activation=tf.nn.tanh, name="c_vf_dense")(concat_obs)
         central_vf_out = tf.keras.layers.Dense(
             1, activation=None, name="c_vf_out")(central_vf_dense)
         self.central_vf = tf.keras.Model(
@@ -80,7 +80,7 @@ def centralized_critic_postprocessing(policy,
     if policy.loss_initialized():
         assert other_agent_batches is not None
 
-        sample_batch_size = 100
+        sample_batch_size = 10
 
         # agent is done and number of samples in batch is not 10, append zeros all elements that don't have
         # amounts that equal sample batch size

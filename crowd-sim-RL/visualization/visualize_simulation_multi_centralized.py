@@ -60,7 +60,21 @@ class VisualizationSimMultiCentralized:
 
         self.simulation_update()
         pygame.display.flip()
-        sleep(10)
+        sleep(5)
+
+        actions = self.trainer.compute_action(observation,
+                                              state=state,
+                                              prev_action=prev_action,
+                                              prev_reward=prev_reward)
+
+        scale = 0.033
+
+        action_rescales = [action * scale for action in actions]
+
+        observation, reward, done, info = env.step(action_rescales)
+
+        prev_action = actions
+        prev_reward = reward
 
         clock = pygame.time.Clock()
 

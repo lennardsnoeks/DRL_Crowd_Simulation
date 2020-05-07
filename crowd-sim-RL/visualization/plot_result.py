@@ -6,13 +6,13 @@ from scipy.signal import savgol_filter
 
 
 def main():
-    plot_reward_progress()
+    #plot_reward_progress()
 
-    #plot_comparison()
+    plot_comparison()
 
 
 def plot_comparison():
-    path = "/home/lennard/ray_results/confusion/"
+    path = "/home/lennard/ray_results/hallway/"
 
     types = ["ppo_0", "ppo_8", "ddpg_0"]
 
@@ -26,14 +26,33 @@ def plot_comparison():
         for scheme in schemes:
             avg_array = []
             for i in range(1, 6):
-                if type == "ppo_0" and scheme == "central_" and i > 1:
+                if scheme == "central_":
+                    avg_array.append(0)
+                    break
+                if type == "ddpg_0" and scheme == "ps_" and i > 1:
+                    break
+                if type == "ppo_0" and scheme == "ps_" and i > 1:
+                    break
+                if type == "ddpg_0" and scheme == "conc_":
+                    avg_array.append(0)
+                    break
+                if type == "ppo_0" and scheme == "conc_":
+                    avg_array.append(0)
+                    break
+                if type == "ddpg_0" and scheme == "centralq_":
+                    avg_array.append(0)
+                    break
+                if type == "ppo_0" and scheme == "centralq_":
+                    avg_array.append(0)
+                    break
+                """if type == "ppo_0" and scheme == "central_" and i > 1:
                     break
                 if type == "ddpg_0" and scheme == "centralq_":
                     avg_array.append(0)
                     break
                 if type == "ddpg_0" and scheme == "central_":
                     avg_array.append(2059.2)
-                    break
+                    break"""
                 file_path = path + scheme + type + "_" + str(i) + "/result.json"
                 with open(file_path, 'r') as handle:
                     json_data = [json.loads(line) for line in handle]

@@ -13,7 +13,7 @@ mean_save = 725
 
 
 def main():
-    filename = "5-crossway_2_groups/group"
+    filename = "3-confusion/2"
     sim_state = parse_sim_state(filename)
 
     checkpoint = ""
@@ -71,7 +71,7 @@ def make_multi_agent_config(sim_state, config):
 
 def train(sim_state, checkpoint):
     global iterations_max, mean_max
-    checkpoint_freq = 0
+    checkpoint_freq = 1
 
     #config = ddpg_config.DDPG_CONFIG.copy()
     config = ppo_config.PPO_CONFIG.copy()
@@ -104,7 +104,7 @@ def train(sim_state, checkpoint):
         # "training_iteration": iterations_max
     }
 
-    name = "crossway"
+    name = "ppo_confusion"
     algo = "PPO"    # Options: DDPG, PPO, TD3
 
     if checkpoint == "":

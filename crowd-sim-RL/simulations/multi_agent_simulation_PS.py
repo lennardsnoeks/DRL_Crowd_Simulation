@@ -14,17 +14,17 @@ from visualization.visualize_simulation_multi_PS import VisualizationSimMultiPS
 
 def main():
     dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, "../test_XML_files/training/5-crossway_2_groups/group.xml")
+    filename = os.path.join(dirname, "../test_XML_files/training/4-hallway/4.xml")
     seed = 22222
     sim_state = XMLSimulationState(filename, seed).simulation_state
 
-    checkpoint_path = "/home/lennard/ray_results/crossway/cross_good_ps_seed22222_8w/good/checkpoint-59"
+    checkpoint_path = "/home/lennard/ray_results/hallway/ps_ddpg_0_1/checkpoint_51/checkpoint-51"
     simulate(sim_state, checkpoint_path)
 
 
 def simulate(sim_state, checkpoint_path):
-    config = ppo_config.PPO_CONFIG.copy()
-    #config = ddpg_config.DDPG_CONFIG.copy()
+    #config = ppo_config.PPO_CONFIG.copy()
+    config = ddpg_config.DDPG_CONFIG.copy()
     #config = td3_config.TD3_CONFIG.copy()
 
     config["gamma"] = 0.99
@@ -55,8 +55,8 @@ def simulate(sim_state, checkpoint_path):
 
     ray.init()
 
-    #trainer = ddpg.DDPGTrainer(env=MultiAgentEnvironment, config=config)
-    trainer = ppo.PPOTrainer(env=MultiAgentEnvironment, config=config)
+    trainer = ddpg.DDPGTrainer(env=MultiAgentEnvironment, config=config)
+    #trainer = ppo.PPOTrainer(env=MultiAgentEnvironment, config=config)
     #trainer = ddpg.TD3Trainer(env=MultiAgentEnvironment, config=config)
 
     trainer.restore(checkpoint_path)

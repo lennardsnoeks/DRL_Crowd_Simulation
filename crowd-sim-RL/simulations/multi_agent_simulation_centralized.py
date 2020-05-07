@@ -14,7 +14,7 @@ def main():
     seed = 22222
     sim_state = XMLSimulationState(filename, seed).simulation_state
 
-    checkpoint_path = "/home/lennard/ray_results/test_ppo/PPO_multi_agent_centralized_d1028652_0_2020-04-28_19-58-07ga0sf2s1/checkpoint_220/checkpoint-220"
+    checkpoint_path = "/home/lennard/ray_results/ppo_confusion/central_0/checkpoint_852/checkpoint-852"
 
     simulate(sim_state, checkpoint_path)
 
