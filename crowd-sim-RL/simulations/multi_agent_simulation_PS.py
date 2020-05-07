@@ -1,4 +1,6 @@
 import os
+from time import sleep
+
 import ray
 import ray.rllib.agents.ddpg as ddpg
 import ray.rllib.agents.ppo as ppo
@@ -12,12 +14,11 @@ from visualization.visualize_simulation_multi_PS import VisualizationSimMultiPS
 
 def main():
     dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, "../test_XML_files/training/4-hallway/4.xml")
-    seed = 1234
+    filename = os.path.join(dirname, "../test_XML_files/training/5-crossway_2_groups/group.xml")
+    seed = 22222
     sim_state = XMLSimulationState(filename, seed).simulation_state
 
-    checkpoint_path = "/home/lennard/ray_results/ppo_testing/PPO_multi_agent_env_1d7e5796_0_2020-04-28_16-54-09tcm6s5yn/checkpoint_150/checkpoint-150"
-
+    checkpoint_path = "/home/lennard/ray_results/crossway/cross_good_ps_seed22222_8w/good/checkpoint-59"
     simulate(sim_state, checkpoint_path)
 
 

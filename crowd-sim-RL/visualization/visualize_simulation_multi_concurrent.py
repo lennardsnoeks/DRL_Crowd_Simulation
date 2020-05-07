@@ -1,4 +1,6 @@
 import sys
+from time import sleep
+
 import pygame
 import math
 import copy
@@ -40,11 +42,9 @@ class VisualizationSimMultiConcurrent:
             previous_positions = [agent.pos]
             self.history_all_agents[agent.id] = previous_positions
 
-    def run(self):
-        pygame.init()
         self.initialize_screen()
-        clock = pygame.time.Clock()
 
+    def run(self):
         config = {
             "sim_state": self.sim_state,
             "agent_id": 0,
@@ -62,6 +62,39 @@ class VisualizationSimMultiConcurrent:
 
         dones = None
 
+        self.simulation_update()
+        pygame.display.flip()
+        sleep(5)
+
+        actions = {}
+        action_rescales = {}
+        for i in range(0, len(self.sim_state.agents)):
+            linear_vel, angular_vel = self.trainer.compute_action(observations[i],
+                                                                  prev_action=prev_actions[i],
+                                                                  prev_reward=prev_rewards[i],
+                                                                  explore=False,
+                                                                  policy_id="policy_" +
+                                                                            str(self.sim_state.agents[i].id))
+
+            scale = 0.033
+
+            if dones is None:
+                action_rescales[i] = [linear_vel * scale, angular_vel * scale]
+                actions[i] = [linear_vel, angular_vel]
+            else:
+                if not dones[i]:
+                    action_rescales[i] = [linear_vel * scale, angular_vel * scale]
+                    actions[i] = [linear_vel, angular_vel]
+                else:
+                    action_rescales[i] = [0, 0]
+                    actions[i] = [0, 0]
+
+        observations, rewards, dones, info = env.step(action_rescales)
+        prev_actions = actions
+        prev_rewards = rewards
+
+        clock = pygame.time.Clock()
+
         while True:
             dt = clock.tick(self.framerate)
 
@@ -72,10 +105,7 @@ class VisualizationSimMultiConcurrent:
 
             if not done:
                 for i in range(0, len(self.sim_state.agents)):
-                    state = self.trainer.get_policy("policy_" + str(self.sim_state.agents[i].id)).get_initial_state()
-
                     linear_vel, angular_vel = self.trainer.compute_action(observations[i],
-                                                                          state=state,
                                                                           prev_action=prev_actions[i],
                                                                           prev_reward=prev_rewards[i],
                                                                           explore=False,

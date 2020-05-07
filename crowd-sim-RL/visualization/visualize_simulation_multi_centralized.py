@@ -1,4 +1,6 @@
 import sys
+from time import sleep
+
 import pygame
 import math
 import copy
@@ -40,11 +42,9 @@ class VisualizationSimMultiCentralized:
             previous_positions = [agent.pos]
             self.history_all_agents[agent.id] = previous_positions
 
-    def run(self):
-        pygame.init()
         self.initialize_screen()
-        clock = pygame.time.Clock()
 
+    def run(self):
         config = {
             "sim_state": self.sim_state,
             "agent_id": 0,
@@ -57,6 +57,12 @@ class VisualizationSimMultiCentralized:
         prev_action = np.zeros_like(env.action_space.sample())
         prev_reward = 0
         state = self.trainer.get_policy().get_initial_state()
+
+        self.simulation_update()
+        pygame.display.flip()
+        sleep(10)
+
+        clock = pygame.time.Clock()
 
         while True:
             dt = clock.tick(self.framerate)

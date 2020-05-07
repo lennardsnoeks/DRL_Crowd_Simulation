@@ -10,14 +10,15 @@ phase2_set = False
 phase3_set = False
 iterations_count = 0
 iterations_max = 100
-mean_max = 175
-count_over_max = 10
+mean_max = 545
+mean_save = 545
+count_over_max = 5
 count_over = 0
 
 
 def main():
-    filename = "3-confusion/2"
-    seed = 1234
+    filename = "4-hallway/4"
+    seed = 22222
     sim_state = parse_sim_state(filename, seed)
 
     checkpoint = ""
@@ -39,8 +40,11 @@ def on_train_result(info):
     trainer = info["trainer"]
     mean = result["episode_reward_mean"]
 
+    if mean > mean_save or count_over > count_over_max:
+        trainer.save()
+
     # always checkpoint on last iteration or if mean reward > asked mean reward
-    if iterations_count == iterations_max - 1 or mean > mean_max or count_over > count_over_max:
+    """if iterations_count == iterations_max - 1 or mean > mean_max or count_over > count_over_max:
         trainer.save()
     iterations_count += 1
 
@@ -72,7 +76,7 @@ def on_train_result(info):
         trainer.save()
 
     if result["episode_reward_max"] >= 750:
-        trainer.save()
+        trainer.save()"""
 
 
 def on_episode_end(info):
@@ -81,11 +85,13 @@ def on_episode_end(info):
 
     if episode.total_reward > mean_max:
         count_over += 1
+    else:
+        count_over = 0
 
 
 def train(sim_state, checkpoint):
     global iterations_max, mean_max
-    checkpoint_freq = 1
+    checkpoint_freq = 0
 
     #config = ddpg_config.DDPG_CONFIG.copy()
     config = ppo_config.PPO_CONFIG.copy()
@@ -105,8 +111,8 @@ def train(sim_state, checkpoint):
         "timesteps_reset": config["timesteps_per_iteration"]
     }
     config["callbacks"] = {
-        #"on_train_result": on_train_result,
-        #"on_episode_end": on_episode_end
+        "on_train_result": on_train_result,
+        "on_episode_end": on_episode_end
     }
 
     env_config = config["env_config"]
@@ -133,11 +139,11 @@ def train(sim_state, checkpoint):
         #"training_iteration": iterations_max
     }
 
-    name = "ppo_confusion"
+    name = "hallway2"
     algo = "PPO"    # Options: DDPG, PPO, TD3
 
     if checkpoint == "":
-        run(algo, num_samples=5, name=name, checkpoint_freq=checkpoint_freq, stop=stop, config=config)
+        run(algo, num_samples=1, name=name, checkpoint_freq=checkpoint_freq, stop=stop, config=config)
     else:
         run(algo, name=name, checkpoint_freq=checkpoint_freq, stop=stop, config=config, restore=checkpoint)
 

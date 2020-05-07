@@ -7,11 +7,11 @@ from simulations.configs import ddpg_config, ppo_config
 
 iterations_count = 0
 iterations_max = 100
-mean_max = 175
+mean_max = 550
 
 
 def main():
-    filename = "3-confusion/2"
+    filename = "4-hallway/4"
     sim_state = parse_sim_state(filename)
 
     checkpoint = ""
@@ -35,20 +35,24 @@ def on_train_result(info):
     mean = result["episode_reward_mean"]
 
     # always checkpoint on last iteration or if mean reward > asked mean reward
-    if iterations_count == iterations_max - 1 or mean > mean_max:
+    """if iterations_count == iterations_max - 1 or mean > mean_max:
+        trainer.save()"""
+
+    if mean > mean_max:
         trainer.save()
+
     iterations_count += 1
 
 
 def train(sim_state, checkpoint):
     global iterations_max, mean_max
-    checkpoint_freq = 4
+    checkpoint_freq = 0
 
     #config = ddpg_config.DDPG_CONFIG.copy()
     config = ppo_config.PPO_CONFIG.copy()
 
     config["gamma"] = 0.99
-    config["num_workers"] = 0
+    config["num_workers"] = 7
     config["num_gpus"] = 0
     config["eager"] = False
     config["observation_filter"] = "MeanStdFilter"
@@ -73,11 +77,11 @@ def train(sim_state, checkpoint):
         # "training_iteration": iterations_max
     }
 
-    name = "ppo_confusion"
+    name = "hallway"
     algo = "PPO"    # Options: DDPG, PPO, TD3
 
     if checkpoint == "":
-        run(algo, num_samples=5, name=name, checkpoint_freq=checkpoint_freq, stop=stop, config=config)
+        run(algo, num_samples=1, name=name, checkpoint_freq=checkpoint_freq, stop=stop, config=config)
     else:
         run(algo, name=name, checkpoint_freq=checkpoint_freq, stop=stop, config=config, restore=checkpoint)
 

@@ -14,7 +14,8 @@ class SingleAgentEnv(gym.Env):
 
         self.reward_goal = 5
         self.reward_collision = 5
-        self.reward_collision_clip = 1
+        #self.reward_collision_clip = 1
+        self.reward_collision_clip = 0
         self.reward_goal_reached = 0
         self.reset_pos_necessary = False
 
@@ -129,11 +130,14 @@ class SingleAgentEnv(gym.Env):
         agent.orientation = new_ori
 
         # check for collisions and assign rewards
-        reward_collision, collision_obstacle, collided_obs_id = self._detect_collisions(agent)
+        reward_collision, collision_obstacle, collision_clip, collided_obs_id = self._detect_collisions(agent)
         reward += reward_collision
 
         # if collision with bounds or bound obstacle, revert to previous pos/ori
-        agent.pos = self._clip_pos(agent.pos, collided_obs_id, agent.radius)
+        pos, clipped = self._clip_pos(agent.pos, collided_obs_id, collision_clip, agent.radius)
+        agent.pos = pos
+        """if clipped:
+            reward -= self.reward_goal * diff"""
 
         # get internal and external state of agents (observation)
         internal_state = self._get_internal_state(agent, shortest_goal)
@@ -189,11 +193,10 @@ class SingleAgentEnv(gym.Env):
 
         return x_min <= agent_x <= x_max and y_min <= agent_y <= y_max
 
-    def _clip_pos(self, pos, collided_obs_id, radius):
-        if collided_obs_id is None:
-            return pos
+    def _clip_pos(self, pos, collided_obs_id, collision_clip, radius):
+        clipped = False
 
-        if collided_obs_id == -1:
+        if collision_clip:
             if (pos[0, 0] - radius) < self.bounds[0]:
                 pos[0, 0] = self.bounds[0] + radius
             elif (pos[0, 0] + radius) > self.bounds[1]:
@@ -203,7 +206,10 @@ class SingleAgentEnv(gym.Env):
                 pos[1, 0] = self.bounds[2] + radius
             elif (pos[1, 0] + radius) > self.bounds[3]:
                 pos[1, 0] = self.bounds[3] - radius
-        else:
+
+            clipped = True
+
+        if collided_obs_id is not None:
             x_min = self.sim_state.obstacles[collided_obs_id].x
             x_max = x_min + self.sim_state.obstacles[collided_obs_id].width
             y_min = self.sim_state.obstacles[collided_obs_id].y
@@ -221,7 +227,9 @@ class SingleAgentEnv(gym.Env):
                 if pos[0, 0] > x_min and pos[0, 0] > x_max:
                     pos[0, 0] = x_max + radius
 
-        return pos
+            clipped = True
+
+        return pos, clipped
 
     @staticmethod
     def _get_internal_state(agent, goal):
@@ -364,6 +372,7 @@ class SingleAgentEnv(gym.Env):
         reward = 0
         collision = False
         collision_obstacle = False
+        collision_clip = False
         collision_ids_agent = []
         collision_ids_obs = []
         collided_obs_id = None
@@ -374,17 +383,17 @@ class SingleAgentEnv(gym.Env):
                                                 current_agent.pos[0, 0], current_agent.pos[1, 0],
                                                 current_agent.radius):
                 collision_obstacle = True
-                """if obstacle.type == 0:
+                if obstacle.type == 0:
                     collision_ids_obs.append(obstacle.id)
                 else:
                     collided_obs_id = obstacle.id
                 if obstacle.id not in self.collision_ids_obs and obstacle.type == 0:
-                    collision = True"""
+                    collision = True
 
-                if obstacle.type == 0:
+                """if obstacle.type == 0:
                     collision = True
                 else:
-                    collided_obs_id = -1
+                    collided_obs_id = obstacle.id"""
 
         # detect collision with other agents
         if not collision:
@@ -393,27 +402,27 @@ class SingleAgentEnv(gym.Env):
                     if self._collision_circle_circle(current_agent.pos[0, 0], current_agent.pos[1, 0],
                                                      current_agent.radius, agent.pos[0, 0], agent.pos[1, 0],
                                                      agent.radius):
-                        """collision_ids_agent.append(agent.id)
+                        collision_ids_agent.append(agent.id)
                         if agent.id not in self.collision_ids_agent:
-                            collision = True"""
-                        collision = True
+                            collision = True
+                        """collision = True"""
 
         # detect collision with world bounds
         if self._collision_bound(current_agent.pos[0, 0], current_agent.pos[1, 0],
                                  self.bounds[0], self.bounds[1], self.bounds[2], self.bounds[3],
                                  current_agent.radius):
-            collided_obs_id = -1
+            collision_clip = True
 
         if collision:
             reward -= self.reward_collision
 
-        if collided_obs_id == -1:
+        if collision_clip or collided_obs_id is not None:
             reward -= self.reward_collision_clip
 
         self.collision_ids_agent = collision_ids_agent
         self.collision_ids_obs = collision_ids_obs
 
-        return reward, collision_obstacle, collided_obs_id
+        return reward, collision_obstacle, collision_clip, collided_obs_id
 
     def reset(self):
         if "multi" not in self.mode:

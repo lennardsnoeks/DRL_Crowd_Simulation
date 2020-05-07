@@ -8,11 +8,12 @@ from simulations.configs import ddpg_config, ppo_config
 
 iterations_count = 0
 iterations_max = 100
-mean_max = 175
+mean_max = 739
+mean_save = 725
 
 
 def main():
-    filename = "3-confusion/2"
+    filename = "5-crossway_2_groups/group"
     sim_state = parse_sim_state(filename)
 
     checkpoint = ""
@@ -30,14 +31,18 @@ def parse_sim_state(filename):
 
 
 def on_train_result(info):
-    global iterations_count, iterations_max, mean_max
+    global iterations_count, iterations_max, mean_max, mean_save
     result = info["result"]
     trainer = info["trainer"]
     mean = result["episode_reward_mean"]
 
     # always checkpoint on last iteration or if mean reward > asked mean reward
-    if iterations_count == iterations_max - 1 or mean > mean_max:
+    """if iterations_count == iterations_max - 1 or mean > mean_max:
+        trainer.save()"""
+
+    if mean > mean_save:
         trainer.save()
+
     iterations_count += 1
 
 
@@ -66,13 +71,13 @@ def make_multi_agent_config(sim_state, config):
 
 def train(sim_state, checkpoint):
     global iterations_max, mean_max
-    checkpoint_freq = 1
+    checkpoint_freq = 0
 
     #config = ddpg_config.DDPG_CONFIG.copy()
     config = ppo_config.PPO_CONFIG.copy()
 
     config["gamma"] = 0.99
-    config["num_workers"] = 0
+    config["num_workers"] = 7
     config["num_gpus"] = 0
     config["metrics_smoothing_episodes"] = 20
     config["observation_filter"] = "MeanStdFilter"
@@ -83,7 +88,7 @@ def train(sim_state, checkpoint):
         "timesteps_reset": config["timesteps_per_iteration"]
     }
     config["callbacks"] = {
-        #"on_train_result": on_train_result,
+        "on_train_result": on_train_result,
     }
 
     multi_agent_config = make_multi_agent_config(sim_state, config)
@@ -99,11 +104,11 @@ def train(sim_state, checkpoint):
         # "training_iteration": iterations_max
     }
 
-    name = "ppo_confusion"
+    name = "crossway"
     algo = "PPO"    # Options: DDPG, PPO, TD3
 
     if checkpoint == "":
-        run(algo, num_samples=5, name=name, checkpoint_freq=checkpoint_freq, stop=stop, config=config)
+        run(algo, num_samples=1, name=name, checkpoint_freq=checkpoint_freq, stop=stop, config=config)
     else:
         run(algo, name=name, checkpoint_freq=checkpoint_freq, stop=stop, config=config, restore=checkpoint)
 

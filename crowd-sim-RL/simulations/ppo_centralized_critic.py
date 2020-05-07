@@ -23,7 +23,7 @@ tf = try_import_tf()
 OPPONENT_OBS = "opponent_obs"
 OPPONENT_ACTION = "opponent_action"
 
-num_agents = 0
+num_agents = 6
 
 
 class CentralizedCriticModel(TFModelV2):
@@ -46,7 +46,7 @@ class CentralizedCriticModel(TFModelV2):
         concat_obs = tf.keras.layers.Concatenate(axis=1)(
             [obs, opp_obs, opp_act])
         central_vf_dense = tf.keras.layers.Dense(
-            256, activation=tf.nn.tanh, name="c_vf_dense")(concat_obs)
+            1024, activation=tf.nn.tanh, name="c_vf_dense")(concat_obs)
         central_vf_out = tf.keras.layers.Dense(
             1, activation=None, name="c_vf_out")(central_vf_dense)
         self.central_vf = tf.keras.Model(
@@ -80,7 +80,7 @@ def centralized_critic_postprocessing(policy,
     if policy.loss_initialized():
         assert other_agent_batches is not None
 
-        sample_batch_size = 10
+        sample_batch_size = 100
 
         # agent is done and number of samples in batch is not 10, append zeros all elements that don't have
         # amounts that equal sample batch size
@@ -244,7 +244,7 @@ CCTrainer = PPOTrainer.with_updates(name="CCPPOTrainer", get_policy_class=lambda
 
 ##### Below is code to run, above is code that implements centralized critic #####
 def main():
-    filename = "3-confusion/2"
+    filename = "5-crossway_2_groups/group"
     sim_state = parse_sim_state(filename)
 
     checkpoint = ""
@@ -284,15 +284,33 @@ def make_multi_agent_config(sim_state, config):
     return multi_agent_config
 
 
+def on_train_result(info):
+    global iterations_count, iterations_max, mean_max
+    result = info["result"]
+    trainer = info["trainer"]
+    mean = result["episode_reward_mean"]
+
+    # always checkpoint on last iteration or if mean reward > asked mean reward
+    """if iterations_count == iterations_max - 1 or mean > mean_max:
+        trainer.save()"""
+
+    if mean > mean_save:
+        trainer.save()
+
+    iterations_count += 1
+
+
+iterations_count = 0
 iterations_max = 100
-mean_max = 175
+mean_max = 739
+mean_save = 725
 
 
 def train(sim_state, checkpoint):
     global num_agents
     num_agents = len(sim_state.agents)
 
-    checkpoint_freq = 1
+    checkpoint_freq = 0
 
     config = ppo_config.PPO_CONFIG.copy()
     config["gamma"] = 0.99
@@ -311,11 +329,13 @@ def train(sim_state, checkpoint):
     register_env("multi_agent_env", lambda _: MultiAgentEnvironment(config["env_config"]))
     ModelCatalog.register_custom_model("cc_model", CentralizedCriticModel)
     config["env"] = "multi_agent_env"
-    config["batch_mode"] = "truncate_episodes"
     config["eager"] = False
-    config["num_workers"] = 0
+    config["num_workers"] = 7
     config["model"] = {
         "custom_model": "cc_model"
+    }
+    config["callbacks"] = {
+        "on_train_result": on_train_result,
     }
 
     stop = {
@@ -323,9 +343,9 @@ def train(sim_state, checkpoint):
         # "training_iteration": iterations_max
     }
 
-    name = "ppo_confusion"
+    name = "crossway"
     if checkpoint == "":
-        run(CCTrainer, num_samples=5, name=name, checkpoint_freq=checkpoint_freq, stop=stop, config=config)
+        run(CCTrainer, num_samples=1, name=name, checkpoint_freq=checkpoint_freq, stop=stop, config=config)
     else:
         run(CCTrainer, name=name, checkpoint_freq=checkpoint_freq, stop=stop, config=config, restore=checkpoint)
 

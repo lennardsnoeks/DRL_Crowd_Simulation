@@ -1,4 +1,6 @@
 import sys
+from time import sleep
+
 import pygame
 import math
 import copy
@@ -40,11 +42,9 @@ class VisualizationSimMultiPS:
             previous_positions = [agent.pos]
             self.history_all_agents[agent.id] = previous_positions
 
-    def run(self):
-        pygame.init()
         self.initialize_screen()
-        clock = pygame.time.Clock()
 
+    def run(self):
         config = {
             "sim_state": self.sim_state,
             "agent_id": 0,
@@ -61,6 +61,12 @@ class VisualizationSimMultiPS:
             prev_actions[i] = [0.0, 0.0]
 
         dones = None
+
+        self.simulation_update()
+        pygame.display.flip()
+        sleep(10)
+
+        clock = pygame.time.Clock()
 
         while True:
             dt = clock.tick(self.framerate)

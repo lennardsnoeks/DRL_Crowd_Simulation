@@ -1,10 +1,13 @@
 import os
 import ray
 import ray.rllib.agents.ddpg as ddpg
+import ray.rllib.agents.ppo as ppo
 from ray.rllib.agents.ddpg.ddpg_policy import DDPGTFPolicy
+from ray.rllib.models import ModelCatalog
+
 from crowd_sim_RL.envs import SingleAgentEnv
 from crowd_sim_RL.envs.multi_agent_env import MultiAgentEnvironment
-from simulations.ppo_centralized_critic import CCTrainer, CCPPO
+from simulations.ppo_centralized_critic import CCTrainer, CCPPO, CentralizedCriticModel
 from utils.steerbench_parser import XMLSimulationState
 from simulations.configs import ddpg_config, ppo_config, td3_config
 from visualization.visualize_simulation_multi_concurrent import VisualizationSimMultiConcurrent
@@ -12,11 +15,11 @@ from visualization.visualize_simulation_multi_concurrent import VisualizationSim
 
 def main():
     dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, "../test_XML_files/4-hallway/4.xml")
+    filename = os.path.join(dirname, "../test_XML_files/training/5-crossway_2_groups/group.xml")
     seed = 22222
     sim_state = XMLSimulationState(filename, seed).simulation_state
 
-    checkpoint_path = "/home/lennard/ray_results/central_critic/CCPPOTrainer_multi_agent_env_17f4268c_0_2020-04-27_23-50-21_kx46i91/checkpoint_73"
+    checkpoint_path = "/home/lennard/ray_results/crossway/weird2_centralq/checkpoint_81/checkpoint-81"
 
     simulate(sim_state, checkpoint_path)
 
@@ -71,8 +74,14 @@ def simulate(sim_state, checkpoint_path):
     multi_agent_config = make_multi_agent_config(sim_state, config, centralized)
     config["multiagent"] = multi_agent_config
 
+    if centralized:
+        ModelCatalog.register_custom_model("cc_model", CentralizedCriticModel)
+        config["model"] = {
+            "custom_model": "cc_model"
+        }
+
     ray.init()
-    #trainer = ddpg.PPOTrainer(env=MultiAgentEnvironment, config=config)
+    #trainer = ppo.PPOTrainer(env=MultiAgentEnvironment, config=config)
     #trainer = ddpg.DDPGTrainer(env=MultiAgentEnvironment, config=config)
     #trainer = ddpg.TD3Trainer(env=MultiAgentEnvironment, config=config)
     trainer = CCTrainer(env=MultiAgentEnvironment, config=config)
