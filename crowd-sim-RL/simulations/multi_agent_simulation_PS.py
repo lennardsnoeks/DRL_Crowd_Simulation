@@ -8,24 +8,23 @@ from crowd_sim_RL.envs import SingleAgentEnv
 from crowd_sim_RL.envs.multi_agent_env import MultiAgentEnvironment
 from simulations.ppo_centralized_critic import CCTrainer
 from utils.steerbench_parser import XMLSimulationState
-from simulations.configs import ddpg_config, ppo_config, td3_config
+from simulations.configs import ddpg_config, ppo_config
 from visualization.visualize_simulation_multi_PS import VisualizationSimMultiPS
 
 
 def main():
     dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, "../test_XML_files/training/4-hallway/4.xml")
+    filename = os.path.join(dirname, "../test_XML_files/training/5-crossway_2_groups/group.xml")
     seed = 22222
     sim_state = XMLSimulationState(filename, seed).simulation_state
 
-    checkpoint_path = "/home/lennard/ray_results/hallway/ps_ddpg_0_1/checkpoint_51/checkpoint-51"
+    checkpoint_path = "/home/lennard/ray_results/crossway/ps_3v3_capped_laser/checkpoint_44/checkpoint-44"
     simulate(sim_state, checkpoint_path)
 
 
 def simulate(sim_state, checkpoint_path):
-    #config = ppo_config.PPO_CONFIG.copy()
-    config = ddpg_config.DDPG_CONFIG.copy()
-    #config = td3_config.TD3_CONFIG.copy()
+    config = ppo_config.PPO_CONFIG.copy()
+    #config = ddpg_config.DDPG_CONFIG.copy()
 
     config["gamma"] = 0.99
     gamma = config["gamma"]
@@ -55,9 +54,8 @@ def simulate(sim_state, checkpoint_path):
 
     ray.init()
 
-    trainer = ddpg.DDPGTrainer(env=MultiAgentEnvironment, config=config)
-    #trainer = ppo.PPOTrainer(env=MultiAgentEnvironment, config=config)
-    #trainer = ddpg.TD3Trainer(env=MultiAgentEnvironment, config=config)
+    #trainer = ddpg.DDPGTrainer(env=MultiAgentEnvironment, config=config)
+    trainer = ppo.PPOTrainer(env=MultiAgentEnvironment, config=config)
 
     trainer.restore(checkpoint_path)
 

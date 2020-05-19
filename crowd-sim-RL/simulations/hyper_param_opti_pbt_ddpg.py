@@ -23,11 +23,11 @@ def train(sim_state):
     config["clip_actions"] = True
 
     config["gamma"] = 0.95
-    config["exploration_should_anneal"] = True
-    config["pure_exploration_steps"] = 1000
-    config["exploration_noise_type"] = "ou"
-    config["observation_filter"] = "MeanStdFilter"
+    config["actor_hiddens"] = [64, 64]
+    config["critic_hiddens"] = [64, 64]
+    config["observation_filter"] = "NoFilter"
     config["train_batch_size"] = 16
+    config["sample_batch_size"] = 1
 
     config["env_config"] = {
         "sim_state": sim_state,
@@ -52,8 +52,8 @@ def train(sim_state):
             "actor_hiddens": [[64, 64], [400, 300]],
             "critic_hiddens": [[64, 64], [400, 300]],
             "train_batch_size": [16, 32, 64],
-            "exploration_should_anneal": [True, False],
-            "pure_exploration_steps": [1000, 2000, 3000]
+            "sample_batch_size": [1, 8, 16],
+            "observation_filter": ["NoFilter", "MeanStdFilter"]
         })
 
     stop = {

@@ -109,7 +109,7 @@
   </obstacle>
 
     <agentRegion>
-    <numAgents>3</numAgents>
+    <numAgents>5</numAgents>
     <regionBounds>
       <xmin>-13</xmin>
       <xmax>-8</xmax>
@@ -134,7 +134,7 @@
   </agentRegion>
 
     <agentRegion>
-    <numAgents>3</numAgents>
+    <numAgents>5</numAgents>
     <regionBounds>
       <xmin>-5</xmin>
       <xmax>5</xmax>

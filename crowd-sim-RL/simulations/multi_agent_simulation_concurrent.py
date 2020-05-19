@@ -9,18 +9,17 @@ from crowd_sim_RL.envs import SingleAgentEnv
 from crowd_sim_RL.envs.multi_agent_env import MultiAgentEnvironment
 from simulations.ppo_centralized_critic import CCTrainer, CCPPO, CentralizedCriticModel
 from utils.steerbench_parser import XMLSimulationState
-from simulations.configs import ddpg_config, ppo_config, td3_config
+from simulations.configs import ddpg_config, ppo_config
 from visualization.visualize_simulation_multi_concurrent import VisualizationSimMultiConcurrent
 
 
 def main():
     dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, "../test_XML_files/training/4-hallway/4.xml")
-    seed = 22222
+    filename = os.path.join(dirname, "../test_XML_files/training/5-crossway_2_groups/group.xml")
+    seed = 23
     sim_state = XMLSimulationState(filename, seed).simulation_state
 
-    checkpoint_path = "/home/lennard/ray_results/hallway/centralq_ppo_8_5/checkpoint_130/checkpoint-130"
-
+    checkpoint_path = "/home/lennard/ray_results/crossway/centralq_ppo_1/checkpoint_103/checkpoint-103"
     simulate(sim_state, checkpoint_path)
 
 
@@ -53,7 +52,6 @@ def make_multi_agent_config(sim_state, config, centralized):
 def simulate(sim_state, checkpoint_path):
     #config = ddpg_config.DDPG_CONFIG.copy()
     config = ppo_config.PPO_CONFIG.copy()
-    #config = td3_config.TD3_CONFIG.copy()
 
     config["gamma"] = 0.99
     config["num_workers"] = 0
@@ -83,7 +81,6 @@ def simulate(sim_state, checkpoint_path):
     ray.init()
     #trainer = ppo.PPOTrainer(env=MultiAgentEnvironment, config=config)
     #trainer = ddpg.DDPGTrainer(env=MultiAgentEnvironment, config=config)
-    #trainer = ddpg.TD3Trainer(env=MultiAgentEnvironment, config=config)
     trainer = CCTrainer(env=MultiAgentEnvironment, config=config)
 
     trainer.restore(checkpoint_path)

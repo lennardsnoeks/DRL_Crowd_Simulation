@@ -25,10 +25,11 @@ def train(sim_state):
     config["clip_actions"] = True
 
     config["gamma"] = 0.95
-    config["exploration_should_anneal"] = False
-    config["exploration_noise_type"] = "ou"
+    config["actor_hiddens"] = [64, 64]
+    config["critic_hiddens"] = [64, 64]
     config["observation_filter"] = "NoFilter"
     config["train_batch_size"] = 16
+    config["sample_batch_size"] = 1
 
     config["env_config"] = {
         "sim_state": sim_state,
@@ -43,12 +44,12 @@ def train(sim_state):
     ray.init()
 
     space = {
-        "gamma": hp.uniform("gamma", 0.95, 0.99),
+        "gamma": hp.choice("gamma", [0.95, 0.96, 0.97, 0.98, 0.99]),
         "actor_hiddens": hp.choice("actor_hiddens", [[64, 64], [400, 300]]),
         "critic_hiddens": hp.choice("critic_hiddens", [[64, 64], [400, 300]]),
-        "exploration_should_anneal": hp.choice("exploration_should_anneal", [True, False]),
         "observation_filter": hp.choice("observation_filter", ["NoFilter", "MeanStdFilter"]),
-        "train_batch_size": hp.choice("train_batch_size", [16, 32, 64])
+        "train_batch_size": hp.choice("train_batch_size", [16, 32, 64]),
+        "sample_batch_size": hp.choice("sample_batch_size", [1, 8, 16])
     }
 
     current_best_params = [
@@ -56,9 +57,9 @@ def train(sim_state):
             "gamma": 0.95,
             "actor_hiddens": 0,
             "critic_hiddens": 0,
-            "exploration_should_anneal": 0,
             "observation_filter": 0,
-            "train_batch_size": 0
+            "train_batch_size": 0,
+            "sample_batch_size": 0
         }
     ]
 

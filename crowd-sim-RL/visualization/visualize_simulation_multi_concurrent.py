@@ -112,7 +112,8 @@ class VisualizationSimMultiConcurrent:
                                                                           policy_id="policy_" +
                                                                                     str(self.sim_state.agents[i].id))
 
-                    scale = dt / 1000
+                    #scale = dt / 1000
+                    scale = 0.1
 
                     if dones is None:
                         action_rescales[i] = [linear_vel * scale, angular_vel * scale]
@@ -138,8 +139,8 @@ class VisualizationSimMultiConcurrent:
 
                 self.simulation_update()
 
-            self.show_fps(self.screen, clock)
-            self.show_size(self.screen)
+            #self.show_fps(self.screen, clock)
+            #self.show_size(self.screen)
 
             pygame.display.flip()
 

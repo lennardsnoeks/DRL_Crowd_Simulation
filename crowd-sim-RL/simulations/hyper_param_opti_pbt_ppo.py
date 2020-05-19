@@ -25,14 +25,10 @@ def train(sim_state):
     config["observation_filter"] = "MeanStdFilter"
 
     config["gamma"] = 0.95
-    config["num_sgd_iter"] = 10
-    config["sgd_minibatch_size"] = 128
-    config["train_batch_size"] = 2000
-    config["lr"] = 0.003
+    config["num_sgd_iter"] = 3
+    config["sgd_minibatch_size"] = 16
+    config["train_batch_size"] = 256
     config["clip_param"] = 0.1
-    config["kl_coeff"] = 0.3
-    config["kl_target"] = 0.003
-    config["lambda"] = 0.9
     config["entropy_coeff"] = 0
 
     config["env_config"] = {
@@ -47,17 +43,6 @@ def train(sim_state):
 
     ray.init()
 
-    """""gamma": [0.95, 0.99],
-    "num_sgd_iter": [10, 20, 30],
-    "sgd_minibatch_size": [128, 256, 1024],
-    "train_batch_size": [2000, 4000],
-    "lr": [0.003, 0.0001, 0.000005],
-    "clip_param": [0.1, 0.2, 0.3],
-    "kl_coeff": [0.3, 0.65, 1],
-    "kl_target": [0.003, 0.01, 0.03],
-    "lambda": [0.9, 0.95, 1.0],
-    "entropy_coeff": [0, 0.01]"""
-
     pbt = PopulationBasedTraining(
         time_attr="time_total_s",
         metric="episode_reward_mean",
@@ -65,16 +50,13 @@ def train(sim_state):
         perturbation_interval=60,
         resample_probability=0.25,
         hyperparam_mutations={
-            "gamma": lambda: random.uniform(0.95, 0.99),
-            "num_sgd_iter": lambda: random.randint(3, 30),
-            "sgd_minibatch_size": [32, 64, 256, 1024],
-            "train_batch_size": [2048, 4096],
-            "lr": lambda: random.uniform(0.00005, 0.03),
+            "gamma": [0.95, 0.96, 0.97, 0.98, 0.99],
+            "num_sgd_iter": [3, 5, 10],
+            "sgd_minibatch_size": [16, 32, 64],
+            "train_batch_size": [256, 512, 1024, 2048],
             "clip_param": [0.1, 0.2, 0.3],
-            "kl_coeff": lambda: random.uniform(0.3, 1.0),
-            "kl_target": lambda: random.uniform(0.003, 0.03),
-            "lambda": lambda: random.uniform(0.90, 1.0),
-            "entropy_coeff": [0, 0.01]
+            "entropy_coeff": [0, 0.05, 0.01],
+            "observation_filter": ["NoFilter", "MeanStdFilter"]
         })
 
     stop = {

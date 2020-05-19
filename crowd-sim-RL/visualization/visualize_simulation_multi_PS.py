@@ -64,7 +64,7 @@ class VisualizationSimMultiPS:
 
         self.simulation_update()
         pygame.display.flip()
-        sleep(10)
+        sleep(5)
 
         actions = {}
         action_rescales = {}
@@ -112,7 +112,8 @@ class VisualizationSimMultiPS:
                                                                           explore=False,
                                                                           policy_id="policy_0")
 
-                    scale = dt / 1000
+                    #scale = dt / 1000
+                    scale = 0.1
 
                     if dones is None:
                         action_rescales[i] = [linear_vel * scale, angular_vel * scale]
@@ -138,8 +139,8 @@ class VisualizationSimMultiPS:
 
                 self.simulation_update()
 
-            self.show_fps(self.screen, clock)
-            self.show_size(self.screen)
+            #self.show_fps(self.screen, clock)
+            #self.show_size(self.screen)
 
             pygame.display.flip()
 

@@ -4,21 +4,21 @@ from ray.tune import register_env, run
 from crowd_sim_RL.envs import SingleAgentEnv
 from crowd_sim_RL.envs.multi_agent_env import MultiAgentEnvironment
 from utils.steerbench_parser import XMLSimulationState
-from simulations.configs import ddpg_config, ppo_config, td3_config
+from simulations.configs import ddpg_config, ppo_config
 
 phase2_set = False
 phase3_set = False
 iterations_count = 0
 iterations_max = 100
-mean_max = 545
-mean_save = 545
+mean_max = 540 #1490
+mean_save = 540 #1340
 count_over_max = 5
 count_over = 0
 
 
 def main():
     filename = "4-hallway/4"
-    seed = 22222
+    seed = 1
     sim_state = parse_sim_state(filename, seed)
 
     checkpoint = ""
@@ -93,9 +93,8 @@ def train(sim_state, checkpoint):
     global iterations_max, mean_max
     checkpoint_freq = 0
 
-    #config = ddpg_config.DDPG_CONFIG.copy()
-    config = ppo_config.PPO_CONFIG.copy()
-    #config = td3_config.TD3_CONFIG.copy()
+    config = ddpg_config.DDPG_CONFIG.copy()
+    #config = ppo_config.PPO_CONFIG.copy()
 
     config["gamma"] = 0.99
     config["metrics_smoothing_episodes"] = 20
@@ -139,8 +138,8 @@ def train(sim_state, checkpoint):
         #"training_iteration": iterations_max
     }
 
-    name = "hallway2"
-    algo = "PPO"    # Options: DDPG, PPO, TD3
+    name = "hallway"
+    algo = "DDPG"    # Options: DDPG, PPO
 
     if checkpoint == "":
         run(algo, num_samples=1, name=name, checkpoint_freq=checkpoint_freq, stop=stop, config=config)

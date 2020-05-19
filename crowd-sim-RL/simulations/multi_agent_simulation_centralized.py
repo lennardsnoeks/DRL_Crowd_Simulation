@@ -5,7 +5,7 @@ import ray.rllib.agents.ppo as ppo
 from crowd_sim_RL.envs.multi_agent_env_centralized import MultiAgentCentralized
 from utils.steerbench_parser import XMLSimulationState
 from visualization.visualize_simulation_multi_centralized import VisualizationSimMultiCentralized
-from simulations.configs import ddpg_config, ppo_config, td3_config
+from simulations.configs import ddpg_config, ppo_config
 
 
 def main():
@@ -14,7 +14,7 @@ def main():
     seed = 22222
     sim_state = XMLSimulationState(filename, seed).simulation_state
 
-    checkpoint_path = "/home/lennard/ray_results/ppo_confusion/central_0/checkpoint_852/checkpoint-852"
+    checkpoint_path = "/home/lennard/ray_results/crossway/weird2_centralq/checkpoint_83/checkpoint-83"
 
     simulate(sim_state, checkpoint_path)
 
@@ -22,7 +22,6 @@ def main():
 def simulate(sim_state, checkpoint_path):
     #config = ddpg_config.DDPG_CONFIG.copy()
     config = ppo_config.PPO_CONFIG.copy()
-    #config = td3_config.TD3_CONFIG.copy()
 
     config["gamma"] = 0.99
     config["num_workers"] = 0
@@ -41,7 +40,6 @@ def simulate(sim_state, checkpoint_path):
     ray.init()
     #trainer = ddpg.DDPGTrainer(env=MultiAgentCentralized, config=config)
     trainer = ppo.PPOTrainer(env=MultiAgentCentralized, config=config)
-    #trainer = ddpg.TD3Trainer(env=MultiAgentEnvironment, config=config)
     trainer.restore(checkpoint_path)
 
     zoom_factor = 10

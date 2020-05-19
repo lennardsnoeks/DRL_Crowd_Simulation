@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import ray
 from ray.rllib.agents.ppo.ppo import PPOTrainer
 from ray.rllib.agents.impala.vtrace_policy import BEHAVIOUR_LOGITS
 from ray.rllib.agents.ppo.ppo_tf_policy import PPOTFPolicy, KLCoeffMixin, PPOLoss
@@ -23,7 +24,7 @@ tf = try_import_tf()
 OPPONENT_OBS = "opponent_obs"
 OPPONENT_ACTION = "opponent_action"
 
-num_agents = 4
+num_agents = 12
 
 
 class CentralizedCriticModel(TFModelV2):
@@ -46,7 +47,7 @@ class CentralizedCriticModel(TFModelV2):
         concat_obs = tf.keras.layers.Concatenate(axis=1)(
             [obs, opp_obs, opp_act])
         central_vf_dense = tf.keras.layers.Dense(
-            512, activation=tf.nn.tanh, name="c_vf_dense")(concat_obs)
+            1280, activation=tf.nn.tanh, name="c_vf_dense")(concat_obs)
         central_vf_out = tf.keras.layers.Dense(
             1, activation=None, name="c_vf_out")(central_vf_dense)
         self.central_vf = tf.keras.Model(
@@ -80,7 +81,7 @@ def centralized_critic_postprocessing(policy,
     if policy.loss_initialized():
         assert other_agent_batches is not None
 
-        sample_batch_size = 10
+        sample_batch_size = 64
 
         # agent is done and number of samples in batch is not 10, append zeros all elements that don't have
         # amounts that equal sample batch size
@@ -244,7 +245,7 @@ CCTrainer = PPOTrainer.with_updates(name="CCPPOTrainer", get_policy_class=lambda
 
 ##### Below is code to run, above is code that implements centralized critic #####
 def main():
-    filename = "5-crossway_2_groups/group"
+    filename = "6-crossway_4_groups/group"
     sim_state = parse_sim_state(filename)
 
     checkpoint = ""
@@ -255,7 +256,7 @@ def main():
 def parse_sim_state(filename):
     dirname = os.path.dirname(__file__)
     filename = os.path.join(dirname, "../test_XML_files/training/" + filename + ".xml")
-    seed = 22222
+    seed = 1
     sim_state = XMLSimulationState(filename, seed).simulation_state
 
     return sim_state
@@ -302,8 +303,8 @@ def on_train_result(info):
 
 iterations_count = 0
 iterations_max = 100
-mean_max = 739
-mean_save = 725
+mean_max = 1490
+mean_save = 1340
 
 
 def train(sim_state, checkpoint):
@@ -330,7 +331,7 @@ def train(sim_state, checkpoint):
     ModelCatalog.register_custom_model("cc_model", CentralizedCriticModel)
     config["env"] = "multi_agent_env"
     config["eager"] = False
-    config["num_workers"] = 7
+    config["num_workers"] = 0
     config["model"] = {
         "custom_model": "cc_model"
     }
@@ -342,6 +343,8 @@ def train(sim_state, checkpoint):
         "episode_reward_mean": mean_max,
         # "training_iteration": iterations_max
     }
+
+    ray.init()
 
     name = "crossway"
     if checkpoint == "":
