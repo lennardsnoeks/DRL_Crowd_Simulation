@@ -121,7 +121,7 @@ def train(sim_state, checkpoint):
     algo = "DDPG"    # Options: DDPG, PPO
 
     if checkpoint == "":
-        run(algo, num_samples=1, name=name, checkpoint_freq=checkpoint_freq, stop=stop, config=config)
+        run(algo, name=name, checkpoint_freq=checkpoint_freq, stop=stop, config=config)
     else:
         run(algo, name=name, checkpoint_freq=checkpoint_freq, stop=stop, config=config, restore=checkpoint)
 

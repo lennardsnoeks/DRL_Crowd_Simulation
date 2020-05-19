@@ -215,13 +215,11 @@ class SingleAgentEnv(gym.Env):
             y_max = y_min + self.sim_state.obstacles[collided_obs_id].height
 
             # clipping now only works for rectangular obstacles placed on bounds (as with the crossway examples)
-            #if x_min - radius <= pos[0, 0] <= x_max + radius:
             if x_min <= pos[0, 0] <= x_max:
                 if pos[1, 0] < y_min and pos[1, 0] < y_max:
                     pos[1, 0] = y_min - radius
                 if pos[1, 0] > y_min and pos[1, 0] > y_max:
                     pos[1, 0] = y_max + radius
-            #if y_min - radius <= pos[1, 0] <= y_max + radius:
             if y_min <= pos[1, 0] <= y_max:
                 if pos[0, 0] < x_min and pos[0, 0] < x_max:
                     pos[0, 0] = x_min - radius

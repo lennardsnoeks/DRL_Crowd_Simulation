@@ -1,6 +1,4 @@
 import os
-from time import sleep
-
 import ray
 import ray.rllib.agents.ddpg as ddpg
 import ray.rllib.agents.ppo as ppo
@@ -18,7 +16,7 @@ def main():
     seed = 22222
     sim_state = XMLSimulationState(filename, seed).simulation_state
 
-    checkpoint_path = "/home/lennard/ray_results/crossway/ps_3v3_capped_laser/checkpoint_44/checkpoint-44"
+    checkpoint_path = ""
     simulate(sim_state, checkpoint_path)
 
 

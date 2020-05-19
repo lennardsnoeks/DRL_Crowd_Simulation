@@ -12,7 +12,7 @@ PPO_CONFIG = with_common_config({
     # Initial coefficient for KL divergence.
     "kl_coeff": 1,
     # Size of batches collected from each worker.
-    "sample_batch_size": 64, #128,
+    "sample_batch_size": 128,
     # Number of timesteps collected for each SGD round. This defines the size
     # of each SGD epoch.
     "train_batch_size": 512,  #3584,  # 1920

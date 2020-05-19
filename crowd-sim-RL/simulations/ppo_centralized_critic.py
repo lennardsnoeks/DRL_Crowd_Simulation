@@ -81,7 +81,7 @@ def centralized_critic_postprocessing(policy,
     if policy.loss_initialized():
         assert other_agent_batches is not None
 
-        sample_batch_size = 64
+        sample_batch_size = 128
 
         # agent is done and number of samples in batch is not 10, append zeros all elements that don't have
         # amounts that equal sample batch size

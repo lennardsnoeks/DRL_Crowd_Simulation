@@ -14,7 +14,7 @@ def main():
     seed = 22222
     sim_state = XMLSimulationState(filename, seed).simulation_state
 
-    checkpoint_path = "/home/lennard/ray_results/crossway/weird2_centralq/checkpoint_83/checkpoint-83"
+    checkpoint_path = ""
 
     simulate(sim_state, checkpoint_path)
 
