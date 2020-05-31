@@ -14,11 +14,11 @@ from visualization.visualize_simulation_multi_concurrent import VisualizationSim
 
 def main():
     dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, "../test_XML_files/training/5-crossway_2_groups/group.xml")
-    seed = 23
+    filename = os.path.join(dirname, "../test_XML_files/training/6-crossway_4_groups/group.xml")
+    seed = 1
     sim_state = XMLSimulationState(filename, seed).simulation_state
 
-    checkpoint_path = ""
+    checkpoint_path = "/home/lennard/ray_results/crossway/conc_3v3v3v3/good/checkpoint-134"
     simulate(sim_state, checkpoint_path)
 
 
@@ -66,7 +66,7 @@ def simulate(sim_state, checkpoint_path):
         "timesteps_per_iteration": config["timesteps_per_iteration"]
     }
 
-    centralized = True
+    centralized = False
 
     multi_agent_config = make_multi_agent_config(sim_state, config, centralized)
     config["multiagent"] = multi_agent_config
@@ -78,9 +78,9 @@ def simulate(sim_state, checkpoint_path):
         }
 
     ray.init()
-    #trainer = ppo.PPOTrainer(env=MultiAgentEnvironment, config=config)
+    trainer = ppo.PPOTrainer(env=MultiAgentEnvironment, config=config)
     #trainer = ddpg.DDPGTrainer(env=MultiAgentEnvironment, config=config)
-    trainer = CCTrainer(env=MultiAgentEnvironment, config=config)
+    #trainer = CCTrainer(env=MultiAgentEnvironment, config=config)
 
     trainer.restore(checkpoint_path)
 

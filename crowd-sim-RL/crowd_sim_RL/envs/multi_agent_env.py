@@ -61,6 +61,10 @@ class MultiAgentEnvironment(MultiAgentEnv):
 
         return {i: a.reset() for i, a in enumerate(self.agents)}
 
+    def test_set(self):
+        for agent in self.agents:
+            agent.test_set()
+
     def initial_visualization(self, visualization):
         visualization.run()
 
