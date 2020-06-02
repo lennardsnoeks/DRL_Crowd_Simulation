@@ -10,8 +10,8 @@ from simulations.configs import ddpg_config, ppo_config
 
 def main():
     dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, "../test_XML_files/training/3-confusion/2.xml")
-    seed = 22222
+    filename = os.path.join(dirname, "../test_XML_files/training/")
+    seed = 1
     sim_state = XMLSimulationState(filename, seed).simulation_state
 
     checkpoint_path = ""

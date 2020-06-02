@@ -1,13 +1,11 @@
 import sys
-from time import sleep
-
 import pygame
 import math
 import copy
 import numpy as np
+from time import sleep
 from pygame.locals import *
 from ray.rllib.agents import Trainer
-
 from crowd_sim_RL.envs.multi_agent_env import MultiAgentEnvironment
 from utils.steerbench_parser import SimulationState
 from visualization.color_config import SIM_COLORS
@@ -64,7 +62,6 @@ class VisualizationSimMultiPS:
 
         self.simulation_update()
         pygame.display.flip()
-        sleep(5)
 
         actions = {}
         action_rescales = {}
@@ -95,7 +92,9 @@ class VisualizationSimMultiPS:
 
         clock = pygame.time.Clock()
 
-        while True:
+        actions_data = []
+
+        while not done:
             dt = clock.tick(self.framerate)
 
             self.process_events()
@@ -112,8 +111,8 @@ class VisualizationSimMultiPS:
                                                                           explore=False,
                                                                           policy_id="policy_0")
 
-                    #scale = dt / 1000
-                    scale = 0.1
+                    scale = dt / 1000
+                    #scale = 0.1
 
                     if dones is None:
                         action_rescales[i] = [linear_vel * scale, angular_vel * scale]
@@ -125,6 +124,8 @@ class VisualizationSimMultiPS:
                         else:
                             action_rescales[i] = [0, 0]
                             actions[i] = [0, 0]
+
+                actions_data.append(action_rescales)
 
                 observations, rewards, dones, info = env.step(action_rescales)
 
@@ -139,10 +140,45 @@ class VisualizationSimMultiPS:
 
                 self.simulation_update()
 
-            #self.show_fps(self.screen, clock)
-            #self.show_size(self.screen)
+            self.show_fps(self.screen, clock)
+            self.show_size(self.screen)
 
             pygame.display.flip()
+
+        """env.reset()
+        done = False
+        counter = 0
+
+        env.test_set()
+
+        pygame.display.flip()
+
+        print("countdown")
+        sleep(5)
+
+        while True:
+            self.process_events()
+
+            if not done:
+                if counter < len(actions_data):
+                    observations, rewards, dones, info = env.step(actions_data[counter])
+
+                    if dones["__all__"]:
+                        done = True
+
+                    agents = env.get_agents()
+                    self.sim_state.agents = agents
+
+                    self.simulation_update()
+
+                    sleep(0.1)
+
+            self.show_size(self.screen)
+            self.show_fps(self.screen, clock)
+
+            pygame.display.flip()
+
+            counter += 1"""
 
     def show_fps(self, window, clock):
         fps_overlay = self.FPS_FONT.render(str(round(clock.get_fps(), 2)) + " fps", True, self.GOLDENROD)

@@ -15,10 +15,10 @@ PPO_CONFIG = with_common_config({
     "sample_batch_size": 128,
     # Number of timesteps collected for each SGD round. This defines the size
     # of each SGD epoch.
-    "train_batch_size": 512,  #3584,  # 1920
+    "train_batch_size": 3584,  #3584,  # 1920
     # Total SGD batch size across all devices for SGD. This defines the
     # minibatch size within each epoch.
-    "sgd_minibatch_size": 16,  # 112
+    "sgd_minibatch_size": 112,  # 112
     # Whether to shuffle sequences in the batch when training (recommended).
     "shuffle_sequences": True,
     # Number of SGD iterations in each outer loop (i.e., number of epochs to

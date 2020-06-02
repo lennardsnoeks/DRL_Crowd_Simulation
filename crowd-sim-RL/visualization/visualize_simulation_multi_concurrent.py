@@ -1,10 +1,9 @@
 import sys
-from time import sleep
-
 import pygame
 import math
 import copy
 import numpy as np
+from time import sleep
 from pygame.locals import *
 from ray.rllib.agents import Trainer
 from crowd_sim_RL.envs.multi_agent_env import MultiAgentEnvironment
@@ -63,7 +62,6 @@ class VisualizationSimMultiConcurrent:
 
         self.simulation_update()
         pygame.display.flip()
-        sleep(5)
 
         actions = {}
         action_rescales = {}
@@ -96,7 +94,7 @@ class VisualizationSimMultiConcurrent:
 
         actions_data = []
 
-        while not done:
+        while not done and len(actions_data) < 300:
             dt = clock.tick(self.framerate)
 
             self.process_events()
@@ -113,8 +111,8 @@ class VisualizationSimMultiConcurrent:
                                                                           policy_id="policy_" +
                                                                                     str(self.sim_state.agents[i].id))
 
-                    #scale = dt / 1000
-                    scale = 0.1
+                    scale = dt / 1000
+                    #scale = 0.1
 
                     if dones is None:
                         action_rescales[i] = [linear_vel * scale, angular_vel * scale]
@@ -140,22 +138,23 @@ class VisualizationSimMultiConcurrent:
                 agents = env.get_agents()
                 self.sim_state.agents = agents
 
-                """self.simulation_update()
+                self.simulation_update()
 
             self.show_fps(self.screen, clock)
             self.show_size(self.screen)
 
-            pygame.display.flip()"""
+            pygame.display.flip()
 
         """env.reset()
-        env = MultiAgentEnvironmentMov(config)"""
-        env.reset()
         done = False
         counter = 0
 
         env.test_set()
 
         pygame.display.flip()
+
+        print("countdown")
+        sleep(5)
 
         while True:
             self.process_events()
@@ -175,10 +174,11 @@ class VisualizationSimMultiConcurrent:
                     sleep(0.1)
 
             self.show_size(self.screen)
+            self.show_fps(self.screen, clock)
 
             pygame.display.flip()
 
-            counter += 1
+            counter += 1"""
 
     def show_fps(self, window, clock):
         fps_overlay = self.FPS_FONT.render(str(round(clock.get_fps(), 2)) + " fps", True, self.GOLDENROD)

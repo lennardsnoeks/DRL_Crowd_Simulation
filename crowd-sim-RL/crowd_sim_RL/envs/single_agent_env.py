@@ -42,11 +42,6 @@ class SingleAgentEnv(gym.Env):
         if "train" in self.mode:
             self.max_step_count = env_config["timesteps_reset"]
 
-        self.set = False
-
-    def test_set(self):
-        self.set = True
-
     def load_params(self, sim_state: SimulationState):
         self.orig_sim_state = copy.deepcopy(sim_state)
 
@@ -81,18 +76,17 @@ class SingleAgentEnv(gym.Env):
         angular_vel = action[1]
         agent = self.steering_agents[self.id]
 
-        if not self.set:
-            # set agent pos back to intial state, neceassary in some cases (see _check_resets method)
-            if self.reset_pos_necessary:
-                agent.pos[0, 0] = self.orig_sim_state.agents[agent.id].pos[0, 0]
-                agent.pos[1, 0] = self.orig_sim_state.agents[agent.id].pos[1, 0]
-                agent.orientation = self.orig_sim_state.agents[agent.id].orientation
-                self.reset_pos_necessary = False
+        # set agent pos back to intial state, neceassary in some cases (see _check_resets method)
+        if self.reset_pos_necessary:
+            agent.pos[0, 0] = self.orig_sim_state.agents[agent.id].pos[0, 0]
+            agent.pos[1, 0] = self.orig_sim_state.agents[agent.id].pos[1, 0]
+            agent.orientation = self.orig_sim_state.agents[agent.id].orientation
+            self.reset_pos_necessary = False
 
-            # adjust linear and angular velocity according to timestep
-            if "train" in self.mode:
-                linear_vel *= self.time_step
-                angular_vel *= self.time_step
+        # adjust linear and angular velocity according to timestep
+        if "train" in self.mode:
+            linear_vel *= self.time_step
+            angular_vel *= self.time_step
 
         # convert single orientation value (degrees or radians) to 2d representation | setup rotation matrix
         orientation_2d = np.array([[math.cos(agent.orientation)], [math.sin(agent.orientation)]])
@@ -106,52 +100,48 @@ class SingleAgentEnv(gym.Env):
         # convert calculated orientation back to polar value
         new_ori = math.atan2(new_ori_2d[1, 0], new_ori_2d[0, 0])
 
-        if not self.set:
-            # reward for getting closer to goal, if there are multiple goals, take closest one in consideration
-            diff = 0
-            max_distance_to_goal = 0
-            shortest_goal = None
-            first = True
-            for goal in agent.goals:
-                previous_distance_to_goal = self._calculate_distance_goal(agent.pos, goal)
-                new_distance_to_goal = self._calculate_distance_goal(new_pos, goal)
-                diff = previous_distance_to_goal - new_distance_to_goal
-                if first:
-                    max_distance_to_goal = new_distance_to_goal
-                    first = False
-                if new_distance_to_goal <= max_distance_to_goal:
-                    shortest_goal = goal
-                if new_distance_to_goal <= self.sim_state.goal_tolerance:
-                    done = True
-                    agent.done = True
-                    self.step_count_same = 0
-                    self.step_count_obs = 0
-                    self.step_count = 0
-                    reward += self.reward_goal_reached
-            reward += self.reward_goal * diff
+        # reward for getting closer to goal, if there are multiple goals, take closest one in consideration
+        diff = 0
+        max_distance_to_goal = 0
+        shortest_goal = None
+        first = True
+        for goal in agent.goals:
+            previous_distance_to_goal = self._calculate_distance_goal(agent.pos, goal)
+            new_distance_to_goal = self._calculate_distance_goal(new_pos, goal)
+            diff = previous_distance_to_goal - new_distance_to_goal
+            if first:
+                max_distance_to_goal = new_distance_to_goal
+                first = False
+            if new_distance_to_goal <= max_distance_to_goal:
+                shortest_goal = goal
+            if new_distance_to_goal <= self.sim_state.goal_tolerance:
+                done = True
+                agent.done = True
+                self.step_count_same = 0
+                self.step_count_obs = 0
+                self.step_count = 0
+                reward += self.reward_goal_reached
+        reward += self.reward_goal * diff
 
         # assign new pos/ori
         previous_pos = agent.pos
         agent.pos = new_pos
         agent.orientation = new_ori
 
-        if not self.set:
-            # check for collisions and assign rewards
-            reward_collision, collision_obstacle, collision_clip, collided_obs_id = self._detect_collisions(agent)
-            reward += reward_collision
+        # check for collisions and assign rewards
+        reward_collision, collision_obstacle, collision_clip, collided_obs_id = self._detect_collisions(agent)
+        reward += reward_collision
 
-            # if collision with bounds or bound obstacle, revert to previous pos/ori
-            pos, clipped = self._clip_pos(agent.pos, collided_obs_id, collision_clip, agent.radius)
-            agent.pos = pos
-            """if (clipped and diff < 0) or not clipped:
-                reward += self.reward_goal * diff"""
+        # if collision with bounds or bound obstacle, revert to previous pos/ori
+        pos, clipped = self._clip_pos(agent.pos, collided_obs_id, collision_clip, agent.radius)
+        agent.pos = pos
+        """if (clipped and diff < 0) or not clipped:
+            reward += self.reward_goal * diff"""
 
-            # get internal and external state of agents (observation)
-            internal_state = self._get_internal_state(agent, shortest_goal)
-            external_state_laser, external_state_type = self._get_external_state(agent)
-            observation = [internal_state, external_state_laser, external_state_type]
-        else:
-            observation = []
+        # get internal and external state of agents (observation)
+        internal_state = self._get_internal_state(agent, shortest_goal)
+        external_state_laser, external_state_type = self._get_external_state(agent)
+        observation = [internal_state, external_state_laser, external_state_type]
 
         # when training, do manual reset once if the agent is stuck in local optima or
         # if they are wandering in 2-obstacles

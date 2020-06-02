@@ -4,7 +4,6 @@ import ray.rllib.agents.ddpg as ddpg
 import ray.rllib.agents.ppo as ppo
 from crowd_sim_RL.envs import SingleAgentEnv
 from crowd_sim_RL.envs.multi_agent_env import MultiAgentEnvironment
-from simulations.ppo_centralized_critic import CCTrainer
 from utils.steerbench_parser import XMLSimulationState
 from simulations.configs import ddpg_config, ppo_config
 from visualization.visualize_simulation_multi_PS import VisualizationSimMultiPS
@@ -12,8 +11,8 @@ from visualization.visualize_simulation_multi_PS import VisualizationSimMultiPS
 
 def main():
     dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, "../test_XML_files/training/5-crossway_2_groups/group.xml")
-    seed = 22222
+    filename = os.path.join(dirname, "../test_XML_files/training/")
+    seed = 1
     sim_state = XMLSimulationState(filename, seed).simulation_state
 
     checkpoint_path = ""

@@ -14,11 +14,11 @@ from visualization.visualize_simulation_multi_concurrent import VisualizationSim
 
 def main():
     dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, "../test_XML_files/training/6-crossway_4_groups/group.xml")
+    filename = os.path.join(dirname, "../test_XML_files/training/")
     seed = 1
     sim_state = XMLSimulationState(filename, seed).simulation_state
 
-    checkpoint_path = "/home/lennard/ray_results/crossway/conc_3v3v3v3/good/checkpoint-134"
+    checkpoint_path = ""
     simulate(sim_state, checkpoint_path)
 
 
