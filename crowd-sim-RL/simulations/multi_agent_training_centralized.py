@@ -11,7 +11,7 @@ mean_max = 550
 
 
 def main():
-    filename = "4-hallway/4"
+    filename = ""
     sim_state = parse_sim_state(filename)
 
     checkpoint = ""
@@ -22,7 +22,7 @@ def main():
 def parse_sim_state(filename):
     dirname = os.path.dirname(__file__)
     filename = os.path.join(dirname, "../test_XML_files/training/" + filename + ".xml")
-    seed = 22222
+    seed = 1
     sim_state = XMLSimulationState(filename, seed).simulation_state
 
     return sim_state
@@ -77,7 +77,7 @@ def train(sim_state, checkpoint):
         # "training_iteration": iterations_max
     }
 
-    name = "hallway"
+    name = ""
     algo = "PPO"    # Options: DDPG, PPO, TD3
 
     if checkpoint == "":

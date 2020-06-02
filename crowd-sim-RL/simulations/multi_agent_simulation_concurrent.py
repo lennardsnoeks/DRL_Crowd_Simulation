@@ -2,7 +2,6 @@ import os
 import ray
 import ray.rllib.agents.ddpg as ddpg
 import ray.rllib.agents.ppo as ppo
-from ray.rllib.agents.ddpg.ddpg_policy import DDPGTFPolicy
 from ray.rllib.models import ModelCatalog
 from crowd_sim_RL.envs import SingleAgentEnv
 from crowd_sim_RL.envs.multi_agent_env import MultiAgentEnvironment

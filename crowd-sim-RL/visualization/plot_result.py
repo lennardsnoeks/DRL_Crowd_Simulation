@@ -7,11 +7,11 @@ from scipy.signal import savgol_filter
 def main():
     plot_reward_progress()
 
-    #plot_comparison()
+    plot_comparison()
 
-    #plot_cap()
+    plot_cap()
 
-    #plot_values()
+    plot_values()
 
 
 def plot_comparison():

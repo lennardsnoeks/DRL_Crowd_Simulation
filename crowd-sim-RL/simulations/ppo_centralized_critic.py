@@ -245,7 +245,7 @@ CCTrainer = PPOTrainer.with_updates(name="CCPPOTrainer", get_policy_class=lambda
 
 ##### Below is code to run, above is code that implements centralized critic #####
 def main():
-    filename = "6-crossway_4_groups/group"
+    filename = ""
     sim_state = parse_sim_state(filename)
 
     checkpoint = ""
@@ -346,7 +346,8 @@ def train(sim_state, checkpoint):
 
     ray.init()
 
-    name = "crossway"
+    name = ""
+
     if checkpoint == "":
         run(CCTrainer, num_samples=1, name=name, checkpoint_freq=checkpoint_freq, stop=stop, config=config)
     else:

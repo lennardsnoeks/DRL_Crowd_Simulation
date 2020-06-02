@@ -8,14 +8,14 @@ from simulations.configs import ddpg_config, ppo_config
 
 iterations_count = 0
 iterations_max = 100
-mean_max = 540 #1490
+mean_max = 540
 mean_save = 540
 count_over_max = 5
 count_over = 0
 
 
 def main():
-    filename = "4-hallway/4"
+    filename = ""
     sim_state = parse_sim_state(filename)
 
     checkpoint = ""
@@ -85,8 +85,8 @@ def train(sim_state, checkpoint):
     global iterations_max, mean_max
     checkpoint_freq = 0
 
-    config = ddpg_config.DDPG_CONFIG.copy()
-    #config = ppo_config.PPO_CONFIG.copy()
+    #config = ddpg_config.DDPG_CONFIG.copy()
+    config = ppo_config.PPO_CONFIG.copy()
 
     config["gamma"] = 0.99
     config["num_workers"] = 0
@@ -117,8 +117,8 @@ def train(sim_state, checkpoint):
         # "training_iteration": iterations_max
     }
 
-    name = "hallway"
-    algo = "DDPG"    # Options: DDPG, PPO
+    name = ""
+    algo = "PPO"    # Options: DDPG, PPO
 
     if checkpoint == "":
         run(algo, name=name, checkpoint_freq=checkpoint_freq, stop=stop, config=config)
